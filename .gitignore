@@ -1,0 +1,13 @@
+*~
+/.vscode/**
+/build/**
+
+# dub
+/**/.dub
+*.a
+
+# tests generate these
+tmp*.o
+
+# Coverage data
+*.lst
