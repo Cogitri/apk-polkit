@@ -27,12 +27,12 @@ import deimos.apk_toolsd.apk_package;
 
 class ApkPackage
 {
-    this(string name, string old_package_version, string package_version, string arch, string license,
+    this(string name, string oldPackageVersion, string packageVersion, string arch, string license,
             string origin, string maintainer, string url, string description, string commit,
             string filename, ulong installedSize, ulong size, SysTime buildTime)
     {
         this.m_name = name;
-        this.m_version = package_version;
+        this.m_version = packageVersion;
         this.m_arch = arch;
         this.m_license = license;
         this.m_origin = origin;
@@ -44,7 +44,7 @@ class ApkPackage
         this.m_installedSize = installedSize;
         this.m_size = size;
         this.m_buildTime = buildTime;
-        this.m_old_version = package_version;
+        this.m_oldVersion = oldPackageVersion;
     }
 
     this(apk_package apk_package)
@@ -75,10 +75,80 @@ class ApkPackage
         return format("Packagename: %s\n Version %s\n", this.m_name, this.m_version);
     }
 
+    @property string name() const
+    {
+        return m_name;
+    }
+
+    @property stringversion() const
+    {
+        return m_version;
+    }
+
+    @property string oldVersion() const
+    {
+        return m_oldVersion;
+    }
+
+    @property string arch() const
+    {
+        return m_arch;
+    }
+
+    @property string license() const
+    {
+        return m_license;
+    }
+
+    @property string origin() const
+    {
+        return m_origin;
+    }
+
+    @property string maintainer() const
+    {
+        return m_maintainer;
+    }
+
+    @property string url() const
+    {
+        return m_url;
+    }
+
+    @property string description() const
+    {
+        return m_description;
+    }
+
+    @property string commit() const
+    {
+        return m_commit;
+    }
+
+    @property string filename() const
+    {
+        return m_filename;
+    }
+
+    @property ulong installedSize() const
+    {
+        return m_installedSize;
+    }
+
+    @property ulong size() const
+    {
+        return m_size;
+    }
+
+    @property SysTime buildTime() const
+    {
+        return m_buildTime;
+    }
+
 private:
     string m_name;
     string m_version;
-    string m_old_version;
+    string m_oldVersion;
     string m_arch;
     string m_license;
     string m_origin;
