@@ -1,0 +1,21 @@
+{
+    "name": "apkd",
+    "description": "Fat wrapper around libapk",
+    "homepage": "https://github.com/Cogitri/apk-polkit",
+    "authors": [
+        "Rasmus Thomsen <oss@cogitri.dev>"
+    ],
+    "license": "GPL-3.0",
+    "targetType": "library",
+    "dependencies": {
+        "apk-tools-d": {
+            "path": "/home/rasmus/Projects/apk-toolsd"
+        }
+    },
+    "sourcePaths": [
+        "."
+    ],
+    "importPaths": [
+        ".."
+    ]
+}

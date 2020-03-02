@@ -1,0 +1,21 @@
+{
+    "name": "apkd_test",
+    "description": "Test binary for apkd",
+    "homepage": "https://github.com/Cogitri/apk-polkit",
+    "authors": [
+        "Rasmus Thomsen <oss@cogitri.dev>"
+    ],
+    "license": "GPL-3.0",
+    "targetType": "executable",
+    "dependencies": {
+        "apkd": {
+            "path": "../../src/apkd"
+        }
+    },
+    "sourcePaths": [
+        "."
+    ],
+    "importPaths": [
+        ".."
+    ]
+}

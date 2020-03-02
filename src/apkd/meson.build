@@ -1,5 +1,5 @@
 lib_src = [
-    'lib.d'
+    'ApkDataBase.d'
 ]
 
 libapk_helper_lib = library(
