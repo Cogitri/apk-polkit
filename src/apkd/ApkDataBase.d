@@ -130,10 +130,9 @@ class ApkDataBase
 
             for (auto i = 0; i < changeset.changes.num; i++)
             {
-                auto new_package = changes[i].new_pkg;
-                auto old_package = changes[i].old_pkg;
-                writeln(old_package.version_);
-                auto apkPackage = new ApkPackage(*new_package);
+                auto newPackage = changes[i].new_pkg;
+                auto oldPackage = changes[i].old_pkg;
+                auto apkPackage = new ApkPackage(*oldPackage, *newPackage);
                 packages ~= apkPackage;
             }
         }
@@ -165,7 +164,7 @@ private:
 
         if (pkgname.canFind(".apk"))
         {
-            apk_package* apk_package = null;
+            apk_package* apkPackage = null;
             apk_sign_ctx ctx;
 
             apk_sign_ctx_init(&ctx, APK_SIGN_VERIFY_AND_GENERATE, null, this.db.keys_fd);
@@ -173,9 +172,9 @@ private:
             {
                 apk_sign_ctx_free(&ctx);
             }
-            auto pkgRes = apk_pkg_read(&this.db, pkgname.toStringz, &ctx, &apk_package);
+            auto pkgRes = apk_pkg_read(&this.db, pkgname.toStringz, &ctx, &apkPackage);
             enforce(pkgRes == 0, format("%s: %s", pkgname, apk_error_str(pkgRes)));
-            apk_dep_from_pkg(&apk_dependency, &this.db, apk_package);
+            apk_dep_from_pkg(&apk_dependency, &this.db, apkPackage);
             return apk_dependency;
         }
         else
