@@ -61,3 +61,45 @@ static foreach (typeName; [
 {
     mixin apkArrayFuncs!typeName;
 }
+
+struct DeleteContext
+{
+public:
+    @property bool recursiveDelete() const
+    {
+        return m_recursiveDelete;
+    }
+
+    @property ref apk_dependency_array* world()
+    {
+        return m_world;
+    }
+
+    @property uint errors()
+    {
+        return m_errors;
+    }
+
+    @property void errors(uint count)
+    {
+        this.m_errors = count;
+    }
+
+private:
+    bool m_recursiveDelete;
+    apk_dependency_array* m_world;
+    uint m_errors;
+}
+
+extern (C) void recursiveDeletePackage(apk_package* apkPackage,
+        apk_dependency*, apk_package*, void* ctx)
+{
+    auto deleteContext = cast(DeleteContext*) ctx;
+    auto world = deleteContext.world;
+    apk_deps_del(&world, apkPackage.name);
+    if (deleteContext.recursiveDelete)
+    {
+        apk_pkg_foreach_reverse_dependency(apkPackage,
+                APK_FOREACH_INSTALLED | APK_DEP_SATISFIES, &recursiveDeletePackage, ctx);
+    }
+}

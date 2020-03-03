@@ -22,6 +22,7 @@ module apkd.ApkDataBase;
 import deimos.apk_toolsd.apk_blob;
 import deimos.apk_toolsd.apk_database;
 import deimos.apk_toolsd.apk_defines;
+import deimos.apk_toolsd.apk_hash;
 import deimos.apk_toolsd.apk_package;
 import deimos.apk_toolsd.apk_print;
 import deimos.apk_toolsd.apk_solver;
@@ -137,6 +138,59 @@ class ApkDataBase
             }
         }
         return packages;
+    }
+
+    void addPackage(string pkgname, ushort solverFlags = 0)
+    {
+        auto dep = packageNameToApkDependency(pkgname);
+        apk_dependency_array* world_copy = null;
+        scope (exit)
+        {
+            apkd.functions.apk_dependency_array_free(&world_copy);
+        }
+        apk_changeset changeset;
+
+        apk_deps_add(&world_copy, &dep);
+        apk_solver_set_name_flags(dep.name, solverFlags, solverFlags);
+        enforce(apk_solver_solve(&this.db, solverFlags, world_copy,
+                &changeset) == 0, "Failed to calculate dependency graph!");
+        enforce(apk_solver_commit_changeset(&this.db, &changeset,
+                world_copy) == 0, "Failed to commit changes to the database!");
+    }
+
+    void deletePackage(string pkgname, ushort solverFlags = 0)
+    {
+        auto pkgnameBlob = apk_blob_t(pkgname.length, toUTFz!(char*)(pkgname));
+        apk_dependency_array* worldCopy = null;
+        apk_changeset changeset;
+        scope (exit)
+        {
+            apkd.functions.apk_change_array_free(&changeset.changes);
+            apkd.functions.apk_dependency_array_free(&worldCopy);
+        }
+
+        apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
+
+        auto hash = this.db.available.names.ops.hash_key(pkgnameBlob);
+        auto name = cast(apk_name*) apk_hash_get_hashed(&this.db.available.names,
+                pkgnameBlob, hash);
+
+        enforce(name !is null, "No such package: %s", pkgname);
+
+        auto deleteContext = apkd.functions.DeleteContext(true, worldCopy, 0);
+
+        auto apkPackage = cast(apk_package*) apk_pkg_get_installed(name);
+        if (apkPackage is null)
+        {
+            apk_deps_del(&worldCopy, name);
+        }
+        else
+        {
+            apkd.functions.recursiveDeletePackage(apkPackage, null, null, &deleteContext);
+        }
+
+        enforce(apk_solver_solve(&this.db, solverFlags, worldCopy, &changeset) == 0);
+        apk_solver_commit_changeset(&this.db, &changeset, worldCopy);
     }
 
 private:
