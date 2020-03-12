@@ -1,4 +1,5 @@
 pkgc = import('pkgconfig')
 
-subdir('libapk_helper')
-subdir('apk_polkit')
+subdir('apkd')
+subdir('apkd_dbus_server')
+subdir('apkd_dbus_client')

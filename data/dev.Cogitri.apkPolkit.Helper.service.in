@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=dev.Cogitri.apkPolkit.Helper
+Exec=@LIBEXEC_DIR@/apkd-dbus-server @EXTRA_ARGS@
+User=root

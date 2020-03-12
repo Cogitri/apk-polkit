@@ -1,8 +1,0 @@
-{
-	"fileVersion": 1,
-	"versions": {
-		"apk-tools-d": {"path":"../apk-toolsd"},
-		"libapk_helper": {"path":"src/libapk_helper"},
-		"openssl": "2.0.1+1.1.0h"
-	}
-}

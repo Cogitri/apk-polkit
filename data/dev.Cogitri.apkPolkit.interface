@@ -1,5 +1,9 @@
-/*
-    Copyright (c) 2020 Rasmus Thomsen
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<!--
+    Copyright (c) 2020 Rasmus Thomsen <oss@cogitri.dev>
 
     This file is part of apk-polkit (see https://github.com/Cogitri/apk-polkit).
 
@@ -15,9 +19,12 @@
 
     You should have received a copy of the GNU General Public License
     along with apk-polkit.  If not, see <https://www.gnu.org/licenses/>.
-*/
+-->
 
-void main()
-{
-
-}
+<node name="/" xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+    <interface name="dev.Cogitri.apkPolkit.Helper">
+        <method name="updateRepositories">
+            <arg type="b" direction="out"/>
+        </method>
+    </interface>
+</node>

@@ -1,0 +1,1 @@
+option('privileged-group', type: 'string', value: 'wheel', description: 'Group which is permitted to use use apk-polkit without authentication')

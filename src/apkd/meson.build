@@ -1,33 +1,36 @@
 lib_src = [
-    'ApkDataBase.d'
+    'ApkDataBase.d',
+    'ApkPackage.d',
+    'functions.d',
 ]
 
-libapk_helper_lib = library(
-    'libapk-helper',
+apkd_lib = library(
+    'apkd',
     [lib_src],
     install: true,
-    version: meson.project_version(),
-    soversion: project_soversion,
     d_module_versions: d_mod_version,
     include_directories: src_inc,
-    dependencies: libapk_helper_deps,
+    dependencies: apkd_deps,
     link_args: ['-shared', link_runtime_shared_arg],
 )
 
-libapk_helper_dep = declare_dependency(
-    link_with: libapk_helper_lib,
+apkd_dep = declare_dependency(
+    link_with: apkd_lib,
     include_directories: src_inc,
     link_args: link_runtime_shared_arg,
+    dependencies: apkd_deps,
 )
 
 pkgc.generate(
-    libapk_helper_lib,
-    name: 'apk-polkit-0',
+    apkd_lib,
+    name: 'apkd-0',
     subdirs: 'd/apk-polkit',
     version: meson.project_version(),
+    requires: apkd_deps,
 )
+
 
 install_headers(
     lib_src,
-    subdir: 'd/apk-polkit/apk_polkit',
+    subdir: 'd/apk-polkit/apkd',
 )

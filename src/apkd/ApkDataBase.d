@@ -20,11 +20,16 @@
 module apkd.ApkDataBase;
 
 import deimos.apk_toolsd.apk_blob;
+
 import deimos.apk_toolsd.apk_database;
+
 import deimos.apk_toolsd.apk_defines;
+
 import deimos.apk_toolsd.apk_hash;
 import deimos.apk_toolsd.apk_package;
+
 import deimos.apk_toolsd.apk_print;
+
 import deimos.apk_toolsd.apk_solver;
 
 import core.stdc.errno;
@@ -57,12 +62,13 @@ class ApkDataBase
     {
         this.dbOptions.open_flags = APK_OPENF_READ | APK_OPENF_WRITE
             | APK_OPENF_NO_AUTOUPDATE | APK_OPENF_CACHE_WRITE | APK_OPENF_CREATE;
+        this.dbOptions.lock_wait = TRUE;
         apkd.functions.list_init(&this.dbOptions.repository_list);
         apk_atom_init();
         apk_db_init(&this.db);
         const auto res = apk_db_open(&this.db, &this.dbOptions);
         enforce(res == 0, format("Failed to open apk database due to error '%s'",
-                apk_error_str(res)));
+                apk_error_str(res).to!string));
     }
 
     ~this()
@@ -219,7 +225,7 @@ private:
         if (pkgname.canFind(".apk"))
         {
             apk_package* apkPackage = null;
-            apk_sign_ctx ctx;
+            apk_sign_ctx ctx = void;
 
             apk_sign_ctx_init(&ctx, APK_SIGN_VERIFY_AND_GENERATE, null, this.db.keys_fd);
             scope (exit)

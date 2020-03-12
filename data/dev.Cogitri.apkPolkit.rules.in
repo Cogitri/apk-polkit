@@ -1,0 +1,15 @@
+polkit.addRule(function(action, subject) {
+    if ((action.id == "dev.Cogitri.apkPolkit.install" ||
+         action.id == "dev.Cogitri.apkPolkit.update"||
+         action.id == "dev.Cogitri.apkPolkit.upgrade" ||
+         action.id == "odev.Cogitri.apkPolkit.delete") &&
+        subject.active == true && subject.local == true)
+            if (subject.isInGroup("@PRIVILEGED_GROUP@")) {
+                return polkit.Result.YES;
+            else {
+                return polkit.Result.NOT_HANDLED;
+            }
+    }
+
+    return polkit.Result.NOT_HANDLED;
+});
