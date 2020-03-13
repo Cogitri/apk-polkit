@@ -22,6 +22,7 @@ apkd_dbus_client_lib_dep = declare_dependency(
 
 apkd_dbus_client_exe_src = [
     'main.d',
+    'Options.d',
 ]
 
 executable(
@@ -32,3 +33,14 @@ executable(
     include_directories: src_inc,
     dependencies: [apkd_dbus_client_lib_dep],
 )
+
+apkd_test = executable(
+    'apkd_test',
+    apkd_dbus_client_exe_src,
+    d_module_versions: d_mod_version,
+    include_directories: src_inc,
+    dependencies: [apkd_dbus_client_lib_dep],
+    d_unittest: true,
+)
+
+test('Test apkd_dbus_client', apkd_test)

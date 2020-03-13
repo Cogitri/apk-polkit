@@ -4,6 +4,7 @@ import apkd.ApkDataBase;
 import ddbus;
 import std.exception;
 import std.stdio;
+import std.typecons;
 
 class DBusServer
 {
@@ -26,14 +27,82 @@ class ApkInterfacer
 {
     this()
     {
-        this.db = new ApkDataBase();
+        this.db = null;
     }
 
     bool updateRepositories()
     {
-        return this.db.updateRepositories(false);
+        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        return dbGuard.db.updateRepositories(false);
+    }
+
+    bool upgradePackage(string pkgname)
+    {
+        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        try
+        {
+            dbGuard.db.upgradePackage(pkgname);
+            return true;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
+    bool upgradeAllPackages()
+    {
+        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        try
+        {
+            dbGuard.db.upgradeAllPackages();
+            return true;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
+    bool deletePackage(string pkgname)
+    {
+        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        try
+        {
+            dbGuard.db.deletePackage(pkgname);
+            return true;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
+    bool addPackage(string pkgname)
+    {
+        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        try
+        {
+            dbGuard.db.addPackage(pkgname);
+            return true;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
     }
 
 private:
-    ApkDataBase db;
+    Nullable!ApkDataBase db;
+}
+
+struct DatabaseGuard
+{
+    @property ref ApkDataBase db()
+    {
+        return this.m_db;
+    }
+
+private:
+    ApkDataBase m_db;
 }

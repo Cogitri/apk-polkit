@@ -121,29 +121,36 @@ class ApkDataBase
     ApkPackage[] getUpgradablePackages()
     {
         ApkPackage[] packages;
-        apk_changeset changeset;
+        auto changeset = this.getAllUpgradeChangeset();
 
-        enforce(apk_db_check_world(&this.db, this.db.world) == 0,
-                "Missing repository tags; can't continue the upgarde!");
-
-        const auto apkSolverRes = apk_solver_solve(&this.db,
-                APK_SOLVERF_UPGRADE, this.db.world, &changeset);
-
-        if (apkSolverRes == 0)
+        for (auto i = 0; i < changeset.changes.num; i++)
         {
-            auto changes = changeset.changes.item;
-
-            writeln(changeset.changes.num);
-
-            for (auto i = 0; i < changeset.changes.num; i++)
-            {
-                auto newPackage = changes[i].new_pkg;
-                auto oldPackage = changes[i].old_pkg;
-                auto apkPackage = new ApkPackage(*oldPackage, *newPackage);
-                packages ~= apkPackage;
-            }
+            auto newPackage = changeset.changes.item[i].new_pkg;
+            auto oldPackage = changeset.changes.item[i].old_pkg;
+            auto apkPackage = new ApkPackage(*oldPackage, *newPackage);
+            packages ~= apkPackage;
         }
+
         return packages;
+    }
+
+    void upgradeAllPackages(ushort solverFlags = 0)
+    {
+        auto changeset = this.getAllUpgradeChangeset();
+        auto res = apk_solver_commit_changeset(&this.db, &changeset, this.db.world);
+        enforce(res == 0, format("Couldn't upgrade packages due to error '%s%",
+                apk_error_str(res).to!string));
+    }
+
+    void upgradePackage(string pkgname, ushort solverFlags = 0)
+    {
+        apk_changeset changeset;
+        auto apkDep = this.packageNameToApkDependency(pkgname);
+        apk_solver_set_name_flags(apkDep.name, solverFlags, solverFlags);
+        enforce(apk_solver_solve(&this.db, APK_SOLVERF_UPGRADE, this.db.world,
+                &changeset) == 0, "Failed to calculate dependency graph!");
+        enforce(apk_solver_commit_changeset(&this.db, &changeset,
+                this.db.world) == 0, "Failed to commit changes to the database!");
     }
 
     void addPackage(string pkgname, ushort solverFlags = 0)
@@ -246,6 +253,21 @@ private:
         }
 
         return apk_dependency;
+    }
+
+    apk_changeset getAllUpgradeChangeset()
+    {
+        apk_changeset changeset;
+
+        enforce(apk_db_check_world(&this.db, this.db.world) == 0,
+                "Missing repository tags; can't continue the upgarde!");
+
+        const auto apkSolverRes = apk_solver_solve(&this.db,
+                APK_SOLVERF_UPGRADE, this.db.world, &changeset);
+
+        enforce(apkSolverRes == 0);
+
+        return changeset;
     }
 
     apk_database db;

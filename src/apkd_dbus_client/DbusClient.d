@@ -17,6 +17,31 @@ class DBusClient
         auto msg = this.pathInterface.updateRepositories();
     }
 
+    void upgrade(string packageName)
+    {
+        auto msg = this.pathInterface.upgradePackage(packageName);
+    }
+
+    void upgradeAll()
+    {
+        auto msg = this.pathInterface.upgradeAllPackages();
+    }
+
+    void deletePackage(string packageName)
+    {
+        auto msg = this.pathInterface.deletePackage(packageName);
+    }
+
+    void purgePackage(string packageName)
+    {
+        auto msg = this.pathInterface.deletePackage(packageName);
+    }
+
+    void addPackage(string packageName)
+    {
+        auto msg = this.pathInterface.addPackage(packageName);
+    }
+
 private:
     Connection connection;
     PathIface pathInterface;
