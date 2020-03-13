@@ -45,16 +45,8 @@ import std.typecons;
 import std.utf : toUTFz;
 
 import apkd.ApkPackage;
+import apkd.exceptions;
 static import apkd.functions;
-
-/// Thrown if updating a repository fails.
-class RepoUpdateException : Exception
-{
-    this(string msg, string file = __FILE__, size_t line = __LINE__) @safe
-    {
-        super(msg, file, line);
-    }
-}
 
 class ApkDataBase
 {
@@ -67,8 +59,9 @@ class ApkDataBase
         apk_atom_init();
         apk_db_init(&this.db);
         const auto res = apk_db_open(&this.db, &this.dbOptions);
-        enforce(res == 0, format("Failed to open apk database due to error '%s'",
-                apk_error_str(res).to!string));
+        enforce!ApkDatabaseOpenException(res == 0,
+                format("Failed to open apk database due to error '%s'",
+                    apk_error_str(res).to!string));
     }
 
     ~this()
@@ -137,9 +130,10 @@ class ApkDataBase
     void upgradeAllPackages(ushort solverFlags = 0)
     {
         auto changeset = this.getAllUpgradeChangeset();
-        auto res = apk_solver_commit_changeset(&this.db, &changeset, this.db.world);
-        enforce(res == 0, format("Couldn't upgrade packages due to error '%s%",
-                apk_error_str(res).to!string));
+        const auto solverRes = apk_solver_commit_changeset(&this.db, &changeset, this.db.world);
+        enforce!ApkSolverException(solverRes == 0,
+                format("Couldn't upgrade packages due to error '%s%",
+                    apk_error_str(solverRes).to!string));
     }
 
     void upgradePackage(string pkgname, ushort solverFlags = 0)
@@ -149,12 +143,14 @@ class ApkDataBase
         apk_solver_set_name_flags(apkDep.name, solverFlags, solverFlags);
         const auto solverSolveRes = apk_solver_solve(&this.db,
                 APK_SOLVERF_UPGRADE, this.db.world, &changeset);
-        enforce(solverSolveRes == 0, format("Failed to calculate dependency graph due to error '%s'!",
-                apk_error_str(solverSolveRes).to!string));
+        enforce!ApkSolverException(solverSolveRes == 0,
+                format("Failed to calculate dependency graph due to error '%s'!",
+                    apk_error_str(solverSolveRes).to!string));
         const auto solverCommitRes = apk_solver_commit_changeset(&this.db,
                 &changeset, this.db.world);
-        enforce(solverCommitRes == 0, format("Failed to commit changes to the database due to error '%s'!",
-                apk_error_str(solverCommitRes).to!string));
+        enforce!ApkDatabaseCommitException(solverCommitRes == 0,
+                format("Failed to commit changes to the database due to error '%s'!",
+                    apk_error_str(solverCommitRes).to!string));
     }
 
     void addPackage(string pkgname, ushort solverFlags = 0)
@@ -170,11 +166,13 @@ class ApkDataBase
         apk_solver_set_name_flags(dep.name, solverFlags, solverFlags);
         const auto solverSolveRes = apk_solver_solve(&this.db, solverFlags,
                 world_copy, &changeset);
-        enforce(solverSolveRes == 0, format("Failed to calculate dependency graph due to error '%s'!",
-                apk_error_str(solverSolveRes).to!string));
+        enforce!ApkSolverException(solverSolveRes == 0,
+                format("Failed to calculate dependency graph due to error '%s'!",
+                    apk_error_str(solverSolveRes).to!string));
         const auto solverCommitRes = apk_solver_commit_changeset(&this.db, &changeset, world_copy);
-        enforce(solverCommitRes == 0, format("Failed to commit changes to the database due to error '%s'!",
-                apk_error_str(solverCommitRes).to!string));
+        enforce!ApkDatabaseCommitException(solverCommitRes == 0,
+                format("Failed to commit changes to the database due to error '%s'!",
+                    apk_error_str(solverCommitRes).to!string));
     }
 
     void deletePackage(string pkgname, ushort solverFlags = 0)
@@ -193,7 +191,7 @@ class ApkDataBase
         auto hash = this.db.available.names.ops.hash_key(pkgnameBlob);
         auto name = cast(apk_name*) apk_hash_get_hashed(&this.db.available.names,
                 pkgnameBlob, hash);
-        enforce(name !is null, "No such package: %s", pkgname);
+        enforce!NoSuchPackageFoundException(name !is null, "No such package: %s", pkgname);
         auto deleteContext = apkd.functions.DeleteContext(true, worldCopy, 0);
         auto apkPackage = cast(apk_package*) apk_pkg_get_installed(name);
         if (apkPackage is null)
@@ -207,11 +205,13 @@ class ApkDataBase
 
         const auto solverSolveRes = apk_solver_solve(&this.db, solverFlags,
                 worldCopy, &changeset);
-        enforce(solverSolveRes == 0, format("Failed to calculate dependency graph due to error '%s'!",
-                apk_error_str(solverSolveRes).to!string));
-        const auto solverCommitRes = apk_solver_commit_changeset(&this.db, &changeset, world_copy);
-        enforce(solverCommitRes == 0, format("Failed to commit changes to the database due to error '%s'!",
-                apk_error_str(solverCommitRes).to!string));
+        enforce!ApkSolverException(solverSolveRes == 0,
+                format("Failed to calculate dependency graph due to error '%s'!",
+                    apk_error_str(solverSolveRes).to!string));
+        const auto solverCommitRes = apk_solver_commit_changeset(&this.db, &changeset, worldCopy);
+        enforce!ApkDatabaseCommitException(solverCommitRes == 0,
+                format("Failed to commit changes to the database due to error '%s'!",
+                    apk_error_str(solverCommitRes).to!string));
     }
 
 private:
@@ -228,7 +228,7 @@ private:
         else if (cacheRes != -EALREADY)
         {
             this.db.repo_update_errors++;
-            throw new RepoUpdateException(format("Fetch of repository %s failed due to error '%s'!",
+            throw new ApkRepoUpdateException(format("Fetch of repository %s failed due to error '%s'!",
                     repo.url, apk_error_str(cacheRes).to!string));
         }
     }
@@ -247,7 +247,8 @@ private:
                 apk_sign_ctx_free(&ctx);
             }
             auto pkgRes = apk_pkg_read(&this.db, pkgname.toStringz, &ctx, &apkPackage);
-            enforce(pkgRes == 0, format("%s: %s", pkgname, apk_error_str(pkgRes).to!string));
+            enforce!NoSuchPackageFoundException(pkgRes == 0, format("%s: %s",
+                    pkgname, apk_error_str(pkgRes).to!string));
             apk_dep_from_pkg(&apk_dependency, &this.db, apkPackage);
             return apk_dependency;
         }
@@ -255,8 +256,8 @@ private:
         {
             apk_blob_t blob = apk_blob_t(pkgname.length, toUTFz!(char*)(pkgname));
             apk_blob_pull_dep(&blob, &this.db, &apk_dependency);
-            enforce(!(blob.ptr is null || blob.len > 0), format(
-                    "'%s' is not a correctly formated world dependency, the forma should be: name(@tag)([<>~=]version)"));
+            enforce!BadDependencyFormatException(!(blob.ptr is null || blob.len > 0), format(
+                    "'%s' is not a correctly formated world dependency, the format should be: name(@tag)([<>~=]version)"));
         }
 
         return apk_dependency;
@@ -268,10 +269,12 @@ private:
         enforce(apk_db_check_world(&this.db, this.db.world) == 0,
                 "Missing repository tags; can't continue the upgarde!");
 
-        const auto apkSolverRes = apk_solver_solve(&this.db,
+        const auto solverSolveRes = apk_solver_solve(&this.db,
                 APK_SOLVERF_UPGRADE, this.db.world, &changeset);
 
-        enforce(apkSolverRes == 0);
+        enforce!ApkSolverException(solverSolveRes == 0,
+                format("Failed to calculate dependency graph due to error '%s'!",
+                    apk_error_str(solverSolveRes).to!string));
 
         return changeset;
     }
