@@ -16,9 +16,9 @@ class DBusServer
         auto objectPath = ObjectPath("/dev/Cogitri/apkPolkit/Helper");
         auto interfaceName = interfaceName("dev.Cogitri.apkPolkit.Helper");
         auto busName = busName("dev.Cogitri.apkPolkit.Helper");
-        auto apkInterfacer = new ApkInterfacer();
         auto msgPattern = MessagePattern(objectPath, interfaceName, "update");
         msgRouter.setHandler!(void)(msgPattern, () { writeln("update"); });
+        auto apkInterfacer = new ApkInterfacer();
         registerMethods(msgRouter, objectPath, interfaceName, apkInterfacer);
         registerRouter(conn, msgRouter);
         enforce(requestName(conn, busName));
