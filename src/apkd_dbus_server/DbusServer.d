@@ -5,8 +5,6 @@ import apkd.exceptions;
 import ddbus;
 import std.exception;
 import std.experimental.logger;
-import std.stdio;
-import std.typecons;
 
 class DBusServer
 {
@@ -16,8 +14,6 @@ class DBusServer
         auto objectPath = ObjectPath("/dev/Cogitri/apkPolkit/Helper");
         auto interfaceName = interfaceName("dev.Cogitri.apkPolkit.Helper");
         auto busName = busName("dev.Cogitri.apkPolkit.Helper");
-        auto msgPattern = MessagePattern(objectPath, interfaceName, "update");
-        msgRouter.setHandler!(void)(msgPattern, () { writeln("update"); });
         auto apkInterfacer = new ApkInterfacer();
         registerMethods(msgRouter, objectPath, interfaceName, apkInterfacer);
         registerRouter(conn, msgRouter);
