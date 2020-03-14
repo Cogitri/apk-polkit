@@ -10,6 +10,8 @@ import deimos.apk_toolsd.apk_package;
 import deimos.apk_toolsd.apk_provider_data;
 import deimos.apk_toolsd.apk_solver;
 
+import apkd.ApkPackage : ApkPackage;
+
 /// Taken from apk_defines.h. It's only declared&defined in the
 /// header, so it doesn't end up in libapk...
 void list_init(list_head* list)
@@ -102,4 +104,19 @@ extern (C) void recursiveDeletePackage(apk_package* apkPackage,
         apk_pkg_foreach_reverse_dependency(apkPackage,
                 APK_FOREACH_INSTALLED | APK_DEP_SATISFIES, &recursiveDeletePackage, ctx);
     }
+}
+
+extern (C) int appendApkPackageToArray(apk_hash_item item, void* ctx)
+{
+    auto apkPackages = cast(ApkPackage[]*) ctx;
+    auto newPackage = cast(apk_package*) item;
+    *apkPackages ~= new ApkPackage(*newPackage);
+    return 0;
+}
+
+StructType* container_of(StructType, string member)(typeof(__traits(getMember,
+        StructType, member))* pointer)
+{
+    enum offset = __traits(getMember, StructType, member).offsetof;
+    return cast(StructType*)(cast(void*) pointer - offset);
 }

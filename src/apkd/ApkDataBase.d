@@ -214,13 +214,47 @@ class ApkDataBase
                     apk_error_str(solverCommitRes).to!string));
     }
 
+    ApkPackage[] getInstalledPackages()
+    {
+        import apkd.functions : container_of;
+
+        apk_installed_package* installedPackage = null;
+        ApkPackage[] ret;
+
+        installedPackage = (&this.db.installed.packages).next.container_of!(
+                apk_installed_package, "installed_pkgs_list");
+
+        if (installedPackage is null
+                || installedPackage.installed_pkgs_list.next == &this.db.installed.packages)
+        {
+            warning("Couldn't find any installed packages!");
+            return ret;
+        }
+
+        while (installedPackage.installed_pkgs_list != this.db.installed.packages)
+        {
+            ret ~= new ApkPackage(*installedPackage.pkg);
+            installedPackage = installedPackage.installed_pkgs_list.next.next.container_of!(
+                    apk_installed_package, "installed_pkgs_list");
+        }
+
+        return ret;
+    }
+
+    ApkPackage[] getAvailablePackages()
+    {
+        ApkPackage[] apkPackages;
+        auto apkHashRes = apk_hash_foreach(&this.db.available.packages,
+                &apkd.functions.appendApkPackageToArray, cast(void*) apkPackages);
+        enforce(apkHashRes < 0, "Failed to enumerate available packages!");
+        return apkPackages;
+    }
+
 private:
     void repositoryUpdate(apk_repository* repo)
     {
         const auto apkVerify = FALSE ? APK_SIGN_NONE : APK_SIGN_VERIFY;
-
         const auto cacheRes = apk_cache_download(&this.db, repo, null, apkVerify, 1, null, null);
-
         if (cacheRes == 0)
         {
             this.db.repo_update_counter++;
@@ -240,7 +274,6 @@ private:
         {
             apk_package* apkPackage = null;
             apk_sign_ctx ctx = void;
-
             apk_sign_ctx_init(&ctx, APK_SIGN_VERIFY_AND_GENERATE, null, this.db.keys_fd);
             scope (exit)
             {
