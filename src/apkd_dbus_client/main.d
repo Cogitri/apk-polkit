@@ -30,16 +30,10 @@ int main(string[] args)
             dbusClient.addPackage(packageName);
         }
         break;
-    case "delete":
+    case "del":
         foreach (packageName; options.packageNames)
         {
             dbusClient.deletePackage(packageName);
-        }
-        break;
-    case "purge":
-        foreach (packageName; options.packageNames)
-        {
-            dbusClient.purgePackage(packageName);
         }
         break;
     case "update":

@@ -36,8 +36,7 @@ List and interact with coredumps
 
 Subcommands:
   add [PKGNAME(S)]    - Add the package(s) identified by PKGNAME
-  delete [PKGNAME(S)] - Remove the package(s) identified by PKGNAME
-  purge [PKGNAME(S)]  - Delete the package(s) identified by PKGNAME AND delete its dependencies 
+  del[PKGNAME(S)] - Remove the package(s) identified by PKGNAME and its dependencies
   update              - Update all repositories
   upgrade             - Upgrade all packages
   upgrade [PKGNAME(S)] - Upgrade the package(s) identified by PKGNAME
@@ -103,11 +102,11 @@ struct Options
                         args.remove(tuple(0, 2))));
             break;
         case "add":
-        case "delete":
-        case "purge":
+        case "del":
             enforce!InsufficientArgLengthException(args.length >= 3,
 
                     format("Expected a package name supplied to subcommand %s", this.mode));
+            goto case "upgrade";
         case "upgrade":
             for (auto i = 2; i < args.length; i++)
             {
@@ -153,19 +152,12 @@ struct Options
     assert(optionsAdd.mode == "add");
     assert(optionsAdd.packageNames == ["package"]);
 
-    args = array(["apkd", "delete"]);
+    args = array(["apkd", "del"]);
     assertThrown!InsufficientArgLengthException(new Options(args));
     args ~= "package";
     auto optionsDel = new Options(args);
-    assert(optionsDel.mode == "delete");
+    assert(optionsDel.mode == "del");
     assert(optionsDel.packageNames == ["package"]);
-
-    args = array(["apkd", "purge"]);
-    assertThrown!InsufficientArgLengthException(new Options(args));
-    args ~= "package";
-    auto optionsPurge = new Options(args);
-    assert(optionsPurge.mode == "purge");
-    assert(optionsPurge.packageNames == ["package"]);
 
     args = array(["apkd", "unknownarg"]);
     assertThrown!UnknownArgumentException(new Options(args));

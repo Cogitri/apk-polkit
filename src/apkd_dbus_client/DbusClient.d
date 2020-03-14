@@ -32,11 +32,6 @@ class DBusClient
         auto msg = this.pathInterface.deletePackage(packageName);
     }
 
-    void purgePackage(string packageName)
-    {
-        auto msg = this.pathInterface.deletePackage(packageName);
-    }
-
     void addPackage(string packageName)
     {
         auto msg = this.pathInterface.addPackage(packageName);
