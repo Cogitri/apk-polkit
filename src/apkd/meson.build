@@ -1,7 +1,9 @@
 lib_src = [
     'ApkDataBase.d',
     'ApkPackage.d',
+    'exceptions.d',
     'functions.d',
+    'SysLogger.d',
 ]
 
 apkd_lib = library(

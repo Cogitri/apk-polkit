@@ -38,8 +38,8 @@ import std.algorithm : canFind;
 import std.array;
 import std.conv;
 import std.exception;
+import std.experimental.logger;
 import std.format : format;
-import std.stdio : stderr, writeln;
 import std.string : toStringz;
 import std.typecons;
 import std.utf : toUTFz;
@@ -97,8 +97,8 @@ class ApkDataBase
             }
             else if (apkCacheRes != 0)
             {
-                stderr.writeln("Failed to download repo '%s' due to error '%s'",
-                        repo.url, apkCacheRes);
+                criticalf("Failed to download repo '%s' due to error '%s'",
+                        repo.url, apk_error_str(apkCacheRes).to!string);
                 this.db.repo_update_errors++;
                 res = false;
             }
