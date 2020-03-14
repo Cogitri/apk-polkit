@@ -2,8 +2,9 @@ module apkd_dbus_client.main;
 
 import apkd_dbus_client.DbusClient;
 import apkd_dbus_client.Options;
+static import apkd_dbus_client.globals;
 import std.range : empty;
-import std.stdio : writeln;
+import std.stdio : writeln, writefln;
 
 int main(string[] args)
 {
@@ -16,7 +17,7 @@ int main(string[] args)
     }
     else if (options.showVersion)
     {
-        writeln("0.0.0");
+        writefln("apkd version: %s", apkd_dbus_client.globals.apkdDbusClientVersion);
         return 0;
     }
 

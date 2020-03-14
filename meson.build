@@ -35,9 +35,9 @@ src_inc = include_directories('src')
 
 vcs_tag = run_command('git', 'rev-parse', '--short', 'HEAD').stdout().strip()
 if vcs_tag == ''
-    corecollector_version = meson.project_version()
+    apkd_version = meson.project_version()
 else
-    corecollector_version = meson.project_version() + '-@0@'.format (vcs_tag)
+    apkd_version = meson.project_version() + '-@0@'.format (vcs_tag)
 endif
 
 compiler_id = meson.get_compiler('d').get_id()
@@ -53,6 +53,13 @@ elif compiler_id == 'gcc'
 endif
 
 i18n = import('i18n')
+
+conf = configuration_data()
+
+conf.set('EXTRA_ARGS', '')
+conf.set('LIBEXEC_DIR', libexec_dir)
+conf.set('PRIVILEGED_GROUP', get_option('privileged-group'))
+conf.set('APKD_VERSION', apkd_version)
 
 subdir('src')
 subdir('data')

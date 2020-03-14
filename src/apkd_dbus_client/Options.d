@@ -32,13 +32,13 @@ immutable helpText = "
 Usage:
   apkd <subcommand> [OPTION...]
 
-List and interact with coredumps
+Interact with APK
 
 Subcommands:
-  add [PKGNAME(S)]    - Add the package(s) identified by PKGNAME
-  del[PKGNAME(S)] - Remove the package(s) identified by PKGNAME and its dependencies
-  update              - Update all repositories
-  upgrade             - Upgrade all packages
+  add [PKGNAME(S)]     - Add the package(s) identified by PKGNAME
+  del[PKGNAME(S)]      - Remove the package(s) identified by PKGNAME and its dependencies
+  update               - Update all repositories
+  upgrade              - Upgrade all packages
   upgrade [PKGNAME(S)] - Upgrade the package(s) identified by PKGNAME
 
 Help Options:

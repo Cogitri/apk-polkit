@@ -1,6 +1,14 @@
+globals_d = configure_file(
+    input: 'globals.d',
+    output: 'globals.d',
+    configuration: conf,
+)
+
 apkd_dbus_server_src = [
     'main.d',
     'DbusServer.d',
+    'Options.d',
+    globals_d,
 ]
 
 executable(

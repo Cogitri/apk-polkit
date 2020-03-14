@@ -1,9 +1,3 @@
-conf = configuration_data()
-
-conf.set('EXTRA_ARGS', '')
-conf.set('LIBEXEC_DIR', libexec_dir)
-conf.set('PRIVILEGED_GROUP', get_option('privileged-group'))
-
 configure_file(
     input: 'dev.Cogitri.apkPolkit.rules.in',
     output: 'dev.Cogitri.apkPolkit.rules',

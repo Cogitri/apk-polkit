@@ -1,9 +1,16 @@
+globals_d = configure_file(
+    input: 'globals.d',
+    output: 'globals.d',
+    configuration: conf,
+)
+
 lib_src = [
     'ApkDataBase.d',
     'ApkPackage.d',
     'exceptions.d',
     'functions.d',
     'SysLogger.d',
+    globals_d,
 ]
 
 apkd_lib = library(
