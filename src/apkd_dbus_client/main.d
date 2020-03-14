@@ -39,7 +39,7 @@ int main(string[] args)
         break;
     case "update":
         dbusClient.update();
-        goto case "upgrade";
+        break;
     case "upgrade":
         if (options.packageNames.empty)
         {
