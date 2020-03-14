@@ -44,7 +44,11 @@ class ApkInterfacer
             dbGuard.db.upgradePackage(pkgname);
             return true;
         }
-        catch (Exception e)
+        catch (ApkException e)
+        {
+            return false;
+        }
+        catch (UserErrorException e)
         {
             return false;
         }
@@ -58,7 +62,11 @@ class ApkInterfacer
             dbGuard.db.upgradeAllPackages();
             return true;
         }
-        catch (Exception e)
+        catch (ApkException e)
+        {
+            return false;
+        }
+        catch (UserErrorException e)
         {
             return false;
         }
@@ -72,7 +80,11 @@ class ApkInterfacer
             dbGuard.db.deletePackage(pkgname);
             return true;
         }
-        catch (Exception e)
+        catch (ApkException e)
+        {
+            return false;
+        }
+        catch (UserErrorException e)
         {
             return false;
         }
@@ -86,7 +98,11 @@ class ApkInterfacer
             dbGuard.db.addPackage(pkgname);
             return true;
         }
-        catch (Exception e)
+        catch (ApkException e)
+        {
+            return false;
+        }
+        catch (UserErrorException e)
         {
             return false;
         }
