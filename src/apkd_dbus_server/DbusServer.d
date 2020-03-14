@@ -16,9 +16,9 @@ class DBusServer
         auto objectPath = ObjectPath("/dev/Cogitri/apkPolkit/Helper");
         auto interfaceName = interfaceName("dev.Cogitri.apkPolkit.Helper");
         auto busName = busName("dev.Cogitri.apkPolkit.Helper");
+        auto apkInterfacer = new ApkInterfacer();
         auto msgPattern = MessagePattern(objectPath, interfaceName, "update");
         msgRouter.setHandler!(void)(msgPattern, () { writeln("update"); });
-        auto apkInterfacer = new ApkInterfacer();
         registerMethods(msgRouter, objectPath, interfaceName, apkInterfacer);
         registerRouter(conn, msgRouter);
         enforce(requestName(conn, busName));
@@ -27,11 +27,6 @@ class DBusServer
 
 class ApkInterfacer
 {
-    this()
-    {
-        this.db = null;
-    }
-
     bool updateRepositories()
     {
         trace("Trying to update repositories");
@@ -123,9 +118,6 @@ class ApkInterfacer
             return false;
         }
     }
-
-private:
-    Nullable!ApkDataBase db;
 }
 
 struct DatabaseGuard
@@ -133,6 +125,11 @@ struct DatabaseGuard
     @property ref ApkDataBase db()
     {
         return this.m_db;
+    }
+
+    ~this()
+    {
+        this.m_db.destroy;
     }
 
 private:
