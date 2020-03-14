@@ -22,12 +22,13 @@ int main(string[] args)
         writefln("apkd-dbus-server version: %s", apkd_dbus_server.globals.apkdDbusServerVersion);
     }
 
-    auto logLevel = LogLevel.warning;
+    LogLevel logLevel;
     switch (options.debugLevel)
     {
     case 0:
         logLevel = LogLevel.error;
         break;
+    case -1:
     case 1:
         logLevel = LogLevel.warning;
         break;
