@@ -18,7 +18,14 @@
 */
 
 module apkd.SysLogger;
-import core.sys.posix.syslog;
+version (CRuntime_Musl)
+{
+    import apkd.muslsyslog;
+}
+else
+{
+    import core.sys.posix.syslog;
+}
 
 import std.exception;
 import std.experimental.logger;
