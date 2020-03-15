@@ -192,7 +192,6 @@ class ApkDataBase
         auto name = cast(apk_name*) apk_hash_get_hashed(&this.db.available.names,
                 pkgnameBlob, hash);
         enforce!NoSuchPackageFoundException(name !is null, "No such package: %s", pkgname);
-        auto deleteContext = apkd.functions.DeleteContext(true, worldCopy, 0);
         auto apkPackage = cast(apk_package*) apk_pkg_get_installed(name);
         if (apkPackage is null)
         {
@@ -200,7 +199,9 @@ class ApkDataBase
         }
         else
         {
+            auto deleteContext = apkd.functions.DeleteContext(true, worldCopy, 0);
             apkd.functions.recursiveDeletePackage(apkPackage, null, null, &deleteContext);
+            enforce(deleteContext.errors == 0);
         }
 
         const auto solverSolveRes = apk_solver_solve(&this.db, solverFlags,
