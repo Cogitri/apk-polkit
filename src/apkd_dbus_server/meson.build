@@ -8,6 +8,7 @@ apkd_dbus_server_src = [
     'main.d',
     'DbusServer.d',
     'Options.d',
+    'Polkit.d',
     globals_d,
 ]
 

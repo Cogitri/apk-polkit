@@ -5,8 +5,8 @@ import apkd.SysLogger;
 import ddbus;
 import ddbus.c_lib : DBusBusType;
 
-import glib.Timeout;
 import glib.MainLoop;
+import glib.Timeout;
 import glib.MainContext;
 import std.format : format;
 import std.stdio : writeln, writefln;
@@ -50,10 +50,10 @@ int main(string[] args)
 
     auto dbusConnection = connectToBus(DBusBusType.DBUS_BUS_SYSTEM);
     auto dbusServer = new DBusServer(dbusConnection);
-    auto mainContext = new MainContext();
+    auto mainContext = MainContext.default_();
     auto mainLoop = new MainLoop(mainContext, false);
     Timeout.add(20, &dbusLoop, &dbusConnection);
-    simpleMainLoop(dbusConnection);
+    mainLoop.run();
     return 0;
 }
 
