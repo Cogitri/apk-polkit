@@ -23,42 +23,44 @@ void list_init(list_head* list)
 mixin template apkArrayFuncs(string name)
 {
     alias T = mixin(name); // works since a few compiler versions ago
+    alias A = mixin(name ~ "_array");
 
-    void _func_init(T** a)
+    void _func_init(A** a)
     {
-        *a = cast(T*) apk_array_resize(null, 0, 0);
+        *a = cast(A*) apk_array_resize(null, 0, 0);
     }
 
-    void _func_free(T** a)
+    void _func_free(A** a)
     {
-        *a = cast(T*) apk_array_resize(*a, 0, 0);
+        *a = cast(A*) apk_array_resize(*a, 0, 0);
     }
 
-    void _func_resize(T** a, size_t size)
+    void _func_resize(A** a, size_t size)
     {
-        *a = cast(T*) apk_array_resize(*a, size, T.sizeof);
+        *a = cast(A*) apk_array_resize(*a, size, T.sizeof);
     }
 
-    void _func_copy(T** a, T* b)
+    void _func_copy(A** a, A* b)
     {
         if (*a == b)
         {
             return;
         }
-        *a = cast(T*) apk_array_resize(*a, b.num, b.sizeof);
+        *a = cast(A*) apk_array_resize(*a, b.num, T.sizeof);
         memcpy(&(*a).item, &b.item, b.num * T.sizeof);
     }
 
-    mixin("alias " ~ name ~ "_free = _func_free;");
-    mixin("alias " ~ name ~ "_copy = _func_copy;");
-    mixin("alias " ~ name ~ "_resize = _func_resize;");
-    mixin("alias " ~ name ~ "_init = _func_init;");
+    mixin("alias " ~ name ~ "_array_free = _func_free;");
+    mixin("alias " ~ name ~ "_array_copy = _func_copy;");
+    mixin("alias " ~ name ~ "_array_resize = _func_resize;");
+    mixin("alias " ~ name ~ "_array_init = _func_init;");
 }
 
+alias apk_string = char*;
+
 static foreach (typeName; [
-        "apk_change_array", "apk_dependency_array", "apk_hash_array",
-        "apk_name_array", "apk_package_array", "apk_protected_path_array",
-        "apk_provider_array", "apk_string_array", "apk_xattr_array",
+        "apk_change", "apk_dependency", "apk_hash", "apk_name", "apk_package",
+        "apk_protected_path", "apk_provider", "apk_string", "apk_xattr",
     ])
 {
     mixin apkArrayFuncs!typeName;
