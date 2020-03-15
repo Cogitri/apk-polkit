@@ -4,6 +4,10 @@ static import apkd_dbus_server.globals;
 import apkd.SysLogger;
 import ddbus;
 import ddbus.c_lib : DBusBusType;
+
+import glib.Timeout;
+import glib.MainLoop;
+import glib.MainContext;
 import std.format : format;
 import std.stdio : writeln, writefln;
 import apkd_dbus_server.DbusServer;
@@ -43,8 +47,19 @@ int main(string[] args)
                 options.debugLevel));
     }
     setupLogging(logLevel);
+
     auto dbusConnection = connectToBus(DBusBusType.DBUS_BUS_SYSTEM);
     auto dbusServer = new DBusServer(dbusConnection);
+    auto mainContext = new MainContext();
+    auto mainLoop = new MainLoop(mainContext, false);
+    Timeout.add(20, &dbusLoop, &dbusConnection);
     simpleMainLoop(dbusConnection);
     return 0;
+}
+
+extern (C) int dbusLoop(void* data)
+{
+    auto dbusConnection = cast(Connection*) data;
+    (*dbusConnection).tick;
+    return true;
 }
