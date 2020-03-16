@@ -7,11 +7,11 @@ import polkit.Details;
 import polkit.SystemBusName;
 import std.experimental.logger;
 
-bool queryPolkitAuth(string action, string uniqueDbusName, ref Cancellable cancellable)
+bool queryPolkitAuth(string action, string sender)
 {
     auto authority = Authority.getSync(null);
-    auto systemBusName = new SystemBusName(uniqueDbusName);
-    auto subject = systemBusName.getProcessSync(cancellable);
+    auto systemBusName = new SystemBusName(sender);
+    auto subject = systemBusName.getProcessSync(null);
     //auto callbackData = PolkitCallbackData(operation, origThreadId);
     auto details = new Details();
     details.insert("polkit.gettext_domain", "apkd");
@@ -24,15 +24,15 @@ bool queryPolkitAuth(string action, string uniqueDbusName, ref Cancellable cance
     if (polkitResult.getIsAuthorized)
     {
         authorized = true;
-        info("Polkit authorized operation %s", action);
+        infof("Polkit authorized operation %s", action);
     }
     else if (polkitResult.getIsChallenge())
     {
-        info("Awaiting Polkit challenge for operation %s.", action);
+        infof("Awaiting Polkit challenge for operation %s.", action);
     }
     else
     {
-        warning("Polkit authorization attempted, but failed for operation %s.", action);
+        warningf("Polkit authorization attempted, but failed for operation %s.", action);
     }
 
     return authorized;

@@ -28,7 +28,7 @@ dbus_interface_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir')
 polkit_policy_dir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir')
 
 apkd_dbus_client_deps = [ddbus_dep]
-apkd_dbus_server_deps = [glibd_dep, polkit_gobjectd_dep, ddbus_dep]
+apkd_dbus_server_deps = [glibd_dep, polkit_gobjectd_dep]
 apkd_deps = [apk_toolsd_dep]
 
 src_inc = include_directories('src')

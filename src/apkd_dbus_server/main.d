@@ -2,8 +2,6 @@ module apkd_dbus_server.main;
 
 static import apkd_dbus_server.globals;
 import apkd.SysLogger;
-import ddbus;
-import ddbus.c_lib : DBusBusType;
 
 import glib.MainLoop;
 import glib.Timeout;
@@ -48,18 +46,9 @@ int main(string[] args)
     }
     setupLogging(logLevel);
 
-    auto dbusConnection = connectToBus(DBusBusType.DBUS_BUS_SYSTEM);
-    auto dbusServer = new DBusServer(dbusConnection);
     auto mainContext = MainContext.default_();
     auto mainLoop = new MainLoop(mainContext, false);
-    Timeout.add(20, &dbusLoop, &dbusConnection);
+    auto dbusServer = new DBusServer();
     mainLoop.run();
     return 0;
-}
-
-extern (C) int dbusLoop(void* data)
-{
-    auto dbusConnection = cast(Connection*) data;
-    (*dbusConnection).tick;
-    return true;
 }
