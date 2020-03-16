@@ -1,43 +1,75 @@
 module libapkd_dbus_client.DbusClient;
 
-import ddbus;
-import ddbus.c_lib : DBusBusType;
+import core.stdc.stdlib : exit;
+import gio.c.types : BusType, BusNameWatcherFlags, DBusCallFlags, G_MAXINT32;
+import gio.DBusNames;
+import gio.DBusConnection;
+import glib.Variant;
+import glib.VariantType;
+import std.exception;
+import std.stdio : writeln;
+
+struct DBusClientUserData
+{
+    string[] packageNames;
+    string methodName;
+}
 
 class DBusClient
 {
-    this()
+    this(string[] packageNames, string methodName)
     {
-        this.connection = connectToBus(DBusBusType.DBUS_BUS_SYSTEM);
-        this.pathInterface = new PathIface(this.connection, "dev.Cogitri.apkPolkit.Helper",
-                "/dev/Cogitri/apkPolkit/Helper", "dev.Cogitri.apkPolkit.Helper");
+        this.data = DBusClientUserData(packageNames, methodName);
+        this.watcherId = DBusNames.watchName(BusType.SYSTEM, "dev.Cogitri.apkPolkit.Helper",
+                BusNameWatcherFlags.AUTO_START, &onNameAppeared,
+                &onNameDisappeared, &this.data, null);
     }
 
-    void update()
+    extern (C) static void onNameAppeared(GDBusConnection* rawConnection,
+            const char* name, const char* nameOwner, void* data)
     {
-        auto msg = this.pathInterface.updateRepositories();
+        auto dbusConnection = new DBusConnection(rawConnection);
+        auto userData = cast(DBusClientUserData*) data;
+        enforce(userData !is null);
+
+        auto success = true;
+
+        if (userData.methodName == "updateRepositories")
+        {
+            auto res = dbusConnection.callSync("dev.Cogitri.apkPolkit.Helper",
+                    "/dev/Cogitri/apkPolkit/Helper", "dev.Cogitri.apkPolkit.Helper",
+                    userData.methodName, null, new VariantType("(b)"),
+                    DBusCallFlags.NONE, G_MAXINT32, null);
+            success = success && res.getChildValue(0).getBoolean();
+        }
+        else
+        {
+            foreach (packageName; userData.packageNames)
+            {
+                auto parameters = new Variant(packageName);
+                auto res = dbusConnection.callSync("dev.Cogitri.apkPolkit.Helper",
+                        "/dev/Cogitri/apkPolkit/Helper", "dev.Cogitri.apkPolkit.Helper",
+                        userData.methodName, parameters, new VariantType("b"),
+                        DBusCallFlags.NONE, 1000, null);
+                success = success && res.getChildValue(0).getBoolean();
+            }
+        }
+
+        if (success)
+        {
+            exit(0);
+        }
+        else
+        {
+            exit(1);
+        }
     }
 
-    void upgrade(string packageName)
+    extern (C) static void onNameDisappeared(GDBusConnection* connection, const char* name, void*)
     {
-        auto msg = this.pathInterface.upgradePackage(packageName);
-    }
-
-    void upgradeAll()
-    {
-        auto msg = this.pathInterface.upgradeAllPackages();
-    }
-
-    void deletePackage(string packageName)
-    {
-        auto msg = this.pathInterface.deletePackage(packageName);
-    }
-
-    void addPackage(string packageName)
-    {
-        auto msg = this.pathInterface.addPackage(packageName);
     }
 
 private:
-    Connection connection;
-    PathIface pathInterface;
+    uint watcherId;
+    DBusClientUserData data;
 }

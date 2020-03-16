@@ -3,6 +3,8 @@ module apkd_dbus_client.main;
 import apkd_dbus_client.DbusClient;
 import apkd_dbus_client.Options;
 static import apkd_dbus_client.globals;
+import glib.MainContext;
+import glib.MainLoop;
 import std.range : empty;
 import std.stdio : writeln, writefln;
 
@@ -21,41 +23,29 @@ int main(string[] args)
         return 0;
     }
 
-    auto dbusClient = new DBusClient();
+    string methodName;
 
     switch (options.mode)
     {
     case "add":
-        foreach (packageName; options.packageNames)
-        {
-            dbusClient.addPackage(packageName);
-        }
+        methodName = "addPackage";
         break;
-    case "del":
-        foreach (packageName; options.packageNames)
-        {
-            dbusClient.deletePackage(packageName);
-        }
+    case "delete":
+        methodName = "deletePackage";
         break;
     case "update":
-        dbusClient.update();
+        methodName = "updateRepositories";
         break;
     case "upgrade":
-        if (options.packageNames.empty)
-        {
-            dbusClient.upgradeAll();
-        }
-        else
-        {
-            foreach (packageName; options.packageNames)
-            {
-                dbusClient.upgrade(packageName);
-            }
-        }
+        methodName = "upgradePackage";
         break;
     default:
         assert(0);
     }
 
+    auto mainContext = MainContext.default_();
+    auto mainLoop = new MainLoop(mainContext, false);
+    auto dbusClient = new DBusClient(options.packageNames, methodName);
+    mainLoop.run();
     return 0;
 }
