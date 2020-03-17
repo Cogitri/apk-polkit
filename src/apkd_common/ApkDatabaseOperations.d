@@ -39,7 +39,7 @@ class ApkDataBaseOperations
         final switch (this.val) with (Enum)
         {
         case addPackage:
-            action = "add";
+            action = "install";
             break;
         case deletePackage:
             action = "delete";
