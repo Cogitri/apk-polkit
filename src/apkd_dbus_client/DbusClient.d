@@ -44,14 +44,12 @@ class DBusClient
         }
         else
         {
-            foreach (packageName; userData.packageNames)
-            {
-                auto parameters = new Variant(packageName);
-                auto res = dbusConnection.callSync(apkd_common.globals.dbusBusName, apkd_common.globals.dbusObjectPath,
-                        apkd_common.globals.dbusInterfaceName, userData.methodName,
-                        parameters, new VariantType("b"), DBusCallFlags.NONE, 1000, null);
-                success = success && res.getChildValue(0).getBoolean();
-            }
+            auto parameters = new Variant(userData.packageNames);
+            auto res = dbusConnection.callSync(apkd_common.globals.dbusBusName, apkd_common.globals.dbusObjectPath,
+                    apkd_common.globals.dbusInterfaceName, userData.methodName,
+                    new Variant([parameters]), new VariantType("(b)"),
+                    DBusCallFlags.NONE, 1000, null);
+            success = success && res.getChildValue(0).getBoolean();
         }
 
         if (success)

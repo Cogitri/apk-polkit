@@ -30,7 +30,7 @@ int main(string[] args)
     case "add":
         methodName = "addPackage";
         break;
-    case "delete":
+    case "del":
         methodName = "deletePackage";
         break;
     case "update":

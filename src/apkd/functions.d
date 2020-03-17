@@ -2,6 +2,7 @@ module apkd.functions;
 
 import core.stdc.string;
 
+import deimos.apk_toolsd.apk_blob;
 import deimos.apk_toolsd.apk_database;
 import deimos.apk_toolsd.apk_defines;
 import deimos.apk_toolsd.apk_hash;
@@ -46,21 +47,29 @@ mixin template apkArrayFuncs(string name)
         {
             return;
         }
-        *a = cast(A*) apk_array_resize(*a, b.num, T.sizeof);
+        mixin(name ~ "_array_resize(a, b.num);");
         memcpy(&(*a).item, &b.item, b.num * T.sizeof);
+    }
+
+    T* _func_add(A** a)
+    {
+        auto size = 1 + (*a).num;
+        mixin(name ~ "_array_resize(a, size);");
+        return &(*a).item[size - 1];
     }
 
     mixin("alias " ~ name ~ "_array_free = _func_free;");
     mixin("alias " ~ name ~ "_array_copy = _func_copy;");
     mixin("alias " ~ name ~ "_array_resize = _func_resize;");
     mixin("alias " ~ name ~ "_array_init = _func_init;");
+    mixin("alias " ~ name ~ "_array_add = _func_add;");
 }
 
 alias apk_string = char*;
 
 static foreach (typeName; [
-        "apk_change", "apk_dependency", "apk_hash", "apk_name", "apk_package",
-        "apk_protected_path", "apk_provider", "apk_string", "apk_xattr",
+        "apk_change", "apk_dependency", "apk_protected_path", "apk_provider",
+        "apk_string", "apk_xattr",
     ])
 {
     mixin apkArrayFuncs!typeName;

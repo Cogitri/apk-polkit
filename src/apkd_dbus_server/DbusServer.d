@@ -65,7 +65,7 @@ class DBusServer
             auto dbusInvocation = new DBusMethodInvocation(invocation);
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.AUTH_FAILED,
                     format("Authorization for operation %s for has failed due to error '%s'!",
-                        methodName.to!string, e));
+                        databaseOperations, e));
         }
 
         if (authorized)
@@ -75,12 +75,12 @@ class DBusServer
             {
             case addPackage:
                 auto variant = new Variant(parameters);
-                string pkgname = variant.getChildValue(0).getBytestring();
+                auto pkgname = variant.getChildValue(0).getStrv();
                 ret ~= new Variant(ApkInterfacer.addPackage(pkgname));
                 break;
             case deletePackage:
                 auto variant = new Variant(parameters);
-                string pkgname = variant.getChildValue(0).getBytestring();
+                auto pkgname = variant.getChildValue(0).getStrv();
                 ret ~= new Variant(ApkInterfacer.deletePackage(pkgname));
                 break;
             case listAvailablePackages:
@@ -94,7 +94,7 @@ class DBusServer
                 break;
             case upgradePackage:
                 auto variant = new Variant(parameters);
-                string pkgname = variant.getChildValue(0).getBytestring();
+                auto pkgname = variant.getChildValue(0).getStrv();
                 ret ~= new Variant(ApkInterfacer.upgradePackage(pkgname));
                 break;
             }
@@ -108,7 +108,7 @@ class DBusServer
             auto dbusInvocation = new DBusMethodInvocation(invocation);
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.ACCESS_DENIED,
                     format("Authorization for operation %s for has failed for user!",
-                        methodName.to!string));
+                        databaseOperations));
         }
     }
 
@@ -150,7 +150,7 @@ class ApkInterfacer
         return dbGuard.db.updateRepositories(false);
     }
 
-    static bool upgradePackage(string pkgname)
+    static bool upgradePackage(string[] pkgname)
     {
         tracef("Trying to upgrade package '%s'", pkgname);
         auto dbGuard = DatabaseGuard(new ApkDataBase());
@@ -192,14 +192,14 @@ class ApkInterfacer
         }
     }
 
-    static bool deletePackage(string pkgname)
+    static bool deletePackage(string[] pkgname)
     {
         tracef("Trying to delete package %s", pkgname);
         auto dbGuard = DatabaseGuard(new ApkDataBase());
         try
         {
             dbGuard.db.deletePackage(pkgname);
-            info("Successfully deleted pakage '%s'", pkgname);
+            infof("Successfully deleted pakage '%s'", pkgname);
             return true;
         }
         catch (ApkException e)
@@ -214,7 +214,7 @@ class ApkInterfacer
         }
     }
 
-    static bool addPackage(string pkgname)
+    static bool addPackage(string[] pkgname)
     {
         tracef("Trying to add package: %s", pkgname);
         auto dbGuard = DatabaseGuard(new ApkDataBase());

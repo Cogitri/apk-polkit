@@ -27,19 +27,19 @@
             <arg type="b" direction="out"/>
         </method>
         <method name="upgradePackage">
-            <arg type="s" direction="in"/>
+            <arg type="as" direction="in"/>
             <arg type="b" direction="out"/>
         </method>
         <method name="upgradeAllPackages">
             <arg type="b" direction="out"/>
         </method>
         <method name="deletePackage">
-            <arg type="s" direction="in"/>
+            <arg type="as" direction="in"/>
             <arg type="b" direction="out"/>
         </method>
         <method name="addPackage">
-            <arg type="s" direction="in"/>
-            <arg type="o" direction="out"/>
+            <arg type="as" direction="in"/>
+            <arg type="b" direction="out"/>
         </method>
     </interface>
 </node>

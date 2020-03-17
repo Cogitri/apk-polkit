@@ -136,13 +136,18 @@ class ApkDataBase
                     apk_error_str(solverRes).to!string));
     }
 
-    void upgradePackage(string pkgname, ushort solverFlags = 0)
+    void upgradePackage(string[] pkgnames, ushort solverFlags = APK_SOLVERF_IGNORE_UPGRADE)
     {
         apk_changeset changeset;
-        auto apkDep = this.packageNameToApkDependency(pkgname);
-        apk_solver_set_name_flags(apkDep.name, solverFlags, solverFlags);
-        const auto solverSolveRes = apk_solver_solve(&this.db,
-                APK_SOLVERF_UPGRADE, this.db.world, &changeset);
+
+        foreach (pkgname; pkgnames)
+        {
+            auto apkDep = this.packageNameToApkDependency(pkgname);
+            apk_solver_set_name_flags(apkDep.name, APK_SOLVERF_UPGRADE, APK_SOLVERF_UPGRADE);
+        }
+
+        const auto solverSolveRes = apk_solver_solve(&this.db, solverFlags,
+                this.db.world, &changeset);
         enforce!ApkSolverException(solverSolveRes == 0,
                 format("Failed to calculate dependency graph due to error '%s'!",
                     apk_error_str(solverSolveRes).to!string));
@@ -153,9 +158,8 @@ class ApkDataBase
                     apk_error_str(solverCommitRes).to!string));
     }
 
-    void addPackage(string pkgname, ushort solverFlags = 0)
+    void addPackage(string[] pkgnames, ushort solverFlags = 0)
     {
-        auto dep = packageNameToApkDependency(pkgname);
         apk_dependency_array* worldCopy = null;
         scope (exit)
         {
@@ -163,23 +167,23 @@ class ApkDataBase
         }
         apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
 
-        apk_changeset changeset;
-        apk_deps_add(&worldCopy, &dep);
-        apk_solver_set_name_flags(dep.name, solverFlags, solverFlags);
-        const auto solverSolveRes = apk_solver_solve(&this.db, solverFlags,
-                worldCopy, &changeset);
-        enforce!ApkSolverException(solverSolveRes == 0,
-                format("Failed to calculate dependency graph due to error '%s'!",
-                    apk_error_str(solverSolveRes).to!string));
-        const auto solverCommitRes = apk_solver_commit_changeset(&this.db, &changeset, worldCopy);
+        foreach (pkgname; pkgnames)
+        {
+            auto dep = packageNameToApkDependency(pkgname);
+
+            apk_changeset changeset;
+            apk_deps_add(&worldCopy, &dep);
+            apk_solver_set_name_flags(dep.name, solverFlags, solverFlags);
+        }
+
+        const auto solverCommitRes = apk_solver_commit(&this.db, solverFlags, worldCopy);
         enforce!ApkDatabaseCommitException(solverCommitRes == 0,
                 format("Failed to commit changes to the database due to error '%s'!",
                     apk_error_str(solverCommitRes).to!string));
     }
 
-    void deletePackage(string pkgname, ushort solverFlags = 0)
+    void deletePackage(string[] pkgnames, ushort solverFlags = 0)
     {
-        auto pkgnameBlob = apk_blob_t(pkgname.length, toUTFz!(char*)(pkgname));
         apk_dependency_array* worldCopy = null;
         apk_changeset changeset;
         scope (exit)
@@ -190,24 +194,14 @@ class ApkDataBase
 
         apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
 
-        auto hash = this.db.available.names.ops.hash_key(pkgnameBlob);
-        auto name = cast(apk_name*) apk_hash_get_hashed(&this.db.available.names,
-                pkgnameBlob, hash);
-        enforce!NoSuchPackageFoundException(name !is null, "No such package: %s", pkgname);
-        auto apkPackage = cast(apk_package*) apk_pkg_get_installed(name);
-        if (apkPackage is null)
-        {
-            apk_deps_del(&worldCopy, name);
-        }
-        else
-        {
-            auto deleteContext = apkd.functions.DeleteContext(true, worldCopy, 0);
-            apkd.functions.recursiveDeletePackage(apkPackage, null, null, &deleteContext);
-            enforce(deleteContext.errors == 0);
-        }
+        auto deleteContext = apkd.functions.DeleteContext(true, worldCopy, 0);
 
+        this.executeForMatching(pkgnames, apk_foreach_genid(), &deleteName, &deleteContext);
+
+        enforce(deleteContext.errors == 0,
+                "Something went wrong while deleting packages, see above...");
         const auto solverSolveRes = apk_solver_solve(&this.db, solverFlags,
-                worldCopy, &changeset);
+                deleteContext.world, &changeset);
         enforce!ApkSolverException(solverSolveRes == 0,
                 format("Failed to calculate dependency graph due to error '%s'!",
                     apk_error_str(solverSolveRes).to!string));
@@ -307,12 +301,76 @@ private:
 
         const auto solverSolveRes = apk_solver_solve(&this.db,
                 APK_SOLVERF_UPGRADE, this.db.world, &changeset);
-
         enforce!ApkSolverException(solverSolveRes == 0,
                 format("Failed to calculate dependency graph due to error '%s'!",
                     apk_error_str(solverSolveRes).to!string));
 
         return changeset;
+    }
+
+    static void deleteName(apk_database*, string match, apk_name* name, void* ctx)
+    {
+        auto deleteContext = cast(apkd.functions.DeleteContext*) ctx;
+        if (name is null)
+        {
+            errorf("No such package: %s", match);
+            deleteContext.errors = deleteContext.errors + 1;
+        }
+
+        auto apkPackage = cast(apk_package*) apk_pkg_get_installed(name);
+        if (apkPackage is null)
+        {
+            auto world = deleteContext.world;
+            apk_deps_del(&world, name);
+        }
+        else
+        {
+            apkd.functions.recursiveDeletePackage(apkPackage, null, null, ctx);
+        }
+    }
+
+    void executeForMatching(string[] filter, uint match, void function(apk_database* db,
+            string match, apk_name* name, void* ctx) cb, void* ctx)
+    {
+        import std.algorithm : canFind;
+        import std.utf : toUTFz;
+
+        uint genid = match & APK_FOREACH_GENID_MASK;
+        if (filter is null || filter.length == 0)
+        {
+            if (!(match & APK_FOREACH_NULL_MATCHES_ALL))
+            {
+                return;
+            }
+
+        }
+
+        foreach (pmatch; filter)
+        {
+            if (pmatch.canFind('*'))
+            {
+                return;
+            }
+        }
+
+        foreach (pmatch; filter)
+        {
+            auto matchBlob = apk_blob_t(pmatch.length, toUTFz!(char*)(pmatch));
+            auto hash = this.db.available.names.ops.hash_key(matchBlob);
+            auto name = cast(apk_name*) apk_hash_get_hashed(&this.db.available.names,
+                    matchBlob, hash);
+            if (genid && name)
+            {
+                if (name.foreach_genid >= genid)
+                {
+                    continue;
+                }
+                name.foreach_genid = genid;
+            }
+            cb(&this.db, pmatch, name, ctx);
+        }
+
+        return;
     }
 
     apk_database db;
