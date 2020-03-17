@@ -1,8 +1,8 @@
 module apkd_dbus_client.main;
 
+static import apkd_common.globals;
 import apkd_dbus_client.DbusClient;
 import apkd_dbus_client.Options;
-static import apkd_dbus_client.globals;
 import glib.MainContext;
 import glib.MainLoop;
 import std.range : empty;
@@ -19,7 +19,7 @@ int main(string[] args)
     }
     else if (options.showVersion)
     {
-        writefln("apkd version: %s", apkd_dbus_client.globals.apkdDbusClientVersion);
+        writefln("apkd version: %s", apkd_common.globals.apkdVersion);
         return 0;
     }
 

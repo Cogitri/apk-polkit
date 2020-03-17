@@ -1,7 +1,7 @@
 module apkd_dbus_server.main;
 
-static import apkd_dbus_server.globals;
-import apkd.SysLogger;
+static import apkd_common.globals;
+import apkd_common.SysLogger;
 
 import glib.MainLoop;
 import glib.Timeout;
@@ -21,7 +21,7 @@ int main(string[] args)
     }
     else if (options.showVersion)
     {
-        writefln("apkd-dbus-server version: %s", apkd_dbus_server.globals.apkdDbusServerVersion);
+        writefln("apkd-dbus-server version: %s", apkd_common.globals.apkdVersion);
     }
 
     LogLevel logLevel;

@@ -16,19 +16,12 @@ apkd_dbus_client_lib_dep = declare_dependency(
     link_with: apkd_dbus_client_lib,
     include_directories: src_inc,
     link_args: link_runtime_shared_arg,
-    dependencies: [apkd_dbus_client_deps]
-)
-
-globals_d = configure_file(
-    input: 'globals.d',
-    output: 'globals.d',
-    configuration: conf,
+    dependencies: [apkd_dbus_client_deps, libapkd_common_dep]
 )
 
 apkd_dbus_client_exe_src = [
     'main.d',
     'Options.d',
-    globals_d,
 ]
 
 executable(

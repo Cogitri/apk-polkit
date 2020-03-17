@@ -1,5 +1,6 @@
 module libapkd_dbus_client.DbusClient;
 
+static import apkd_common.globals;
 import core.stdc.stdlib : exit;
 import gio.c.types : BusType, BusNameWatcherFlags, DBusCallFlags, G_MAXINT32;
 import gio.DBusNames;
@@ -20,7 +21,7 @@ class DBusClient
     this(string[] packageNames, string methodName)
     {
         this.data = DBusClientUserData(packageNames, methodName);
-        this.watcherId = DBusNames.watchName(BusType.SYSTEM, "dev.Cogitri.apkPolkit.Helper",
+        this.watcherId = DBusNames.watchName(BusType.SYSTEM, apkd_common.globals.dbusBusName,
                 BusNameWatcherFlags.AUTO_START, &onNameAppeared,
                 &onNameDisappeared, &this.data, null);
     }
@@ -36,10 +37,9 @@ class DBusClient
 
         if (userData.methodName == "updateRepositories")
         {
-            auto res = dbusConnection.callSync("dev.Cogitri.apkPolkit.Helper",
-                    "/dev/Cogitri/apkPolkit/Helper", "dev.Cogitri.apkPolkit.Helper",
-                    userData.methodName, null, new VariantType("(b)"),
-                    DBusCallFlags.NONE, G_MAXINT32, null);
+            auto res = dbusConnection.callSync(apkd_common.globals.dbusBusName, apkd_common.globals.dbusObjectPath,
+                    apkd_common.globals.dbusInterfaceName, userData.methodName, null,
+                    new VariantType("(b)"), DBusCallFlags.NONE, G_MAXINT32, null);
             success = success && res.getChildValue(0).getBoolean();
         }
         else
@@ -47,10 +47,9 @@ class DBusClient
             foreach (packageName; userData.packageNames)
             {
                 auto parameters = new Variant(packageName);
-                auto res = dbusConnection.callSync("dev.Cogitri.apkPolkit.Helper",
-                        "/dev/Cogitri/apkPolkit/Helper", "dev.Cogitri.apkPolkit.Helper",
-                        userData.methodName, parameters, new VariantType("b"),
-                        DBusCallFlags.NONE, 1000, null);
+                auto res = dbusConnection.callSync(apkd_common.globals.dbusBusName, apkd_common.globals.dbusObjectPath,
+                        apkd_common.globals.dbusInterfaceName, userData.methodName,
+                        parameters, new VariantType("b"), DBusCallFlags.NONE, 1000, null);
                 success = success && res.getChildValue(0).getBoolean();
             }
         }

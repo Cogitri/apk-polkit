@@ -2,6 +2,8 @@ module apkd_dbus_server.DBusServer;
 
 import apkd.ApkDataBase;
 import apkd.exceptions;
+import apkd_common.ApkDatabaseOperations;
+static import apkd_common.globals;
 import apkd_dbus_server.Polkit;
 import gio.Cancellable;
 import gio.DBusConnection;
@@ -13,7 +15,7 @@ import gio.c.types : BusNameOwnerFlags, BusType, GDBusInterfaceVTable,
     GDBusMethodInvocation, GVariant;
 import glib.GException;
 import glib.Variant;
-import std.conv : to;
+import std.conv : to, ConvException;
 import std.concurrency : receive;
 import std.exception;
 import std.experimental.logger;
@@ -26,7 +28,7 @@ class DBusServer
     this()
     {
         auto dbusFlags = BusNameOwnerFlags.NONE;
-        this.ownerId = DBusNames.ownName(BusType.SYSTEM, "dev.Cogitri.apkPolkit.Helper",
+        this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName,
                 dbusFlags, &onBusAcquired, &onNameAcquired, &onNameLost, null, null);
     }
 
@@ -40,31 +42,23 @@ class DBusServer
             GDBusMethodInvocation* invocation, void*)
     {
         tracef("Handling method %s from sender %s", methodName.to!string, sender.to!string);
-        auto polkitActionName = "";
-        switch (methodName.to!string)
+
+        ApkDataBaseOperations databaseOperations;
+        try
         {
-        case "addPackage":
-            polkitActionName = "dev.Cogitri.apkPolkit.add";
-            break;
-        case "deletePackage":
-            polkitActionName = "dev.Cogitri.apkPolkit.delete";
-            break;
-        case "updateRepositories":
-            polkitActionName = "dev.Cogitri.apkPolkit.update";
-            break;
-        case "upradeAllPackages":
-        case "upgradePackage":
-            polkitActionName = "dev.Cogitri.apkPolkit.upgrade";
-            break;
-        default:
-            assert(0);
+            databaseOperations = new ApkDataBaseOperations(methodName.to!string);
+        }
+        catch (ConvException e)
+        {
+            errorf("Unkown method name %s!", methodName.to!string);
+            return;
         }
 
         auto authorized = false;
 
         try
         {
-            authorized = queryPolkitAuth(polkitActionName, sender.to!string);
+            authorized = queryPolkitAuth(databaseOperations.toPolkitAction(), sender.to!string);
         }
         catch (GException e)
         {
@@ -77,31 +71,32 @@ class DBusServer
         if (authorized)
         {
             Variant[] ret;
-            switch (methodName.to!string)
+            final switch (databaseOperations.val) with (ApkDataBaseOperations.Enum)
             {
-            case "addPackage":
+            case addPackage:
                 auto variant = new Variant(parameters);
                 string pkgname = variant.getChildValue(0).getBytestring();
                 ret ~= new Variant(ApkInterfacer.addPackage(pkgname));
                 break;
-            case "deletePackage":
+            case deletePackage:
                 auto variant = new Variant(parameters);
                 string pkgname = variant.getChildValue(0).getBytestring();
                 ret ~= new Variant(ApkInterfacer.deletePackage(pkgname));
                 break;
-            case "updateRepositories":
+            case listAvailablePackages:
+            case listInstalledPackages:
+                break;
+            case updateRepositories:
                 ret ~= new Variant(ApkInterfacer.updateRepositories());
                 break;
-            case "upgradeAllPackages":
+            case upgradeAllPackages:
                 ret ~= new Variant(ApkInterfacer.upgradeAllPackages());
                 break;
-            case "upgradePackage":
+            case upgradePackage:
                 auto variant = new Variant(parameters);
                 string pkgname = variant.getChildValue(0).getBytestring();
                 ret ~= new Variant(ApkInterfacer.upgradePackage(pkgname));
                 break;
-            default:
-                assert(0);
             }
 
             auto dbusInvocation = new DBusMethodInvocation(invocation);
@@ -126,7 +121,7 @@ class DBusServer
         auto dbusIntrospectionData = new DBusNodeInfo(dbusIntrospectionXML);
         enforce(dbusIntrospectionData !is null);
 
-        const auto regId = dbusConnection.registerObject("/dev/Cogitri/apkPolkit/Helper",
+        const auto regId = dbusConnection.registerObject(apkd_common.globals.dbusObjectPath,
                 dbusIntrospectionData.interfaces[0], &interfaceVTable, null, null);
 
         enforce(regId > 0);

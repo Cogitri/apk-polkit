@@ -1,6 +1,6 @@
 /// The DRuntime doesn't offer bindings for syslog for musl yet.
 /// See https://github.com/dlang/druntime/pull/2876
-module apkd.muslsyslog;
+module apkd_common.muslsyslog;
 
 extern (C)
 {
@@ -17,7 +17,9 @@ extern (C)
             LOG_NOTICE = 5, /* normal but significant condition */
             LOG_INFO = 6, /* informational */
             LOG_DEBUG = 7, /* debug-level messages */
+
         
+
     };
 
     //OPTIONS
@@ -29,7 +31,9 @@ extern (C)
         LOG_NDELAY = 0x08, /* don't delay open */
         LOG_NOWAIT = 0x10, /* don't wait for console forks: DEPRECATED */
         LOG_PERROR = 0x20, /* log to stderr as well */
+
     
+
 };
 
 //FACILITY
@@ -59,6 +63,8 @@ enum
     LOG_LOCAL7 = (23 << 3), /* reserved for local use */
 
     LOG_NFACILITIES = 24, /* current number of facilities */
+
+
 
 };
 

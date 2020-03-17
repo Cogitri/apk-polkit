@@ -1,16 +1,8 @@
-globals_d = configure_file(
-    input: 'globals.d',
-    output: 'globals.d',
-    configuration: conf,
-)
-
 lib_src = [
     'ApkDataBase.d',
     'ApkPackage.d',
     'exceptions.d',
     'functions.d',
-    'SysLogger.d',
-    globals_d,
 ]
 
 apkd_lib = library(
@@ -19,7 +11,7 @@ apkd_lib = library(
     install: true,
     d_module_versions: d_mod_version,
     include_directories: src_inc,
-    dependencies: apkd_deps,
+    dependencies: [apkd_deps, libapkd_common_dep],
     link_args: ['-shared', link_runtime_shared_arg],
 )
 

@@ -17,10 +17,11 @@
     along with apk-polkit.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-module apkd.SysLogger;
+module apkd_common.SysLogger;
+
 version (CRuntime_Musl)
 {
-    import apkd.muslsyslog;
+    import apkd_common.muslsyslog;
 }
 else
 {

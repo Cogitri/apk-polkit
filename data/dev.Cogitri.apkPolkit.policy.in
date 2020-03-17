@@ -13,7 +13,7 @@
   <vendor_url>https://github.com/Cogitri/apk-polkit</vendor_url>
   <icon_name>package-x-generic</icon_name>
 
-  <action id="dev.Cogitri.apkPolkit.install">
+  <action id="dev.Cogitri.apkPolkit.Helper.install">
     <!-- SECURITY:
           - Normal users need admin authentication to install packages
           - Users in the "wheel" group can install packages without authentication
@@ -26,10 +26,10 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.update dev.Cogitri.apkPolkit.upgrade dev.Cogitri.apkPolkit.delete</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.update dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.update">
+  <action id="dev.Cogitri.apkPolkit.Helper.update">
     <!-- SECURITY:
           - Normal users need admin authentication to update the package database
           - Users in the "wheel" group can update the package databse without authentication
@@ -42,10 +42,10 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.install dev.Cogitri.apkPolkit.upgrade dev.Cogitri.apkPolkit.delete</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.upgrade">
+  <action id="dev.Cogitri.apkPolkit.Helper.upgrade">
     <!-- SECURITY:
           - Normal users need admin authentication to upgrade packages
           - Users in the "wheel" group can upgrade packages without authentication
@@ -58,10 +58,10 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.install dev.Cogitri.apkPolkit.upgrade dev.Cogitri.apkPolkit.delete</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.delete">
+  <action id="dev.Cogitri.apkPolkit.Helper.delete">
     <!-- SECURITY:
           - Normal users need admin authentication to delete packages
           - Users in the "wheel" group can delete packages without authentication
@@ -74,7 +74,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.install dev.Cogitri.apkPolkit.upgrade dev.Cogitri.apkPolkit.delete</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
   </action>
 
 </policyconfig>
