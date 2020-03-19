@@ -35,7 +35,8 @@ class DBusClient
 
         auto success = true;
 
-        if (userData.methodName == "updateRepositories")
+        if (userData.methodName == "updateRepositories"
+                || userData.methodName == "upgradeAllPackages")
         {
             auto res = dbusConnection.callSync(apkd_common.globals.dbusBusName, apkd_common.globals.dbusObjectPath,
                     apkd_common.globals.dbusInterfaceName, userData.methodName, null,

@@ -37,7 +37,14 @@ int main(string[] args)
         methodName = "updateRepositories";
         break;
     case "upgrade":
-        methodName = "upgradePackage";
+        if (options.packageNames == [])
+        {
+            methodName = "upgradeAllPackages";
+        }
+        else
+        {
+            methodName = "upgradePackage";
+        }
         break;
     default:
         assert(0);
