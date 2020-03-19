@@ -139,20 +139,21 @@ class ApkDataBase
     void upgradePackage(string[] pkgnames, ushort solverFlags = APK_SOLVERF_IGNORE_UPGRADE)
     {
         apk_changeset changeset;
+        apk_dependency_array* worldCopy = null;
+        scope (exit)
+        {
+            apkd.functions.apk_dependency_array_free(&worldCopy);
+        }
+        apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
 
         foreach (pkgname; pkgnames)
         {
             auto apkDep = this.packageNameToApkDependency(pkgname);
+            apk_deps_add(&worldCopy, &apkDep);
             apk_solver_set_name_flags(apkDep.name, APK_SOLVERF_UPGRADE, APK_SOLVERF_UPGRADE);
         }
 
-        const auto solverSolveRes = apk_solver_solve(&this.db, solverFlags,
-                this.db.world, &changeset);
-        enforce!ApkSolverException(solverSolveRes == 0,
-                format("Failed to calculate dependency graph due to error '%s'!",
-                    apk_error_str(solverSolveRes).to!string));
-        const auto solverCommitRes = apk_solver_commit_changeset(&this.db,
-                &changeset, this.db.world);
+        const auto solverCommitRes = apk_solver_commit(&this.db, 0, worldCopy);
         enforce!ApkDatabaseCommitException(solverCommitRes == 0,
                 format("Failed to commit changes to the database due to error '%s'!",
                     apk_error_str(solverCommitRes).to!string));
