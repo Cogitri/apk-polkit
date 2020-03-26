@@ -98,6 +98,9 @@ class DBusServer
             case listInstalledPackages:
                 ret ~= apkPackageArrayToVariant(ApkInterfacer.getInstalledPackages());
                 break;
+            case listUpgradablePackages:
+                ret ~= apkPackageArrayToVariant(ApkInterfacer.getUpgradablePackages());
+                break;
             case updateRepositories:
                 ret ~= new Variant(ApkInterfacer.updateRepositories());
                 break;
@@ -301,6 +304,21 @@ class ApkInterfacer
         catch (ApkException e)
         {
             criticalf("Failed to list all installed packages due to APK error '%s'", e);
+            return [];
+        }
+    }
+
+    static ApkPackage[] getUpgradablePackages()
+    {
+        trace("Trying to list upgradable packages");
+        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        try
+        {
+            return dbGuard.db.getUpgradablePackages();
+        }
+        catch (ApkException e)
+        {
+            criticalf("Failed to list upgradable packages due to APK error '%s'", e);
             return [];
         }
     }

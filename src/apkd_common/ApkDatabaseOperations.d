@@ -10,6 +10,7 @@ class ApkDataBaseOperations
         deletePackage,
         listInstalledPackages,
         listAvailablePackages,
+        listUpgradablePackages,
         updateRepositories,
         upgradeAllPackages,
         upgradePackage,
@@ -49,6 +50,9 @@ class ApkDataBaseOperations
             break;
         case listAvailablePackages:
             action = "listAvailable";
+            break;
+        case listUpgradablePackages:
+            action = "listUpgradable";
             break;
         case updateRepositories:
             action = "update";

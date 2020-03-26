@@ -78,15 +78,17 @@ struct Options
 {
     bool showVersion;
     bool showHelp;
-    bool installed;
+    bool listInstalled;
+    bool listUpgradable;
     int debugLevel = -1;
     string mode;
     string[] packageNames;
 
     this(ref string[] args) @safe
     {
-        getopt(args, "help|h", &this.showHelp, "version|v", &this.showVersion,
-                "debug|d", &this.debugLevel, "installed|i", &this.installed);
+        getopt(args, "help|h", &this.showHelp, "version|v", &this.showVersion, "debug|d",
+                &this.debugLevel, "installed|i", &this.listInstalled,
+                "upgradable|u", &this.listUpgradable);
 
         if (showHelp || showVersion)
         {

@@ -47,5 +47,8 @@
         <method name="listInstalledPackages">
             <arg type="a(ssssssssssstt)" direction="out"/>
         </method>
+        <method name="listUpgradablePackages">
+            <arg type="a(ssssssssssstt)" direction="out"/>
+        </method>
     </interface>
 </node>

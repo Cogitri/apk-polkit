@@ -77,7 +77,7 @@
     <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
   </action>
 
-    <action id="dev.Cogitri.apkPolkit.Helper.listAvailable">
+  <action id="dev.Cogitri.apkPolkit.Helper.listAvailable">
     <!-- SECURITY:
           - Everyone is allowed to list available packages in the database by default. This
             rule is only here so you can restrict this if you so desire.
@@ -92,7 +92,7 @@
     </defaults>
   </action>
 
-    <action id="dev.Cogitri.apkPolkit.Helper.listInstalled">
+  <action id="dev.Cogitri.apkPolkit.Helper.listInstalled">
     <!-- SECURITY:
           - Everyone is allowed to list installed packages in the database by default. This
             rule is only here so you can restrict this if you so desire.
@@ -107,4 +107,18 @@
     </defaults>
   </action>
 
+  <action id="dev.Cogitri.apkPolkit.Helper.listUpgradable">
+    <!-- SECURITY:
+          - Everyone is allowed to list upgradable packages in the database by default. This
+            rule is only here so you can restrict this if you so desire.
+     -->
+    <description>List upgradable packages</description>
+    <message>Authentication is required to list all upgradable packages</message>
+    <icon_name>package-x-generic</icon_name>
+    <defaults>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
 </policyconfig>

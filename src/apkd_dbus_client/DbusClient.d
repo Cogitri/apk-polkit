@@ -50,6 +50,7 @@ class DBusClient
             break;
         case listAvailablePackages:
         case listInstalledPackages:
+        case listUpgradablePackages:
             auto dbusTupleRet = dbusConnection.callSync(apkd_common.globals.dbusBusName,
                     apkd_common.globals.dbusObjectPath,
                     apkd_common.globals.dbusInterfaceName, userData.dbOp.to!string, null,

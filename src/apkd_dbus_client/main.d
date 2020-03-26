@@ -48,9 +48,13 @@ int main(string[] args)
         }
         break;
     case "list":
-        if (options.installed)
+        if (options.listInstalled)
         {
             methodName = "listInstalledPackages";
+        }
+        else if (options.listUpgradable)
+        {
+            methodName = "listUpgradablePackages";
         }
         else
         {

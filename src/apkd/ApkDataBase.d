@@ -31,6 +31,7 @@ import deimos.apk_toolsd.apk_package;
 import deimos.apk_toolsd.apk_print;
 
 import deimos.apk_toolsd.apk_solver;
+import deimos.apk_toolsd.apk_version;
 
 import core.stdc.errno;
 
@@ -113,15 +114,26 @@ class ApkDataBase
 
     ApkPackage[] getUpgradablePackages()
     {
+
         ApkPackage[] packages;
         auto changeset = this.getAllUpgradeChangeset();
 
-        for (auto i = 0; i < changeset.changes.num; i++)
+        for (auto iter = &changeset.changes.item[0]; iter < &changeset.changes
+                .item[changeset.changes.num]; iter++)
         {
-            auto newPackage = changeset.changes.item[i].new_pkg;
-            auto oldPackage = changeset.changes.item[i].old_pkg;
-            auto apkPackage = ApkPackage(*oldPackage, *newPackage);
-            packages ~= apkPackage;
+            if (iter.new_pkg is null || iter.old_pkg is null)
+            {
+                continue;
+            }
+            if (apk_pkg_version_compare(iter.new_pkg,
+                    iter.old_pkg) & (APK_VERSION_GREATER | APK_VERSION_EQUAL)
+                    && (iter.new_pkg != iter.old_pkg))
+            {
+                auto newPackage = iter.new_pkg;
+                auto oldPackage = iter.old_pkg;
+                auto apkPackage = ApkPackage(*oldPackage, *newPackage);
+                packages ~= apkPackage;
+            }
         }
 
         return packages;
@@ -294,14 +306,14 @@ private:
         return apk_dependency;
     }
 
-    apk_changeset getAllUpgradeChangeset()
+    apk_changeset getAllUpgradeChangeset(ushort solverFlags = 0)
     {
         apk_changeset changeset;
         enforce(apk_db_check_world(&this.db, this.db.world) == 0,
-                "Missing repository tags; can't continue the upgarde!");
+                "Missing repository tags; can't continue the upgrade!");
 
         const auto solverSolveRes = apk_solver_solve(&this.db,
-                APK_SOLVERF_UPGRADE, this.db.world, &changeset);
+                APK_SOLVERF_UPGRADE | solverFlags, this.db.world, &changeset);
         enforce!ApkSolverException(solverSolveRes == 0,
                 format("Failed to calculate dependency graph due to error '%s'!",
                     apk_error_str(solverSolveRes).to!string));
