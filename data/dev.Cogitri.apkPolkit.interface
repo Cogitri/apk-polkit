@@ -41,5 +41,11 @@
             <arg type="as" direction="in"/>
             <arg type="b" direction="out"/>
         </method>
+        <method name="listAvailablePackages">
+            <arg type="a(ssssssssssstt)" direction="out"/>
+        </method>
+        <method name="listInstalledPackages">
+            <arg type="a(ssssssssssstt)" direction="out"/>
+        </method>
     </interface>
 </node>

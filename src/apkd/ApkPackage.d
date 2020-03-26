@@ -25,14 +25,15 @@ import std.format : format;
 import std.typecons;
 import deimos.apk_toolsd.apk_package;
 
-class ApkPackage
+struct ApkPackage
 {
-    this(string name, string oldPackageVersion, string packageVersion, string arch, string license,
+    this(string name, string packageVersion, string oldPackageVersion, string arch, string license,
             string origin, string maintainer, string url, string description, string commit,
             string filename, ulong installedSize, ulong size, SysTime buildTime)
     {
         this.m_name = name;
         this.m_version = packageVersion;
+        this.m_oldVersion = oldPackageVersion;
         this.m_arch = arch;
         this.m_license = license;
         this.m_origin = origin;
@@ -44,33 +45,56 @@ class ApkPackage
         this.m_installedSize = installedSize;
         this.m_size = size;
         this.m_buildTime = buildTime;
-        this.m_oldVersion = oldPackageVersion;
     }
 
     this(apk_package apk_package)
+    in
     {
-
-        this(to!string(apk_package.name.name),
-                to!string(apk_package.version_.ptr), null, to!string(apk_package.arch.ptr),
-                to!string(apk_package.license.ptr), to!string(apk_package.origin.ptr),
-                to!string(apk_package.maintainer.ptr), to!string(apk_package.url),
-                to!string(apk_package.description), to!string(apk_package.commit), to!string(apk_package.filename),
-                apk_package.installed_size, apk_package.size,
-                SysTime(unixTimeToStdTime(apk_package.build_time)));
+        assert(apk_package.name.name);
+        assert(apk_package.version_.ptr);
+        assert(apk_package.arch.ptr);
+        assert(apk_package.license.ptr);
+        assert(apk_package.origin.ptr);
+        apk_package.maintainer ? assert(apk_package.maintainer.ptr) : true;
+        assert(apk_package.url);
+        assert(apk_package.description);
+        assert(apk_package.commit);
+        assert(apk_package.size);
+        assert(apk_package.build_time);
+    }
+    do
+    {
+        // dfmt off
+        this(
+            to!string(apk_package.name.name),
+            apk_package.version_.ptr[0 .. apk_package.version_.len].to!string,
+            null,
+            apk_package.arch.ptr[0 .. apk_package.arch.len].to!string,
+            apk_package.license.ptr[0 .. apk_package.license.len].to!string,
+            apk_package.origin.ptr[0 .. apk_package.origin.len].to!string,
+            apk_package.maintainer ? apk_package.maintainer.ptr[0 .. apk_package.maintainer.len].to!string: null,
+            to!string(apk_package.url),
+            to!string(apk_package.description),
+            to!string(apk_package.commit),
+            apk_package.filename ? apk_package.filename.to!string() : null, apk_package.installed_size,
+            apk_package.size,
+            SysTime(unixTimeToStdTime(apk_package.build_time)),
+        );
+        // dfmt on
     }
 
     this(apk_package old_package, apk_package new_package)
+    in
     {
-        this(to!string(new_package.name.name),
-                to!string(new_package.version_.ptr), to!string(old_package.version_.ptr),
-                to!string(new_package.arch.ptr), to!string(new_package.license.ptr),
-                to!string(new_package.origin.ptr), to!string(new_package.maintainer.ptr),
-                to!string(new_package.url), to!string(new_package.description), to!string(new_package.commit),
-                to!string(new_package.filename), new_package.installed_size,
-                new_package.size, SysTime(unixTimeToStdTime(new_package.build_time)));
+        assert(old_package.version_.ptr);
+    }
+    do
+    {
+        this(new_package);
+        this.m_oldVersion = old_package.version_.ptr[0 .. old_package.version_.len].to!string;
     }
 
-    override string toString()
+    string toString()
     {
         return format("Packagename: %s\n Version %s\n", this.m_name, this.m_version);
     }
@@ -80,7 +104,7 @@ class ApkPackage
         return m_name;
     }
 
-    @property stringversion() const
+    @property newVersion() const
     {
         return m_version;
     }

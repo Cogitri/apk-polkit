@@ -1,6 +1,7 @@
 module apkd_dbus_server.DBusServer;
 
 import apkd.ApkDataBase;
+import apkd.ApkPackage;
 import apkd.exceptions;
 import apkd_common.ApkDatabaseOperations;
 static import apkd_common.globals;
@@ -13,13 +14,17 @@ import gio.DBusNodeInfo;
 import gio.DBusMethodInvocation;
 import gio.c.types : BusNameOwnerFlags, BusType, GDBusInterfaceVTable,
     GDBusMethodInvocation, GVariant;
+import glib.c.functions : g_variant_new;
 import glib.GException;
 import glib.Variant;
+import glib.VariantBuilder;
+import glib.VariantType;
 import std.conv : to, ConvException;
 import std.concurrency : receive;
 import std.exception;
 import std.experimental.logger;
 import std.format : format;
+import std.string : toStringz;
 
 auto immutable dbusIntrospectionXML = import("dev.Cogitri.apkPolkit.interface");
 
@@ -27,6 +32,7 @@ class DBusServer
 {
     this()
     {
+        tracef("Trying to acquire DBus name %s", apkd_common.globals.dbusBusName);
         auto dbusFlags = BusNameOwnerFlags.NONE;
         this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName,
                 dbusFlags, &onBusAcquired, &onNameAcquired, &onNameLost, null, null);
@@ -56,6 +62,7 @@ class DBusServer
 
         auto authorized = false;
 
+        info("Tying to authorized user...");
         try
         {
             authorized = queryPolkitAuth(databaseOperations.toPolkitAction(), sender.to!string);
@@ -66,10 +73,12 @@ class DBusServer
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.AUTH_FAILED,
                     format("Authorization for operation %s for has failed due to error '%s'!",
                         databaseOperations, e));
+            return;
         }
 
         if (authorized)
         {
+            info("Authorization succeeded!");
             Variant[] ret;
             final switch (databaseOperations.val) with (ApkDataBaseOperations.Enum)
             {
@@ -84,7 +93,10 @@ class DBusServer
                 ret ~= new Variant(ApkInterfacer.deletePackage(pkgname));
                 break;
             case listAvailablePackages:
+                ret ~= apkPackageArrayToVariant(ApkInterfacer.getAvailablePackages());
+                break;
             case listInstalledPackages:
+                ret ~= apkPackageArrayToVariant(ApkInterfacer.getInstalledPackages());
                 break;
             case updateRepositories:
                 ret ~= new Variant(ApkInterfacer.updateRepositories());
@@ -105,6 +117,7 @@ class DBusServer
         }
         else
         {
+            error("Autorization failed!");
             auto dbusInvocation = new DBusMethodInvocation(invocation);
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.ACCESS_DENIED,
                     format("Authorization for operation %s for has failed for user!",
@@ -138,6 +151,33 @@ class DBusServer
     }
 
 private:
+
+    static Variant apkPackageArrayToVariant(ApkPackage[] pkgArr)
+    {
+        auto arrBuilder = new VariantBuilder(new VariantType("a(ssssssssssstt)"));
+
+        foreach (pkg; pkgArr)
+        {
+            auto pkgBuilder = new VariantBuilder(new VariantType("(ssssssssssstt)"));
+            static foreach (member; [
+                    "name", "newVersion", "oldVersion", "arch", "license",
+                    "origin", "maintainer", "url", "description", "commit",
+                    "filename"
+                ])
+            {
+                pkgBuilder.addValue(new Variant(__traits(getMember, pkg,
+                        member) ? __traits(getMember, pkg, member) : ""));
+            }
+            static foreach (member; ["installedSize", "size"])
+            {
+                pkgBuilder.addValue(new Variant(__traits(getMember, pkg, member)));
+            }
+            arrBuilder.addValue(pkgBuilder.end());
+        }
+
+        return arrBuilder.end();
+    }
+
     uint ownerId;
 }
 
@@ -232,6 +272,36 @@ class ApkInterfacer
         {
             criticalf("Failed to add package '%s' due to error '%s'", pkgname, e);
             return false;
+        }
+    }
+
+    static ApkPackage[] getAvailablePackages()
+    {
+        trace("Trying to list all available packages");
+        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        try
+        {
+            return dbGuard.db.getAvailablePackages();
+        }
+        catch (ApkException e)
+        {
+            criticalf("Failed to list all available packages due to APK error '%s'", e);
+            return [];
+        }
+    }
+
+    static ApkPackage[] getInstalledPackages()
+    {
+        trace("Trying to list all installed packages");
+        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        try
+        {
+            return dbGuard.db.getInstalledPackages();
+        }
+        catch (ApkException e)
+        {
+            criticalf("Failed to list all installed packages due to APK error '%s'", e);
+            return [];
         }
     }
 }

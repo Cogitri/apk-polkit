@@ -1,7 +1,7 @@
 module apkd.functions;
 
+import apkd.ApkPackage;
 import core.stdc.string;
-
 import deimos.apk_toolsd.apk_blob;
 import deimos.apk_toolsd.apk_database;
 import deimos.apk_toolsd.apk_defines;
@@ -10,8 +10,6 @@ import deimos.apk_toolsd.apk_io;
 import deimos.apk_toolsd.apk_package;
 import deimos.apk_toolsd.apk_provider_data;
 import deimos.apk_toolsd.apk_solver;
-
-import apkd.ApkPackage : ApkPackage;
 
 /// Taken from apk_defines.h. It's only declared&defined in the
 /// header, so it doesn't end up in libapk...
@@ -118,10 +116,17 @@ extern (C) void recursiveDeletePackage(apk_package* apkPackage,
 }
 
 extern (C) int appendApkPackageToArray(apk_hash_item item, void* ctx)
+in
+{
+    assert(cast(ApkPackage[]*) ctx);
+    assert(cast(apk_package*) item);
+
+}
+body
 {
     auto apkPackages = cast(ApkPackage[]*) ctx;
     auto newPackage = cast(apk_package*) item;
-    *apkPackages ~= new ApkPackage(*newPackage);
+    *apkPackages ~= ApkPackage(*newPackage);
     return 0;
 }
 

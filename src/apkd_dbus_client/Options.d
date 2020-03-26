@@ -37,6 +37,7 @@ Interact with APK
 Subcommands:
   add [PKGNAME(S)]     - Add the package(s) identified by PKGNAME
   del[PKGNAME(S)]      - Remove the package(s) identified by PKGNAME and its dependencies
+  list [--installed|-i]- List packages available. Pass -i for installed packages.
   update               - Update all repositories
   upgrade              - Upgrade all packages
   upgrade [PKGNAME(S)] - Upgrade the package(s) identified by PKGNAME
@@ -77,14 +78,15 @@ struct Options
 {
     bool showVersion;
     bool showHelp;
+    bool installed;
     int debugLevel = -1;
     string mode;
     string[] packageNames;
 
     this(ref string[] args) @safe
     {
-        getopt(args, "help|h", &this.showHelp, "version|v",
-                &this.showVersion, "debug|d", &this.debugLevel);
+        getopt(args, "help|h", &this.showHelp, "version|v", &this.showVersion,
+                "debug|d", &this.debugLevel, "installed|i", &this.installed);
 
         if (showHelp || showVersion)
         {
@@ -96,10 +98,11 @@ struct Options
         this.mode = args[1];
         switch (this.mode)
         {
+        case "list":
         case "update":
             enforce!UnexpectedArgumentException(args.length == 2,
-                    format("Didn't expect the additional arguments %s to subcommand 'update'",
-                        args.remove(tuple(0, 2))));
+                    format("Didn't expect the additional arguments %s to subcommand '%s'",
+                        args.remove(tuple(0, 2)), this.mode));
             break;
         case "add":
         case "del":

@@ -120,7 +120,7 @@ class ApkDataBase
         {
             auto newPackage = changeset.changes.item[i].new_pkg;
             auto oldPackage = changeset.changes.item[i].old_pkg;
-            auto apkPackage = new ApkPackage(*oldPackage, *newPackage);
+            auto apkPackage = ApkPackage(*oldPackage, *newPackage);
             packages ~= apkPackage;
         }
 
@@ -231,7 +231,7 @@ class ApkDataBase
 
         while (installedPackage.installed_pkgs_list != this.db.installed.packages)
         {
-            ret ~= new ApkPackage(*installedPackage.pkg);
+            ret ~= ApkPackage(*installedPackage.pkg);
             installedPackage = installedPackage.installed_pkgs_list.next.next.container_of!(
                     apk_installed_package, "installed_pkgs_list");
         }
@@ -243,8 +243,8 @@ class ApkDataBase
     {
         ApkPackage[] apkPackages;
         auto apkHashRes = apk_hash_foreach(&this.db.available.packages,
-                &apkd.functions.appendApkPackageToArray, cast(void*) apkPackages);
-        enforce(apkHashRes < 0, "Failed to enumerate available packages!");
+                &apkd.functions.appendApkPackageToArray, cast(void*)&apkPackages);
+        enforce(apkHashRes == 0, "Failed to enumerate available packages!");
         return apkPackages;
     }
 
