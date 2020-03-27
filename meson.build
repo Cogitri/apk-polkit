@@ -62,3 +62,4 @@ conf.set('APKD_VERSION', apkd_version)
 
 subdir('src')
 subdir('data')
+subdir('tests')
