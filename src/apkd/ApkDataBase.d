@@ -19,6 +19,7 @@
 
 module apkd.ApkDataBase;
 
+import core.stdc.stdlib : calloc;
 import deimos.apk_toolsd.apk_blob;
 
 import deimos.apk_toolsd.apk_database;
@@ -51,18 +52,23 @@ static import apkd.functions;
 
 class ApkDataBase
 {
-    this()
+    this(in bool readOnly = false)
     {
-        this.dbOptions.open_flags = APK_OPENF_READ | APK_OPENF_WRITE
-            | APK_OPENF_NO_AUTOUPDATE | APK_OPENF_CACHE_WRITE | APK_OPENF_CREATE;
+
         this.dbOptions.lock_wait = TRUE;
         apkd.functions.list_init(&this.dbOptions.repository_list);
-        apk_atom_init();
-        apk_db_init(&this.db);
-        const auto res = apk_db_open(&this.db, &this.dbOptions);
-        enforce!ApkDatabaseOpenException(res == 0,
-                format("Failed to open apk database due to error '%s'",
-                    apk_error_str(res).to!string));
+        this.openDatabase(readOnly);
+    }
+
+    this(in string dbRoot, in string repoUrl, in bool readOnly = false)
+    {
+        this.dbOptions.root = dbRoot.toUTFz!(char*);
+        auto repoList = cast(apk_repository_list*) calloc(1, apk_repository_list.sizeof);
+        repoList.url = repoUrl.toUTFz!(char*);
+        apkd.functions.list_init(&repoList.list);
+        apkd.functions.list_init(&this.dbOptions.repository_list);
+        apkd.functions.apk_list_add(&repoList.list, &this.dbOptions.repository_list);
+        this.openDatabase(readOnly);
     }
 
     ~this()
@@ -73,7 +79,7 @@ class ApkDataBase
         }
     }
 
-    bool updateRepositories(in bool allowUntustedRepos)
+    bool updateRepositories(in bool allowUntustedRepos = false)
     {
         bool res = true;
         const auto apkVerify = allowUntustedRepos ? APK_SIGN_NONE : APK_SIGN_VERIFY;
@@ -86,26 +92,16 @@ class ApkDataBase
                 continue;
             }
 
-            auto repo = this.db.repos[i];
+            auto repo = &this.db.repos[i];
 
-            const auto apkCacheRes = apk_cache_download(&this.db, &repo,
-                    null, apkVerify, FALSE, null, null);
-
-            if (apkCacheRes == -EALREADY)
+            try
+            {
+                this.repositoryUpdate(repo, allowUntustedRepos);
+            }
+            catch (ApkRepoUpdateException)
             {
                 res = false;
-                continue;
-            }
-            else if (apkCacheRes != 0)
-            {
-                criticalf("Failed to download repo '%s' due to error '%s'",
-                        repo.url, apk_error_str(apkCacheRes).to!string);
-                this.db.repo_update_errors++;
-                res = false;
-            }
-            else
-            {
-                this.db.repo_update_counter++;
+                errorf("Failed to update repository %s", repo.url.to!string);
             }
         }
 
@@ -133,6 +129,7 @@ class ApkDataBase
                 auto oldPackage = iter.old_pkg;
                 auto apkPackage = ApkPackage(*oldPackage, *newPackage);
                 packages ~= apkPackage;
+
             }
         }
 
@@ -189,10 +186,10 @@ class ApkDataBase
             apk_solver_set_name_flags(dep.name, solverFlags, solverFlags);
         }
 
-        const auto solverCommitRes = apk_solver_commit(&this.db, solverFlags, worldCopy);
-        enforce!ApkDatabaseCommitException(solverCommitRes == 0,
-                format("Failed to commit changes to the database due to error '%s'!",
-                    apk_error_str(solverCommitRes).to!string));
+        const auto solverCommitErrorCount = apk_solver_commit(&this.db, solverFlags, worldCopy);
+        enforce!ApkDatabaseCommitException(solverCommitErrorCount == 0,
+                format("%d error%s occured while installing packages '%s'!",
+                    solverCommitErrorCount, solverCommitErrorCount > 1 ? "s" : "", pkgnames));
     }
 
     void deletePackage(string[] pkgnames, ushort solverFlags = 0)
@@ -261,10 +258,11 @@ class ApkDataBase
     }
 
 private:
-    void repositoryUpdate(apk_repository* repo)
+    void repositoryUpdate(apk_repository* repo, in bool allowUntustedRepos)
     {
-        const auto apkVerify = FALSE ? APK_SIGN_NONE : APK_SIGN_VERIFY;
-        const auto cacheRes = apk_cache_download(&this.db, repo, null, apkVerify, 1, null, null);
+        const auto apkVerify = allowUntustedRepos ? APK_SIGN_NONE : APK_SIGN_VERIFY;
+        const auto cacheRes = apk_cache_download(&this.db, repo, null,
+                apkVerify, FALSE, null, null);
         if (cacheRes == 0)
         {
             this.db.repo_update_counter++;
@@ -384,6 +382,27 @@ private:
         }
 
         return;
+    }
+
+    void openDatabase(in bool readOnly = false)
+    {
+        if (readOnly)
+        {
+            this.dbOptions.open_flags = APK_OPENF_READ | APK_OPENF_NO_AUTOUPDATE;
+        }
+        else
+        {
+            this.dbOptions.open_flags = APK_OPENF_READ | APK_OPENF_WRITE
+                | APK_OPENF_NO_AUTOUPDATE | APK_OPENF_CACHE_WRITE | APK_OPENF_CREATE;
+
+        }
+        this.dbOptions.lock_wait = TRUE;
+        apk_atom_init();
+        apk_db_init(&this.db);
+        const auto res = apk_db_open(&this.db, &this.dbOptions);
+        enforce!ApkDatabaseOpenException(res == 0,
+                format("Failed to open apk database due to error '%s'",
+                    apk_error_str(res).to!string));
     }
 
     apk_database db;

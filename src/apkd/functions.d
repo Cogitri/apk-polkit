@@ -136,3 +136,11 @@ StructType* container_of(StructType, string member)(typeof(__traits(getMember,
     enum offset = __traits(getMember, StructType, member).offsetof;
     return cast(StructType*)(cast(void*) pointer - offset);
 }
+
+void apk_list_add(list_head* new_, list_head* head)
+{
+    head.next.prev = new_;
+    new_.next = head.next;
+    new_.prev = head;
+    head.next = new_;
+}
