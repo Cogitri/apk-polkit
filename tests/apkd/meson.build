@@ -3,6 +3,7 @@ test_preparer = find_program('prepare.sh')
 test_src_files = [
     'install.d',
     'listAvailable.d',
+    'listInstalled.d',
 ]
 
 testlib = static_library(
