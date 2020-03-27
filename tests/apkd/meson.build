@@ -5,6 +5,12 @@ test_src_files = [
     'listAvailable.d',
 ]
 
+testlib = static_library(
+    'testlib',
+    'testlib.d',
+    dependencies: apk_toolsd_dep,
+)
+
 foreach src: test_src_files
     test_name = src.underscorify()
     apkd_test_exe = executable(
@@ -12,6 +18,8 @@ foreach src: test_src_files
         [src],
         dependencies: [apkd_dep, apk_toolsd_dep],
         d_unittest: true,
+        link_with: testlib,
+        include_directories: include_directories('../../')
     )
     test(
         'test_' + test_name,
