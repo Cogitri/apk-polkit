@@ -24,6 +24,7 @@ import std.conv : to;
 import std.datetime : unixTimeToStdTime, SysTime;
 import std.format : format;
 
+/// Struct containing all the information about a package
 struct ApkPackage
 {
     this(string name, string packageVersion, string oldPackageVersion, string arch, string license,

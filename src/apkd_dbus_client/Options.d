@@ -49,6 +49,7 @@ Application Options:
   -v, --version      - Print program version.
   -d, --debug [0-3]  - Specify the debug level.";
 
+/// Thrown if the user didn't specify enough arguments
 class InsufficientArgLengthException : Exception
 {
     this(string msg, string file = __FILE__, size_t line = __LINE__) @safe
@@ -57,6 +58,7 @@ class InsufficientArgLengthException : Exception
     }
 }
 
+/// Thrown if the user specified an argument we didn't expected
 class UnexpectedArgumentException : Exception
 {
     this(string msg, string file = __FILE__, size_t line = __LINE__) @safe
@@ -65,6 +67,7 @@ class UnexpectedArgumentException : Exception
     }
 }
 
+/// Thrown if the user specified an argument we don't know
 class UnknownArgumentException : Exception
 {
     this(string msg, string file = __FILE__, size_t line = __LINE__) @safe
@@ -84,6 +87,16 @@ struct Options
     string mode;
     string[] packageNames;
 
+    /**
+    * Construct a `Options` from CLI args.
+    *
+    * Params:
+    *   args =   The CLI args passed to the main() of your application.
+    *               Be mindful that the arguments picked up by this `Options`
+    *               implementation are removed from args.
+    * Throws: Can throw InsufficientArgLengthException, UnexpectedArgumentException
+    *         or UnknownArgumentException if the user hasn't specified the right arguments.
+    */
     this(ref string[] args) @safe
     {
         getopt(args, "help|h", &this.showHelp, "version|v", &this.showVersion, "debug|d",

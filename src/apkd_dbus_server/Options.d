@@ -49,6 +49,14 @@ struct Options
     bool showHelp;
     int debugLevel = -1;
 
+    /**
+    * Construct a `Options` from CLI args.
+    *
+    * Params:
+    *   args =   The CLI args passed to the main() of your application.
+    *            Be mindful that the arguments picked up by this `Options`
+    *            implementation are removed from args.
+    */
     this(ref string[] args) @safe
     {
         getopt(args, "help|h", &this.showHelp, "version|v",

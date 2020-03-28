@@ -21,6 +21,8 @@ module apkd_common.ApkDatabaseOperations;
 
 import std.conv : to;
 
+// Helper struct that aids in translating from a db operation (function)
+// one wants to run to the dbus method or the polkit action.
 class ApkDataBaseOperations
 {
     enum Enum

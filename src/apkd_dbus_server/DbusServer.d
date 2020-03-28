@@ -45,10 +45,16 @@ import std.experimental.logger;
 import std.format : format;
 import std.string : toStringz;
 
+/// The DBus interface this dbus application exposes as XML
 auto immutable dbusIntrospectionXML = import("dev.Cogitri.apkPolkit.interface");
 
+/// DBusServer class, that is used to setup the dbus connection and handle method calls
 class DBusServer
 {
+    /**
+    * While construction apkd-dbus-server's DBus name is acquired and handler methods are set,
+    * which are invoked by GDBus upon receiving a method call/losing the name etc.
+    */
     this()
     {
         tracef("Trying to acquire DBus name %s", apkd_common.globals.dbusBusName);
@@ -62,6 +68,11 @@ class DBusServer
         DBusNames.unownName(this.ownerId);
     }
 
+    /**
+    * Passed to GDBus to handle incoming method calls. In this function we match the method name to the function to be
+    * executed, authorize the user via polkit and send the return value back. We try very hard not to throw here and
+    * instead send a dbus error mesage back and return early, since throwing here would mean crashing the entire server.
+    */
     extern (C) static void methodHandler(GDBusConnection* DBusConnection, const char* sender, const char*, const char*,
             const char* methodName, GVariant* parameters,
             GDBusMethodInvocation* invocation, void*)
@@ -147,6 +158,10 @@ class DBusServer
         }
     }
 
+    /**
+    * Passed to GDBus to be executed once we've successfully established a connection to the
+    * DBus bus. We register our methods here.
+    */
     extern (C) static void onBusAcquired(GDBusConnection* gdbusConnection, const char*, void*)
     {
         trace("Acquired the DBus connection");
@@ -162,11 +177,19 @@ class DBusServer
         enforce(regId > 0);
     }
 
+    /**
+    * Passed to GDBus to be executed once we've acquired the DBus name (no one else owns
+    * it already, we have the necessary permissions, etc.).
+    */
     extern (C) static void onNameAcquired(GDBusConnection* dbusConnection, const char* name, void*)
     {
         tracef("Acquired the DBus name '%s'", name.to!string);
     }
 
+    /**
+    * Passed to GDBus to be executed if we lose our DBus name (e.g. if someone else owns it already,
+    * we don't have the necessary permissions, etc.).
+    */
     extern (C) static void onNameLost(GDBusConnection* DBusConnection, const char* name, void*)
     {
         fatalf("Lost DBus connection %s!", name.to!string);
@@ -174,6 +197,7 @@ class DBusServer
 
 private:
 
+    /// Helper method to convert a ApkPackage array to a Variant for sending it over DBus
     static Variant apkPackageArrayToVariant(ApkPackage[] pkgArr)
     {
         auto arrBuilder = new VariantBuilder(new VariantType("a(ssssssssssstt)"));
@@ -203,6 +227,10 @@ private:
     uint ownerId;
 }
 
+/**
+* Helper class that is used in DBusServer.handleMethod to call the right functions on
+* apkd.ApkDatabase, handle logging etc.
+*/
 class ApkInterfacer
 {
     static bool updateRepositories()
@@ -343,6 +371,10 @@ class ApkInterfacer
     }
 }
 
+/**
+* Helper struct that is used to destroy the apkd.ApkDatabase class as soon as
+* it goes out of scope to ensure we don't lock the db for longer than we have to.
+*/
 struct DatabaseGuard
 {
     @property ref ApkDataBase db()

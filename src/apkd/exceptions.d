@@ -67,6 +67,24 @@ class ApkRepoUpdateException : ApkException
     }
 }
 
+/// Thrown if the db's world is broken
+class ApkBrokenWorldException : ApkException
+{
+    this(string msg, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(msg, file, line);
+    }
+}
+
+/// Thrown if something goes wrong while listing packages
+class ApkListException : ApkException
+{
+    this(string msg, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(msg, file, line);
+    }
+}
+
 /// Superclass for user caused errors
 class UserErrorException : Exception
 {

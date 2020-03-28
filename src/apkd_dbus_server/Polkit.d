@@ -26,6 +26,17 @@ import polkit.Details;
 import polkit.SystemBusName;
 import std.experimental.logger;
 
+/**
+* Query the polkit authority if a certain DBus sender is permitted to
+* execute a certain action.
+*
+* Params:
+*   action  =   The ID of the polkit action that should be checked
+*   sender  =   The unique DBus sender ID of who is trying to execute
+*               the action.
+*
+* Returns: True if the authorization succeeded.
+*/
 bool queryPolkitAuth(string action, string sender)
 {
     auto authority = Authority.getSync(null);

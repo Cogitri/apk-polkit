@@ -92,6 +92,7 @@ static foreach (typeName; [
     mixin apkArrayFuncs!typeName;
 }
 
+/// User data passed into recursiveDeletePackages as void pointer
 struct DeleteContext
 {
 public:
@@ -121,6 +122,14 @@ private:
     uint m_errors;
 }
 
+/**
+* Recursively delete a pacakge and all of its dependants.
+*
+* Params:
+*   apkPackage = Package which should be deleted
+*   ctx        = A DeleteContext which is used to pipe user
+*                data into the function.
+*/
 extern (C) void recursiveDeletePackage(apk_package* apkPackage,
         apk_dependency*, apk_package*, void* ctx)
 {
@@ -134,6 +143,7 @@ extern (C) void recursiveDeletePackage(apk_package* apkPackage,
     }
 }
 
+/// Append an apk_package* to an ApkPackage array.
 extern (C) int appendApkPackageToArray(apk_hash_item item, void* ctx)
 in
 {
@@ -149,6 +159,7 @@ body
     return 0;
 }
 
+/// Get the struct containing a certain member only from a pointer to a member
 StructType* container_of(StructType, string member)(typeof(__traits(getMember,
         StructType, member))* pointer)
 {
@@ -156,6 +167,13 @@ StructType* container_of(StructType, string member)(typeof(__traits(getMember,
     return cast(StructType*)(cast(void*) pointer - offset);
 }
 
+/**
+* Add a new element to an existing list
+*
+* Params:
+*   new_ = The new element to be added
+*   head = The list to add the new element to
+*/
 void apk_list_add(list_head* new_, list_head* head)
 {
     head.next.prev = new_;

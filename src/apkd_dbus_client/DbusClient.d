@@ -33,12 +33,17 @@ import std.datetime;
 import std.exception;
 import std.stdio : writeln;
 
+/// Struct passed as void pointer to C functions as user data
 struct DBusClientUserData
 {
     string[] packageNames;
     ApkDataBaseOperations dbOp;
 }
 
+/**
+* DBus client class that deals with calling DBus method once the required dbus
+* server is available.
+*/
 class DBusClient
 {
     this(string[] packageNames, ApkDataBaseOperations dbOp)
