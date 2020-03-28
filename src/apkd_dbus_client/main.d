@@ -84,7 +84,7 @@ int main(string[] args)
         assert(0);
     }
 
-    auto dbOp = new ApkDataBaseOperations(methodName);
+    auto dbOp = ApkDataBaseOperations(methodName);
 
     auto mainContext = MainContext.default_();
     auto mainLoop = new MainLoop(mainContext, false);

@@ -94,7 +94,7 @@ struct ApkPackage
         this.m_oldVersion = old_package.version_.ptr[0 .. old_package.version_.len].to!string;
     }
 
-    string toString()
+    string toString() const
     {
         return format("Packagename: %s\n Version %s\n", this.m_name, this.m_version);
     }

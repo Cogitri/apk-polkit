@@ -206,7 +206,6 @@ class ApkDataBase
     */
     void upgradePackage(string[] pkgnames, ushort solverFlags = APK_SOLVERF_IGNORE_UPGRADE)
     {
-        apk_changeset changeset;
         apk_dependency_array* worldCopy = null;
         scope (exit)
         {
@@ -253,7 +252,6 @@ class ApkDataBase
         {
             auto dep = packageNameToApkDependency(pkgname);
 
-            apk_changeset changeset;
             apk_deps_add(&worldCopy, &dep);
             apk_solver_set_name_flags(dep.name, solverFlags, solverFlags);
         }
@@ -493,7 +491,7 @@ private:
         import std.algorithm : canFind;
         import std.utf : toUTFz;
 
-        uint genid = match & APK_FOREACH_GENID_MASK;
+        const uint genid = match & APK_FOREACH_GENID_MASK;
         if (filter is null || filter.length == 0)
         {
             if (!(match & APK_FOREACH_NULL_MATCHES_ALL))

@@ -82,7 +82,7 @@ class DBusServer
         ApkDataBaseOperations databaseOperations;
         try
         {
-            databaseOperations = new ApkDataBaseOperations(methodName.to!string);
+            databaseOperations = ApkDataBaseOperations(methodName.to!string);
         }
         catch (ConvException e)
         {

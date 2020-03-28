@@ -23,7 +23,7 @@ import std.conv : to;
 
 // Helper struct that aids in translating from a db operation (function)
 // one wants to run to the dbus method or the polkit action.
-class ApkDataBaseOperations
+struct ApkDataBaseOperations
 {
     enum Enum
     {
@@ -47,12 +47,12 @@ class ApkDataBaseOperations
         this.m_val = methodName.to!Enum;
     }
 
-    override string toString()
+    string toString() const
     {
         return this.val.to!string;
     }
 
-    string toPolkitAction()
+    string toPolkitAction() const
     {
         immutable auto prefix = "dev.Cogitri.apkPolkit.Helper";
 
@@ -87,7 +87,7 @@ class ApkDataBaseOperations
         return prefix ~ "." ~ action;
     }
 
-    @property Enum val()
+    @property Enum val() const
     {
         return this.m_val;
     }

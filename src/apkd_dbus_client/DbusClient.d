@@ -81,7 +81,7 @@ class DBusClient
                     new VariantType("(a(ssssssssssstt))"), DBusCallFlags.NONE, G_MAXINT32, null);
             auto dbusRet = dbusTupleRet.getChildValue(0);
 
-            auto arrLen = dbusRet.nChildren();
+            const auto arrLen = dbusRet.nChildren();
             if (arrLen > 0)
             {
                 dbusOpSucessfull = true;
