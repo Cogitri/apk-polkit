@@ -10,6 +10,9 @@ int main(string[] args)
     auto testHelper = TestHelper(args, "listInstalled");
     auto database = new ApkDataBase(testHelper.apkRootDir, testHelper.repoDir);
     auto installedPkgs = database.getInstalledPackages();
-    enforce(installedPkgs.length == 0, format("%s", installedPkgs.length));
+    immutable auto expectedInstalledPkgs = 0;
+    enforce(installedPkgs.length == expectedInstalledPkgs,
+            format("Expected %s installed packages, got %s",
+                expectedInstalledPkgs, installedPkgs.length));
     return 0;
 }
