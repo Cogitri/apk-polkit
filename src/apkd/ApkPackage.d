@@ -19,11 +19,10 @@
 
 module apkd.ApkPackage;
 
-import std.conv;
+import deimos.apk_toolsd.apk_package;
+import std.conv : to;
 import std.datetime : unixTimeToStdTime, SysTime;
 import std.format : format;
-import std.typecons;
-import deimos.apk_toolsd.apk_package;
 
 struct ApkPackage
 {

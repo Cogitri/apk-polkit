@@ -1,6 +1,6 @@
 module apkd_common.ApkDatabaseOperations;
 
-import std.conv;
+import std.conv : to;
 
 class ApkDataBaseOperations
 {

@@ -2,14 +2,13 @@ module apkd_dbus_server.main;
 
 static import apkd_common.globals;
 import apkd_common.SysLogger;
-
+import apkd_dbus_server.DbusServer;
+import apkd_dbus_server.Options;
 import glib.MainLoop;
 import glib.Timeout;
 import glib.MainContext;
 import std.format : format;
 import std.stdio : writeln, writefln;
-import apkd_dbus_server.DbusServer;
-import apkd_dbus_server.Options;
 
 int main(string[] args)
 {

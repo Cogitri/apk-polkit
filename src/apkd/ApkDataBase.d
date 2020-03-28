@@ -19,39 +19,30 @@
 
 module apkd.ApkDataBase;
 
-import core.stdc.stdlib : calloc;
-import deimos.apk_toolsd.apk_blob;
-
-import deimos.apk_toolsd.apk_database;
-
-import deimos.apk_toolsd.apk_defines;
-
-import deimos.apk_toolsd.apk_hash;
-import deimos.apk_toolsd.apk_package;
-
-import deimos.apk_toolsd.apk_print;
-
-import deimos.apk_toolsd.apk_solver;
-import deimos.apk_toolsd.apk_version;
-
-import core.stdc.errno;
-
-import std.algorithm : canFind;
-import std.array;
-import std.conv;
-import std.exception;
-import std.experimental.logger;
-import std.format : format;
-import std.string : toStringz;
-import std.typecons;
-import std.utf : toUTFz;
-
 import apkd.ApkPackage;
 import apkd.exceptions;
 static import apkd.functions;
+import core.stdc.errno : EALREADY;
+import core.stdc.stdlib : calloc;
+import deimos.apk_toolsd.apk_blob;
+import deimos.apk_toolsd.apk_database;
+import deimos.apk_toolsd.apk_defines;
+import deimos.apk_toolsd.apk_hash;
+import deimos.apk_toolsd.apk_package;
+import deimos.apk_toolsd.apk_print;
+import deimos.apk_toolsd.apk_solver;
+import deimos.apk_toolsd.apk_version;
+import std.algorithm : canFind;
+import std.conv : to;
+import std.exception : enforce;
+import std.experimental.logger;
+import std.format : format;
+import std.string : toStringz;
+import std.utf : toUTFz;
 
 class ApkDataBase
 {
+    ///
     this(in bool readOnly = false)
     {
 
