@@ -9,11 +9,14 @@ struct TestHelper
 {
     @disable this();
 
-    this(string[] args, string testAppletName)
+    this(string[] args, string testAppletName, bool allowUntrusted = true)
     {
         this.apkRootDir = format("%s-%s", args[1], testAppletName);
         this.repoDir = format("%s-%s/repo", args[2], testAppletName);
-        apk_flags = APK_ALLOW_UNTRUSTED;
+        if (allowUntrusted)
+        {
+            apk_flags = APK_ALLOW_UNTRUSTED;
+        }
         apk_verbosity = 2;
 
         auto runScript = execute([args[3], this.apkRootDir, this.repoDir]);
