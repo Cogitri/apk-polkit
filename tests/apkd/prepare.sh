@@ -18,6 +18,6 @@ cd "$2"
 
 for x in abuilds/*/APKBUILD; do
     pushd ${x%/*}
-    APK="apk --allow-untrusted --root $1" SUDO_APK="abuild-apk --root $1" REPODEST="$2" abuild clean unpack prepare build rootpkg update_abuildrepo_index
+    APK="apk --allow-untrusted --root $1" SUDO_APK="abuild-apk --root $1" REPODEST="$2" abuild -F clean unpack prepare build rootpkg update_abuildrepo_index
     popd
 done
