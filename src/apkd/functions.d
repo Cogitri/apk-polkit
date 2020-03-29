@@ -29,6 +29,7 @@ import deimos.apk_toolsd.apk_io;
 import deimos.apk_toolsd.apk_package;
 import deimos.apk_toolsd.apk_provider_data;
 import deimos.apk_toolsd.apk_solver;
+import std.experimental.logger;
 
 /// Taken from apk_defines.h. It's only declared&defined in the
 /// header, so it doesn't end up in libapk...
@@ -96,22 +97,22 @@ static foreach (typeName; [
 struct DeleteContext
 {
 public:
-    @property bool recursiveDelete() const
+    @property bool recursiveDelete() const nothrow
     {
         return m_recursiveDelete;
     }
 
-    @property ref apk_dependency_array* world()
+    @property ref apk_dependency_array* world() nothrow
     {
         return m_world;
     }
 
-    @property uint errors()
+    @property uint errors() nothrow
     {
         return m_errors;
     }
 
-    @property void errors(uint count)
+    @property void errors(uint count) nothrow
     {
         this.m_errors = count;
     }
@@ -131,7 +132,7 @@ private:
 *                data into the function.
 */
 extern (C) void recursiveDeletePackage(apk_package* apkPackage,
-        apk_dependency*, apk_package*, void* ctx)
+        apk_dependency*, apk_package*, void* ctx) nothrow
 {
     auto deleteContext = cast(DeleteContext*) ctx;
     auto world = deleteContext.world;
@@ -144,7 +145,7 @@ extern (C) void recursiveDeletePackage(apk_package* apkPackage,
 }
 
 /// Append an apk_package* to an ApkPackage array.
-extern (C) int appendApkPackageToArray(apk_hash_item item, void* ctx)
+extern (C) int appendApkPackageToArray(apk_hash_item item, void* ctx) nothrow
 in
 {
     assert(cast(ApkPackage[]*) ctx);
@@ -155,7 +156,24 @@ body
 {
     auto apkPackages = cast(ApkPackage[]*) ctx;
     auto newPackage = cast(apk_package*) item;
-    *apkPackages ~= ApkPackage(*newPackage);
+    try
+    {
+        *apkPackages ~= ApkPackage(*newPackage);
+    }
+    catch (Exception e)
+    {
+        try
+        {
+            error("Appending a new apkPackage to the array failed!");
+        }
+        catch (Exception e)
+        {
+        }
+        auto retCode = 1;
+        // Don't do assert(0) here - that'd end up in release builds!
+        assert(retCode == 0);
+        return retCode;
+    }
     return 0;
 }
 

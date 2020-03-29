@@ -143,7 +143,7 @@ class DBusClient
         }
     }
 
-    extern (C) static void onNameDisappeared(GDBusConnection* connection, const char* name, void*)
+    extern (C) static void onNameDisappeared(GDBusConnection* connection, const char* name, void*) nothrow
     {
     }
 
