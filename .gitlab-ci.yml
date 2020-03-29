@@ -1,7 +1,7 @@
 stages:
   - build
 
-build-ldc:
+.build:
   image: ubuntu:focal
   stage: build
   script:
@@ -18,3 +18,12 @@ build-ldc:
     - cd ../apk-toolsd && meson build && ninja -C build install
     - cd ../polkit-d && meson build && ninja -C build install
     - cd ../ && meson build && env LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu ninja -C build test
+
+build-ldc:
+  extends: .build
+
+
+build-ldc-sanitizer:
+  extends: .build
+  variables:
+     DFLAGS: "-fsanitize=address -g -disable-fp-elim"
