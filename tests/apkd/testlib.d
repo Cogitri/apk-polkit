@@ -22,6 +22,7 @@ module tests.apkd.testlib;
 import deimos.apk_toolsd.apk_defines;
 import std.exception;
 import std.format;
+import std.path : buildPath;
 import std.process;
 
 struct TestHelper
@@ -31,14 +32,15 @@ struct TestHelper
     this(string[] args, string testAppletName, bool allowUntrusted = true)
     {
         this.apkRootDir = format("%s-%s", args[1], testAppletName);
-        this.repoDir = format("%s-%s/repo", args[2], testAppletName);
+        auto abuildBuildDir = format("%s-%s", args[2], testAppletName);
+        this.repoDir = buildPath(abuildBuildDir, "abuilds");
         if (allowUntrusted)
         {
             apk_flags = APK_ALLOW_UNTRUSTED;
         }
         apk_verbosity = 2;
 
-        auto runScript = execute([args[3], this.apkRootDir, this.repoDir]);
+        auto runScript = execute([args[3], this.apkRootDir, abuildBuildDir]);
         enforce(runScript[0] == 0, runScript[1]);
     }
 
