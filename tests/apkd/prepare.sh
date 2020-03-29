@@ -9,6 +9,7 @@ touch installed lock scripts.tar triggers
 popd
 
 apk --allow-untrusted -X "$2"/repo add --root "$1" --initdb
+abuild-keygen -ai
 
 mkdir -p "$2"
 
