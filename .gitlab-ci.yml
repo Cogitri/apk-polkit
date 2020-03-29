@@ -1,0 +1,20 @@
+stages:
+  - build
+
+build-ldc:
+  image: ubuntu:focal
+  stage: build
+  script:
+    - apt update
+    - DEBIAN_FRONTEND=noninteractive apt-get -y install libpolkit-gobject-1-dev libglibd-2.0-dev libssl-dev meson ldc git build-essential gir-to-d libgirepository1.0-dev libdbus-1-dev
+    - git clone https://gitlab.alpinelinux.org/alpine/abuild
+    - git clone https://gitlab.alpinelinux.org/alpine/apk-tools
+    - git clone https://gitlab.alpinelinux.org/Cogitri/apk-toolsd
+    - git clone https://gitlab.alpinelinux.org/Cogitri/polkit-d
+    - git clone https://github.com/Cogitri/openssl
+    - cd abuild && sed 's|bin/ash|bin/bash|g' -i *.in && make install
+    - cd ../apk-tools && make CFLAGS="-Wno-error" LUAAPK="" SCDOC="" install
+    - cd ../openssl && git checkout meson && meson build && ninja -C build install
+    - cd ../apk-toolsd && meson build && ninja -C build install
+    - cd ../polkit-d && meson build && ninja -C build install
+    - cd ../ && meson build && env LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu ninja -C build test
