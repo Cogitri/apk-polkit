@@ -33,6 +33,7 @@ int getUpgradablePackages(struct apk_database *db, void cb(struct apk_package *o
 
     if (r != 0)
     {
+        apk_change_array_free(&changeset.changes);
         return r;
     }
 
@@ -44,5 +45,6 @@ int getUpgradablePackages(struct apk_database *db, void cb(struct apk_package *o
         }
     }
 
+    apk_change_array_free(&changeset.changes);
     return 0;
 }
