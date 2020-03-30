@@ -23,7 +23,7 @@ import apkd.ApkPackage;
 import apkd.exceptions;
 static import apkd.functions;
 import core.stdc.errno : EALREADY;
-import core.stdc.stdlib : calloc, free;
+import core.stdc.stdlib : calloc, malloc;
 import deimos.apk_toolsd.apk_blob;
 import deimos.apk_toolsd.apk_database;
 import deimos.apk_toolsd.apk_defines;
@@ -150,27 +150,25 @@ class ApkDataBase
     */
     ApkPackage[] getUpgradablePackages()
     {
-
         ApkPackage[] packages;
-        auto changeset = this.getAllUpgradeChangeset();
+        apk_package[] newPkgs;
+        apk_package[] oldPkgs;
 
-        for (auto iter = &changeset.changes.item[0]; iter < &changeset.changes
-                .item[changeset.changes.num]; iter++)
+        extern (C) void addToArray(apk_package* pkg, void* ctx)
         {
-            if (iter.new_pkg is null || iter.old_pkg is null)
-            {
-                continue;
-            }
-            if (apk_pkg_version_compare(iter.new_pkg,
-                    iter.old_pkg) & (APK_VERSION_GREATER | APK_VERSION_EQUAL)
-                    && (iter.new_pkg != iter.old_pkg))
-            {
-                auto newPackage = iter.new_pkg;
-                auto oldPackage = iter.old_pkg;
-                auto apkPackage = ApkPackage(*oldPackage, *newPackage);
-                packages ~= apkPackage;
+            auto arr = cast(apk_package[]*) ctx;
+            *arr ~= *pkg;
+        }
 
-            }
+        auto getUpgradeRes = apkd.functions.getUpgradablePackages(&this.db,
+                &addToArray, &oldPkgs, &newPkgs);
+        enforce!ApkSolverException(getUpgradeRes == 0,
+                format("Couldn't list upgradable packages due to error '%s'",
+                    apk_error_str(getUpgradeRes).to!string));
+
+        foreach (i; 0 .. newPkgs.length)
+        {
+            packages ~= ApkPackage(oldPkgs[i], newPkgs[i]);
         }
 
         return packages;

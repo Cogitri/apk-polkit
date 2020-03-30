@@ -199,3 +199,7 @@ void apk_list_add(list_head* new_, list_head* head)
     new_.prev = head;
     head.next = new_;
 }
+
+/// From our C Helper lib
+alias getterCb = extern (C) void function(apk_package* pkg, void* ctx) nothrow;
+extern (C) int getUpgradablePackages(apk_database* db, getterCb cb, void* ctxOld, void* ctxNew);
