@@ -23,7 +23,6 @@ import apkd.ApkPackage;
 import apkd.exceptions;
 static import apkd.functions;
 import core.stdc.errno : EALREADY;
-import core.stdc.stdlib : calloc, malloc;
 import deimos.apk_toolsd.apk_blob;
 import deimos.apk_toolsd.apk_database;
 import deimos.apk_toolsd.apk_defines;
@@ -78,7 +77,7 @@ class ApkDataBase
     this(in string dbRoot, in string repoUrl, in bool readOnly = false)
     {
         this.dbOptions.root = dbRoot.toUTFz!(char*);
-        this.additionalRepo = cast(apk_repository_list*) calloc(1, apk_repository_list.sizeof);
+        this.additionalRepo = new apk_repository_list;
         this.additionalRepo.url = repoUrl.toUTFz!(char*);
         apkd.functions.list_init(&this.additionalRepo.list);
         apkd.functions.list_init(&this.dbOptions.repository_list);
@@ -92,10 +91,6 @@ class ApkDataBase
         if (this.db.open_complete)
         {
             apk_db_close(&this.db);
-        }
-        if (this.additionalRepo)
-        {
-            free(this.additionalRepo);
         }
     }
 
