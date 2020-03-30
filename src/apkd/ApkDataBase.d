@@ -151,25 +151,18 @@ class ApkDataBase
     ApkPackage[] getUpgradablePackages()
     {
         ApkPackage[] packages;
-        apk_package[] newPkgs;
-        apk_package[] oldPkgs;
 
-        extern (C) void addToArray(apk_package* pkg, void* ctx)
+        extern (C) void addToArray(apk_package* oldPkg, apk_package* newPkg, void* ctx)
         {
-            auto arr = cast(apk_package[]*) ctx;
-            *arr ~= *pkg;
+            auto arr = cast(ApkPackage[]*) ctx;
+            *arr ~= ApkPackage(*oldPkg, *newPkg);
         }
 
         auto getUpgradeRes = apkd.functions.getUpgradablePackages(&this.db,
-                &addToArray, &oldPkgs, &newPkgs);
+                &addToArray, &packages);
         enforce!ApkSolverException(getUpgradeRes == 0,
                 format("Couldn't list upgradable packages due to error '%s'",
                     apk_error_str(getUpgradeRes).to!string));
-
-        foreach (i; 0 .. newPkgs.length)
-        {
-            packages ~= ApkPackage(oldPkgs[i], newPkgs[i]);
-        }
 
         return packages;
     }

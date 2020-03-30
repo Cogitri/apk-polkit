@@ -23,7 +23,7 @@ static int checkUpgrade(struct apk_change *change)
     return 0;
 }
 
-int getUpgradablePackages(struct apk_database *db, void cb(struct apk_package *oldPkg, void *ctx), void *oldCtx, void *newCtx)
+int getUpgradablePackages(struct apk_database *db, void cb(struct apk_package *oldPkg, struct apk_package *newPkg, void *ctx), void *ctx)
 {
     struct apk_changeset changeset = {};
     struct apk_change *change;
@@ -40,8 +40,7 @@ int getUpgradablePackages(struct apk_database *db, void cb(struct apk_package *o
     {
         if (checkUpgrade(change))
         {
-            cb(change->old_pkg, oldCtx);
-            cb(change->new_pkg, newCtx);
+            cb(change->old_pkg, change->new_pkg, ctx);
         }
     }
 
