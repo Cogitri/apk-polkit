@@ -19,12 +19,18 @@
 
 module apkd_dbus_client.main;
 
+import apkd.ApkPackage;
 import apkd_common.ApkDatabaseOperations;
 static import apkd_common.globals;
 import apkd_dbus_client.DbusClient;
 import apkd_dbus_client.Options;
+import core.stdc.stdlib : exit;
+import gio.c.types;
+import gio.Task;
 import glib.MainContext;
 import glib.MainLoop;
+import glib.Variant;
+import std.datetime;
 import std.range : empty;
 import std.stdio : writeln, writefln;
 
@@ -88,7 +94,79 @@ int main(string[] args)
 
     auto mainContext = MainContext.default_();
     auto mainLoop = new MainLoop(mainContext, false);
-    auto dbusClient = new DBusClient(options.packageNames, dbOp);
+    auto dbusClient = DBusClient.get();
+    dbusClient.queryAsync(options.packageNames, dbOp, null, &checkAuth, &dbOp);
     mainLoop.run();
     return 0;
+}
+
+extern (C) void checkAuth(GObject*, GAsyncResult* res, void* userData)
+{
+    auto dbusRes = DBusClient.queryFinish(res);
+    auto dbOp = cast(ApkDataBaseOperations*) userData;
+
+    bool dbusOpSucessfull;
+
+    switch (dbOp.val) with (ApkDataBaseOperations.Enum)
+    {
+    case listAvailablePackages:
+    case listInstalledPackages:
+    case listUpgradablePackages:
+        auto dbusRet = dbusRes.getChildValue(0);
+
+        const auto arrLen = dbusRet.nChildren();
+        if (arrLen > 0)
+        {
+            dbusOpSucessfull = true;
+        }
+        else
+        {
+            dbusOpSucessfull = false;
+        }
+
+        ApkPackage[] pkgArr;
+        for (uint i; i < arrLen; i++)
+        {
+            auto valueTuple = dbusRet.getChildValue(i);
+            ulong len;
+
+            // dfmt off
+                auto pkg = ApkPackage(
+                        valueTuple.getChildValue(0).getString(len),
+                        valueTuple.getChildValue(1).getString(len),
+                        valueTuple.getChildValue(2).getString(len),
+                        valueTuple.getChildValue(3).getString(len),
+                        valueTuple.getChildValue(4).getString(len),
+                        valueTuple.getChildValue(5).getString(len),
+                        valueTuple.getChildValue(6).getString(len),
+                        valueTuple.getChildValue(7).getString(len),
+                        valueTuple.getChildValue(8).getString(len),
+                        valueTuple.getChildValue(9).getString(len),
+                        valueTuple.getChildValue(10).getString(len),
+                        valueTuple.getChildValue(11).getUint64(),
+                        valueTuple.getChildValue(12).getUint64(),
+                        SysTime(0), //FIXME
+                    );
+                // dfmt on
+            pkgArr ~= pkg;
+        }
+
+        foreach (pkg; pkgArr)
+        {
+            writeln(pkg);
+        }
+
+        break;
+    default:
+        dbusOpSucessfull = dbusRes.getChildValue(0).getBoolean();
+    }
+
+    if (dbusOpSucessfull)
+    {
+        exit(0);
+    }
+    else
+    {
+        exit(1);
+    }
 }

@@ -111,6 +111,7 @@ struct Options
         enforce!InsufficientArgLengthException(args.length >= 2, "Please specify a subcommand.");
 
         this.mode = args[1];
+        this.packageNames = [];
         switch (this.mode)
         {
         case "list":
