@@ -1,6 +1,7 @@
 c_helper_lib = static_library(
     'apkd_c_helper',
     ['upgradeLister.c'],
+    dependencies: apk_dep,
 )
 
 c_helper_lib_dep = declare_dependency(
