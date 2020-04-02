@@ -12,6 +12,11 @@ install_headers(
     subdir: 'apk-polkit'
 )
 
+install_headers(
+    apkd_dbus_client_lib_src,
+    subdir: 'd/apk-polkit/apk_dbus_client'
+)
+
 apkd_dbus_client_lib = library(
     'apkd-dbus-client',
     apkd_dbus_client_lib_src,
@@ -28,6 +33,14 @@ apkd_dbus_client_lib_dep = declare_dependency(
     include_directories: src_inc,
     link_args: link_runtime_shared_arg,
     dependencies: [apkd_dbus_client_deps, libapkd_common_dep, apkd_dep]
+)
+
+pkgc.generate(
+    apkd_dbus_client_lib,
+    name: 'apkd-dbus-client-0',
+    subdirs: 'd/apk-polkit',
+    version: meson.project_version(),
+    requires: apkd_dbus_client_deps,
 )
 
 apkd_dbus_client_exe_src = [
