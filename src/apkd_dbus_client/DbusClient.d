@@ -33,7 +33,7 @@ import glib.Variant;
 import glib.VariantType;
 import gobject.ObjectG;
 import std.conv;
-import std.datetime;
+import std.datetime : SysTime;
 import std.exception;
 
 auto immutable dbusIntrospectionXML = import("dev.Cogitri.apkPolkit.interface");
@@ -63,22 +63,31 @@ class DBusClient
         return m_instance;
     }
 
-    void queryAsync(string[] packageNames, ApkDataBaseOperations dbOp,
+    void queryAsync(string[] packageNames, ApkDataBaseOperations dbOp, bool allowUntrustedRepos,
             Cancellable cancellable, GAsyncReadyCallback callback, void* userData)
     {
         this.queryAsyncTask = new Task(null, cancellable, callback, userData);
         Variant params;
-        switch (dbOp.val) with (ApkDataBaseOperations.Enum)
+        final switch (dbOp.val) with (ApkDataBaseOperations.Enum)
         {
         case listAvailablePackages:
-        case listInstalledPackages:
         case listUpgradablePackages:
         case upgradeAllPackages:
         case updateRepositories:
+            params = new Variant([new Variant(allowUntrustedRepos)]);
+            break;
+        case listInstalledPackages:
             params = null;
             break;
-        default:
+        case addPackage:
+        case upgradePackage:
+            params = new Variant([
+                    new Variant(allowUntrustedRepos), new Variant(packageNames)
+                    ]);
+            break;
+        case deletePackage:
             params = new Variant([new Variant(packageNames)]);
+            break;
         }
         this.proxy.call(dbOp.toString(), params, DBusCallFlags.NONE, G_MAXINT32,
                 cancellable, &queryAsyncDbusCallFinish, &this.queryAsyncTask);

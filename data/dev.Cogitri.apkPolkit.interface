@@ -27,10 +27,11 @@
             <arg type="b" direction="out"/>
         </method>
         <method name="upgradePackage">
-            <arg type="as" direction="in"/>
+            <arg type="bas" direction="in"/>
             <arg type="b" direction="out"/>
         </method>
         <method name="upgradeAllPackages">
+            <arg type="b" direction="in"/>
             <arg type="b" direction="out"/>
         </method>
         <method name="deletePackage">
@@ -38,16 +39,18 @@
             <arg type="b" direction="out"/>
         </method>
         <method name="addPackage">
-            <arg type="as" direction="in"/>
+            <arg type="bas" direction="in"/>
             <arg type="b" direction="out"/>
         </method>
         <method name="listAvailablePackages">
+            <arg type="b" direction="in"/>
             <arg type="a(ssssssssssstt)" direction="out"/>
         </method>
         <method name="listInstalledPackages">
             <arg type="a(ssssssssssstt)" direction="out"/>
         </method>
         <method name="listUpgradablePackages">
+            <arg type="b" direction="in"/>
             <arg type="a(ssssssssssstt)" direction="out"/>
         </method>
     </interface>

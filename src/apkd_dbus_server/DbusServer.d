@@ -114,8 +114,9 @@ class DBusServer
             {
             case addPackage:
                 auto variant = new Variant(parameters);
-                auto pkgname = variant.getChildValue(0).getStrv();
-                ret ~= new Variant(ApkInterfacer.addPackage(pkgname));
+                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
+                auto pkgnames = variant.getChildValue(1).getStrv();
+                ret ~= new Variant(ApkInterfacer.addPackage(pkgnames));
                 break;
             case deletePackage:
                 auto variant = new Variant(parameters);
@@ -123,15 +124,21 @@ class DBusServer
                 ret ~= new Variant(ApkInterfacer.deletePackage(pkgname));
                 break;
             case listAvailablePackages:
+                auto variant = new Variant(parameters);
+                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
                 ret ~= apkPackageArrayToVariant(ApkInterfacer.getAvailablePackages());
                 break;
             case listInstalledPackages:
                 ret ~= apkPackageArrayToVariant(ApkInterfacer.getInstalledPackages());
                 break;
             case listUpgradablePackages:
+                auto variant = new Variant(parameters);
+                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
                 ret ~= apkPackageArrayToVariant(ApkInterfacer.getUpgradablePackages());
                 break;
             case updateRepositories:
+                auto variant = new Variant(parameters);
+                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
                 ret ~= new Variant(ApkInterfacer.updateRepositories());
                 break;
             case upgradeAllPackages:
@@ -139,8 +146,9 @@ class DBusServer
                 break;
             case upgradePackage:
                 auto variant = new Variant(parameters);
-                auto pkgname = variant.getChildValue(0).getStrv();
-                ret ~= new Variant(ApkInterfacer.upgradePackage(pkgname));
+                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
+                auto pkgnames = variant.getChildValue(1).getStrv();
+                ret ~= new Variant(ApkInterfacer.upgradePackage(pkgnames));
                 break;
             }
 

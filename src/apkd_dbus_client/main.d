@@ -95,7 +95,7 @@ int main(string[] args)
     auto mainContext = MainContext.default_();
     auto mainLoop = new MainLoop(mainContext, false);
     auto dbusClient = DBusClient.get();
-    dbusClient.queryAsync(options.packageNames, dbOp, null, &checkAuth, &dbOp);
+    dbusClient.queryAsync(options.packageNames, dbOp, false, null, &checkAuth, &dbOp);
     mainLoop.run();
     return 0;
 }
