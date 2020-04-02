@@ -14,6 +14,24 @@ enum
     upgradePackage,
 } ApkDatabaseOperationsEnum;
 
+struct
+{
+    char *m_name;
+    char *m_version;
+    char *m_oldVersion;
+    char *m_arch;
+    char *m_license;
+    char *m_origin;
+    char *m_maintainer;
+    char *m_url;
+    char *m_description;
+    char *m_commit;
+    char *m_filename;
+    unsigned long m_installedSize;
+    unsigned long m_size;
+    time_t m_buildTime;
+} apkd_package;
+
 bool apkd_init();
 
 bool apkd_deinit();

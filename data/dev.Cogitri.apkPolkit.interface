@@ -24,34 +24,37 @@
 <node name="/" xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
     <interface name="dev.Cogitri.apkPolkit.Helper">
         <method name="updateRepositories">
-            <arg type="b" direction="out"/>
+            <arg name="allowUntrustedRepos" type="b" direction="in"/>
+            <arg name="successful" type="b" direction="out"/>
         </method>
         <method name="upgradePackage">
-            <arg type="bas" direction="in"/>
+            <arg name="allowUntrustedRepos" type="b" direction="in"/>
+            <arg name="packages" type="as" direction="in"/>
             <arg type="b" direction="out"/>
         </method>
         <method name="upgradeAllPackages">
-            <arg type="b" direction="in"/>
-            <arg type="b" direction="out"/>
+            <arg name="allowUntrustedRepos" type="b" direction="in"/>
+            <arg name="successful" type="b" direction="out"/>
         </method>
         <method name="deletePackage">
-            <arg type="as" direction="in"/>
-            <arg type="b" direction="out"/>
+            <arg name="packages" type="as" direction="in"/>
+            <arg name="successful" type="b" direction="out"/>
         </method>
         <method name="addPackage">
-            <arg type="bas" direction="in"/>
-            <arg type="b" direction="out"/>
+            <arg name="allowUntrustedRepos" type="b" direction="in"/>
+            <arg name="packages" type="as" direction="in"/>
+            <arg name="successful" type="b" direction="out"/>
         </method>
         <method name="listAvailablePackages">
-            <arg type="b" direction="in"/>
-            <arg type="a(ssssssssssstt)" direction="out"/>
+            <arg name="allowUntrustedRepos" type="b" direction="in"/>
+            <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
         </method>
         <method name="listInstalledPackages">
-            <arg type="a(ssssssssssstt)" direction="out"/>
+            <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
         </method>
         <method name="listUpgradablePackages">
-            <arg type="b" direction="in"/>
-            <arg type="a(ssssssssssstt)" direction="out"/>
+            <arg name="allowUntrustedRepos" type="b" direction="in"/>
+            <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
         </method>
     </interface>
 </node>
