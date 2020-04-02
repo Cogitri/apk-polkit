@@ -1,6 +1,16 @@
 apkd_dbus_client_lib_src = [
     'DbusClient.d',
+    'DbusClientC.d',
 ]
+
+apkd_dbus_client_c_headers = [
+    'apkd-dbus-client.h',
+]
+
+install_headers(
+    apkd_dbus_client_c_headers,
+    subdir: 'apk-polkit'
+)
 
 apkd_dbus_client_lib = library(
     'apkd-dbus-client',
