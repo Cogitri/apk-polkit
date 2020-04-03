@@ -309,17 +309,12 @@ class ApkDataBase
         apk_installed_package* installedPackage = null;
         ApkPackage[] ret;
 
-        installedPackage = (&this.db.installed.packages).next.container_of!(
-                apk_installed_package, "installed_pkgs_list");
-
-        enforce!ApkListException(installedPackage !is null
-                && installedPackage.installed_pkgs_list.next != &this.db.installed.packages,
-                "Couldn't find any installed packages!");
-        while (installedPackage.installed_pkgs_list != this.db.installed.packages)
+        for(
+            installedPackage = (&this.db.installed.packages).next.container_of!(apk_installed_package, "installed_pkgs_list");
+            &installedPackage.installed_pkgs_list != &this.db.installed.packages;
+            installedPackage = installedPackage.installed_pkgs_list.next.container_of!(apk_installed_package, "installed_pkgs_list"))
         {
             ret ~= ApkPackage(*installedPackage.pkg);
-            installedPackage = installedPackage.installed_pkgs_list.next.next.container_of!(
-                    apk_installed_package, "installed_pkgs_list");
         }
 
         return ret;
