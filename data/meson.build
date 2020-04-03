@@ -26,3 +26,9 @@ install_data(
     'dev.Cogitri.apkPolkit.Helper.conf',
     install_dir: dbus_config_dir,
 )
+
+install_data(
+    'dev.Cogitri.apkPolkit.interface',
+    install_dir: dbus_interface_dir,
+    rename: 'dev.cogitri.apkPolkit.xml',
+)
