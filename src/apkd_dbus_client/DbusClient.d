@@ -109,6 +109,35 @@ class DBusClient
         return cast(Variant*) task.propagatePointer();
     }
 
+    Variant querySync(string[] packageNames, ApkDataBaseOperations dbOp,
+            bool allowUntrustedRepos, Cancellable cancellable)
+    {
+        Variant params;
+        final switch (dbOp.val) with (ApkDataBaseOperations.Enum)
+        {
+        case listAvailablePackages:
+        case listUpgradablePackages:
+        case upgradeAllPackages:
+        case updateRepositories:
+            params = new Variant([new Variant(allowUntrustedRepos)]);
+            break;
+        case listInstalledPackages:
+            params = null;
+            break;
+        case addPackage:
+        case upgradePackage:
+            params = new Variant([
+                    new Variant(allowUntrustedRepos), new Variant(packageNames)
+                    ]);
+            break;
+        case deletePackage:
+            params = new Variant([new Variant(packageNames)]);
+            break;
+        }
+        return this.proxy.callSync(dbOp.toString(), params, DBusCallFlags.NONE,
+                G_MAXINT32, cancellable);
+    }
+
 private:
     extern (C) static void queryAsyncDbusCallFinish(GObject* rawProxy,
             GAsyncResult* res, void* rawUserData)
