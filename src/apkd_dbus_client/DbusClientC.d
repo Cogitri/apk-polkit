@@ -7,6 +7,7 @@ import gio.c.types : GAsyncReadyCallback, GAsyncResult, GCancellable, GError;
 import gio.Cancellable;
 import glib.c.types : GPtrArray, GVariant;
 import glib.ErrorG;
+import glib.PtrArray;
 import gobject.c.types : GCallback;
 import std.conv : to;
 import std.format : format;
@@ -21,15 +22,19 @@ extern (C) bool apkd_deinit()
     return cast(bool) rt_term();
 }
 
-extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNames, uint len, ApkDataBaseOperations.Enum rawDbOp,
+extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray, uint len, ApkDataBaseOperations.Enum rawDbOp,
         bool allowUntrustedRepos, GCancellable* cancellable,
         GAsyncReadyCallback callback, void* userData)
 {
     string[] pkgNames;
 
-    for (uint i = 0; i < len; i++)
-    {
-        pkgNames[i] = rawPkgNames[i].to!string;
+    if(rawPkgNamesPtrArray) {
+        auto pkgNamesPtrArray = new PtrArray(rawPkgNamesPtrArray);
+
+        foreach(i; 0..pkgNamesPtrArray.len()) {
+            auto pkgname = cast(char*) pkgNamesPtrArray.index(i);
+            pkgNames ~= pkgname.to!string;
+        }
     }
 
     auto dbusClient = DBusClient.get();
@@ -62,14 +67,18 @@ do
     }
 }
 
-extern (C) GVariant* apkd_dbus_client_query_sync(GPtrArray* rawPkgNames, uint len,
+extern (C) GVariant* apkd_dbus_client_query_sync(GPtrArray* rawPkgNamesPtrArray, uint len,
         ApkDataBaseOperations.Enum rawDbOp, bool allowUntrustedRepos, GCancellable* cancellable)
 {
     string[] pkgNames;
 
-    for (uint i = 0; i < len; i++)
-    {
-        pkgNames ~= rawPkgNames[i].to!string;
+    if(rawPkgNamesPtrArray) {
+        auto pkgNamesPtrArray = new PtrArray(rawPkgNamesPtrArray);
+
+        foreach(i; 0..pkgNamesPtrArray.len()) {
+            auto pkgname = cast(char*) pkgNamesPtrArray.index(i);
+            pkgNames ~= pkgname.to!string;
+        }
     }
 
     auto dbusClient = DBusClient.get();
