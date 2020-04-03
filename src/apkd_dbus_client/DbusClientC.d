@@ -6,8 +6,10 @@ import apkd_dbus_client.DbusClient;
 import gio.c.types : GAsyncReadyCallback, GAsyncResult, GCancellable, GError;
 import gio.Cancellable;
 import glib.c.types : GPtrArray, GVariant;
+import glib.ErrorG;
 import gobject.c.types : GCallback;
-import std.conv;
+import std.conv : to;
+import std.format : format;
 
 extern (C) bool apkd_init()
 {
@@ -48,5 +50,31 @@ out (result)
 }
 do
 {
-    return DBusClient.queryFinish(res).getVariantStruct();
+    try
+    {
+        return DBusClient.queryFinish(res).getVariantStruct();
+    }
+    catch (Exception e)
+    {
+        auto errorG = new ErrorG(0, 0, format("Failed to execute query due to error %s", e));
+        *error = errorG.getErrorGStruct();
+        return null;
+    }
+}
+
+extern (C) GVariant* apkd_dbus_client_query_sync(GPtrArray* rawPkgNames, uint len,
+        ApkDataBaseOperations.Enum rawDbOp, bool allowUntrustedRepos, GCancellable* cancellable)
+{
+    string[] pkgNames;
+
+    for (uint i = 0; i < len; i++)
+    {
+        pkgNames ~= rawPkgNames[i].to!string;
+    }
+
+    auto dbusClient = DBusClient.get();
+    auto dbOp = ApkDataBaseOperations(rawDbOp);
+    auto variant = dbusClient.querySync(pkgNames, dbOp, allowUntrustedRepos,
+            new Cancellable(cancellable));
+    return variant.getVariantStruct();
 }
