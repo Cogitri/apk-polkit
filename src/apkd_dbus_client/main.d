@@ -27,10 +27,12 @@ import apkd_dbus_client.Options;
 import core.stdc.stdlib : exit;
 import gio.c.types;
 import gio.Task;
+import glib.GException;
 import glib.MainContext;
 import glib.MainLoop;
 import glib.Variant;
 import std.datetime;
+import std.experimental.logger;
 import std.range : empty;
 import std.stdio : writeln, writefln;
 
@@ -102,30 +104,29 @@ int main(string[] args)
 
 extern (C) void checkAuth(GObject*, GAsyncResult* res, void* userData)
 {
-    auto dbusRes = DBusClient.queryFinish(res);
+    Variant* dbusRes;
+    try
+    {
+        dbusRes = DBusClient.queryFinish(res);
+    }
+    catch (GException e)
+    {
+        error(e);
+        exit(1);
+    }
+
     auto dbOp = cast(ApkDataBaseOperations*) userData;
 
-    bool dbusOpSucessfull;
-
+    // For some DBus calls we get a return value (other than errors)
     switch (dbOp.val) with (ApkDataBaseOperations.Enum)
     {
     case listAvailablePackages:
     case listInstalledPackages:
     case listUpgradablePackages:
         auto dbusRet = dbusRes.getChildValue(0);
-
-        const auto arrLen = dbusRet.nChildren();
-        if (arrLen > 0)
-        {
-            dbusOpSucessfull = true;
-        }
-        else
-        {
-            dbusOpSucessfull = false;
-        }
-
         ApkPackage[] pkgArr;
-        for (uint i; i < arrLen; i++)
+
+        for (uint i; i < dbusRet.nChildren(); i++)
         {
             auto valueTuple = dbusRet.getChildValue(i);
             ulong len;
@@ -158,15 +159,7 @@ extern (C) void checkAuth(GObject*, GAsyncResult* res, void* userData)
 
         break;
     default:
-        dbusOpSucessfull = dbusRes.getChildValue(0).getBoolean();
     }
 
-    if (dbusOpSucessfull)
-    {
-        exit(0);
-    }
-    else
-    {
-        exit(1);
-    }
+    exit(0);
 }

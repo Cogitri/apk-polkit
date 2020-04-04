@@ -17,7 +17,7 @@ import std.exception : assumeWontThrow;
 import std.format : format;
 import std.string;
 
-enum ApkErrorEnum
+enum ApkDbusClientErrorEnum
 {
     FAILED,
     DBUS_SPAWN_FAILED,
@@ -26,9 +26,9 @@ enum ApkErrorEnum
     APK_QUERY_ASYNC_FINISH_FAILED,
 }
 
-extern (C) GQuark apkd_error_quark() nothrow
+extern (C) GQuark apkd_dbus_client_error_quark() nothrow
 {
-    return assumeWontThrow(g_quark_from_static_string("apkd-error-quark"));
+    return assumeWontThrow(g_quark_from_static_string("apkd-dbus-client-error-quark"));
 }
 
 extern (C) bool apkd_init()
@@ -69,7 +69,8 @@ extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray,
     }
     catch (Exception e)
     {
-        auto error = assumeWontThrow(new ErrorG(apkd_error_quark(), ApkErrorEnum.DBUS_SPAWN_FAILED,
+        auto error = assumeWontThrow(new ErrorG(apkd_dbus_client_error_quark(),
+                ApkDbusClientErrorEnum.DBUS_SPAWN_FAILED,
                 assumeWontThrow(format("Spawning the DBusClient failed due to error %s!", e))));
         assumeWontThrow(task.returnError(error));
         return;
@@ -84,7 +85,8 @@ extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray,
     }
     catch (Exception e)
     {
-        auto error = assumeWontThrow(new ErrorG(apkd_error_quark(), ApkErrorEnum.APK_QUERY_ASYNC_FAILED,
+        auto error = assumeWontThrow(new ErrorG(apkd_dbus_client_error_quark(),
+                ApkDbusClientErrorEnum.APK_QUERY_ASYNC_FAILED,
                 assumeWontThrow(format("Executing the transaction %s failed due to error %s",
                 dbOp, e))));
         assumeWontThrow(task.returnError(error));
@@ -109,7 +111,8 @@ do
     }
     catch (Exception e)
     {
-        assumeWontThrow(g_set_error(error, apkd_error_quark(), ApkErrorEnum.APK_QUERY_ASYNC_FINISH_FAILED,
+        assumeWontThrow(g_set_error(error, apkd_dbus_client_error_quark(),
+                ApkDbusClientErrorEnum.APK_QUERY_ASYNC_FINISH_FAILED,
                 format("Failed to finish query que to error %s", e).toStringz()));
         return null;
     }
@@ -151,7 +154,7 @@ do
     }
     catch (Exception e)
     {
-        assumeWontThrow(g_set_error(error, apkd_error_quark(), ApkErrorEnum.DBUS_SPAWN_FAILED,
+        assumeWontThrow(g_set_error(error, apkd_dbus_client_error_quark(), ApkDbusClientErrorEnum.DBUS_SPAWN_FAILED,
                 assumeWontThrow(format("Spawning the DBusClient failed due to error %s!", e)).toStringz()));
         return null;
     }
@@ -166,7 +169,7 @@ do
     }
     catch (Exception e)
     {
-        assumeWontThrow(g_set_error(error, apkd_error_quark(), ApkErrorEnum.APK_OP_FAILED,
+        assumeWontThrow(g_set_error(error, apkd_dbus_client_error_quark(), ApkDbusClientErrorEnum.APK_OP_FAILED,
                 assumeWontThrow(format("Executing the transaction %s failed due to error %s",
                 dbOp, e)).toStringz()));
     }
