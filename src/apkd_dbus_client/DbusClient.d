@@ -67,6 +67,19 @@ class DBusClient
             Cancellable cancellable, GAsyncReadyCallback callback, void* userData)
     {
         this.queryAsyncTask = new Task(null, cancellable, callback, userData);
+        this.queryAsync(packageNames, dbOp, allowUntrustedRepos, cancellable);
+    }
+
+    void queryAsync(string[] packageNames, ApkDataBaseOperations dbOp,
+            bool allowUntrustedRepos, Cancellable cancellable, Task task)
+    {
+        this.queryAsyncTask = task;
+        this.queryAsync(packageNames, dbOp, allowUntrustedRepos, cancellable);
+    }
+
+    void queryAsync(string[] packageNames, ApkDataBaseOperations dbOp,
+            bool allowUntrustedRepos, Cancellable cancellable)
+    {
         Variant params;
         final switch (dbOp.val) with (ApkDataBaseOperations.Enum)
         {
@@ -89,6 +102,7 @@ class DBusClient
             params = new Variant([new Variant(packageNames)]);
             break;
         }
+
         this.proxy.call(dbOp.toString(), params, DBusCallFlags.NONE, G_MAXINT32,
                 cancellable, &queryAsyncDbusCallFinish, &this.queryAsyncTask);
 

@@ -37,7 +37,7 @@ struct ApkDataBaseOperations
         upgradePackage,
     }
 
-    this(Enum val)
+    this(Enum val) nothrow
     {
         this.m_val = val;
     }

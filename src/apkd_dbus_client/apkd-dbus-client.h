@@ -40,4 +40,4 @@ void apkd_dbus_client_query_async(GPtrArray *packageNameArray, unsigned int len,
 
 GVariant *apkd_dbus_client_query_finish(GAsyncResult *res, GError **error);
 
-GVariant *apkd_dbus_client_query_sync(GPtrArray *packageNameArray, unsigned int len, ApkDatabaseOperationsEnum dbOp, bool allowUntrustedRepos, GCancellable *cancellable);
+GVariant *apkd_dbus_client_query_sync(GPtrArray *packageNameArray, unsigned int len, ApkDatabaseOperationsEnum dbOp, bool allowUntrustedRepos, GCancellable *cancellable, GError **error);
