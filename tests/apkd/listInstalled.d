@@ -29,6 +29,15 @@ int main(string[] args)
 {
     auto testHelper = TestHelper(args, "listInstalled");
     auto database = new ApkDataBase(testHelper.apkRootDir, testHelper.repoDir);
-    assertThrown!ApkListException(database.getInstalledPackages());
+    enforce(database.getInstalledPackages().length == 0);
+    // FIXME: See install.d
+    try
+    {
+        database.addPackage(["test-a"]);
+    }
+    catch (ApkDatabaseCommitException)
+    {
+    }
+    enforce(database.getInstalledPackages().length == 1);
     return 0;
 }
