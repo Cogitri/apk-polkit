@@ -8,13 +8,19 @@ class DBusPropertyOperations : CommonOperations
     enum Enum
     {
         getAll,
-        getAllowUntrustedRepos,
-        setAllowUntrustedRepos,
+        allowUntrustedRepos,
     }
 
-    this(Enum val) nothrow
+    enum DirectionEnum
+    {
+        get,
+        set,
+    }
+
+    this(Enum val, DirectionEnum direction) nothrow
     {
         this.m_val = val;
+        this.m_direction = direction;
     }
 
     this(string methodName)
@@ -38,11 +44,16 @@ class DBusPropertyOperations : CommonOperations
         case getAll:
             action = "getAllProperties";
             break;
-        case getAllowUntrustedRepos:
-            action = "getAllowUntrustedRepos";
-            break;
-        case setAllowUntrustedRepos:
-            action = "setAllowUntrustedRepos";
+        case allowUntrustedRepos:
+            if (this.m_direction == DirectionEnum.get)
+            {
+                action = "getAllowUntrustedRepos";
+            }
+            else
+            {
+                action = "setAllowUntrustedRepos";
+            }
+
             break;
         }
 
@@ -54,6 +65,12 @@ class DBusPropertyOperations : CommonOperations
         return this.m_val;
     }
 
+    @property DirectionEnum direction() const
+    {
+        return this.m_direction;
+    }
+
 private:
+    DirectionEnum m_direction;
     Enum m_val;
 }

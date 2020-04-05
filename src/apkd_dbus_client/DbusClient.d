@@ -143,6 +143,11 @@ class DBusClient
     }
 
     Variant getProperty(DBusPropertyOperations operation, Cancellable cancellable)
+    in
+    {
+        assert(operation.direction == DBusPropertyOperations.DirectionEnum.get);
+    }
+    do
     {
         auto params = new Variant([
                 new Variant(apkd_common.globals.dbusInterfaceName),
@@ -153,6 +158,11 @@ class DBusClient
     }
 
     void setProperty(DBusPropertyOperations operation, Variant param, Cancellable cancellable)
+    in
+    {
+        assert(operation.direction == DBusPropertyOperations.DirectionEnum.set);
+    }
+    do
     {
         auto params = new Variant([
                 new Variant(apkd_common.globals.dbusInterfaceName),

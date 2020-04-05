@@ -41,7 +41,6 @@ import glib.GException;
 import glib.Variant;
 import glib.VariantBuilder;
 import glib.VariantType;
-import std.ascii : toUpper;
 import std.conv : to, ConvException;
 import std.concurrency : receive;
 import std.exception;
@@ -162,17 +161,17 @@ class DBusServer
                 case "Get":
                     ulong len;
                     auto propertyName = variant.getChildValue(1).getString(len);
-                    operation = new DBusPropertyOperations(
-                            "get" ~ propertyName[0].toUpper ~ propertyName[1 .. $]);
+                    operation = new DBusPropertyOperations(propertyName.to!(DBusPropertyOperations.Enum),
+                            DBusPropertyOperations.DirectionEnum.get);
                     break;
                 case "Set":
                     ulong len;
                     auto propertyName = variant.getChildValue(1).getString(len);
-                    operation = new DBusPropertyOperations(
-                            "set" ~ propertyName[0].toUpper ~ propertyName[1 .. $]);
+                    operation = new DBusPropertyOperations(propertyName.to!(DBusPropertyOperations.Enum),
+                            DBusPropertyOperations.DirectionEnum.set);
                     break;
                 case "GetAll":
-                    operation = new DBusPropertyOperations(DBusPropertyOperations.Enum.getAll);
+                    operation = new DBusPropertyOperations("getAll");
                     break;
                 default:
                     assert(0);
@@ -342,29 +341,33 @@ class DBusServer
                     builder.close();
                     ret ~= builder.end();
                     break;
-                case getAllowUntrustedRepos:
-                    auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
-                    ret ~= new Variant(new Variant(*allowUntrustedRepositories));
-                    break;
-                case setAllowUntrustedRepos:
-                    auto connection = new DBusConnection(dbusConnection);
-                    auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
-                    *allowUntrustedRepositories = variant.getChildValue(2)
-                        .getVariant().getBoolean();
-                    auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
-                    dictBuilder.open(new VariantType("{sv}"));
-                    dictBuilder.addValue(new Variant("allowUntrustedRepos"));
-                    dictBuilder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
-                    dictBuilder.close();
-                    auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
-                    valBuilder.addValue(new Variant(interfaceName.to!string));
-                    valBuilder.addValue(dictBuilder.end());
-                    valBuilder.open(new VariantType("as"));
-                    valBuilder.addValue(new Variant(""));
-                    valBuilder.close();
-                    connection.emitSignal(null, objectPath.to!string,
-                            "org.freedesktop.DBus.Properties",
-                            "PropertiesChanged", valBuilder.end());
+                case allowUntrustedRepos:
+                    if (dbusOperation.direction == DBusPropertyOperations.DirectionEnum.get)
+                    {
+                        auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
+                        ret ~= new Variant(new Variant(*allowUntrustedRepositories));
+                    }
+                    else
+                    {
+                        auto connection = new DBusConnection(dbusConnection);
+                        auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
+                        *allowUntrustedRepositories = variant.getChildValue(2)
+                            .getVariant().getBoolean();
+                        auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
+                        dictBuilder.open(new VariantType("{sv}"));
+                        dictBuilder.addValue(new Variant("allowUntrustedRepos"));
+                        dictBuilder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
+                        dictBuilder.close();
+                        auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
+                        valBuilder.addValue(new Variant(interfaceName.to!string));
+                        valBuilder.addValue(dictBuilder.end());
+                        valBuilder.open(new VariantType("as"));
+                        valBuilder.addValue(new Variant(""));
+                        valBuilder.close();
+                        connection.emitSignal(null, objectPath.to!string,
+                                "org.freedesktop.DBus.Properties",
+                                "PropertiesChanged", valBuilder.end());
+                    }
                     break;
                 }
 
