@@ -20,6 +20,7 @@
 module libapkd_dbus_client.DbusClient;
 
 import apkd_common.ApkDatabaseOperations;
+import apkd_common.DBusPropertyOperations;
 static import apkd_common.globals;
 import gio.AsyncResultIF;
 import gio.c.types : BusType, BusNameWatcherFlags, DBusCallFlags, G_MAXINT32, GDBusProxy;
@@ -139,6 +140,26 @@ class DBusClient
         }
         return this.proxy.callSync(dbOp.toString(), params, DBusCallFlags.NONE,
                 G_MAXINT32, cancellable);
+    }
+
+    Variant getProperty(DBusPropertyOperations operation, Cancellable cancellable)
+    {
+        auto params = new Variant([
+                new Variant(apkd_common.globals.dbusInterfaceName),
+                new Variant(operation.toString()),
+                ]);
+        return this.proxy.callSync("org.freedesktop.DBus.Properties.Get",
+                params, DBusCallFlags.NONE, G_MAXINT32, cancellable);
+    }
+
+    void setProperty(DBusPropertyOperations operation, Variant param, Cancellable cancellable)
+    {
+        auto params = new Variant([
+                new Variant(apkd_common.globals.dbusInterfaceName),
+                new Variant(operation.toString()), new Variant(param),
+                ]);
+        this.proxy.callSync("org.freedesktop.DBus.Properties.Set", params,
+                DBusCallFlags.NONE, G_MAXINT32, cancellable);
     }
 
 private:
