@@ -33,17 +33,19 @@ import gio.DBusNodeInfo;
 import gio.DBusMethodInvocation;
 import gio.c.types : BusNameOwnerFlags, BusType, GDBusInterfaceVTable,
     GDBusMethodInvocation, GVariant;
-import glib.c.functions : g_quark_from_static_string, g_variant_new;
+import glib.c.functions : g_quark_from_static_string, g_set_error,
+    g_variant_new, g_variant_builder_add;
 import glib.GException;
 import glib.Variant;
 import glib.VariantBuilder;
 import glib.VariantType;
+import std.ascii : toUpper;
 import std.conv : to, ConvException;
 import std.concurrency : receive;
 import std.exception;
 import std.experimental.logger;
 import std.format : format;
-import std.string : toStringz;
+import std.string : capitalize;
 
 enum ApkdDbusServerErrorQuarkEnum
 {
@@ -63,6 +65,53 @@ extern (C) GQuark ApkdDbusServerErrorQuark() nothrow
     return assumeWontThrow(g_quark_from_static_string("apkd-dbus-server-error-quark"));
 }
 
+struct ApkdDbusServerProperties
+{
+    enum Enum
+    {
+        allowUntrustedRepos,
+    }
+
+    this(Enum val)
+    {
+        this.m_val = val;
+    }
+
+    this(string name)
+    {
+        this.m_val = name.to!Enum;
+    }
+
+    string toString() const
+    {
+        return this.m_val.to!string;
+    }
+
+    string toPolkitAction() const
+    {
+        immutable auto prefix = "dev.Cogitri.apkPolkit.Helper";
+
+        string action;
+
+        final switch (this.m_val) with (Enum)
+        {
+        case allowUntrustedRepos:
+            action = "setAllowUntrustedRepos";
+            break;
+        }
+
+        return prefix ~ "." ~ action;
+    }
+
+    @property Enum val() const
+    {
+        return this.m_val;
+    }
+
+private:
+    Enum m_val;
+}
+
 /// The DBus interface this dbus application exposes as XML
 auto immutable dbusIntrospectionXML = import("dev.Cogitri.apkPolkit.interface");
 
@@ -77,8 +126,9 @@ class DBusServer
     {
         tracef("Trying to acquire DBus name %s", apkd_common.globals.dbusBusName);
         auto dbusFlags = BusNameOwnerFlags.NONE;
-        this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName,
-                dbusFlags, &onBusAcquired, &onNameAcquired, &onNameLost, null, null);
+        this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName, dbusFlags,
+                &onBusAcquired, &onNameAcquired, &onNameLost,
+                &this.allowUntrustedRepositories, null);
     }
 
     ~this()
@@ -91,21 +141,50 @@ class DBusServer
     * executed, authorize the user via polkit and send the return value back. We try very hard not to throw here and
     * instead send a dbus error mesage back and return early, since throwing here would mean crashing the entire server.
     */
-    extern (C) static void methodHandler(GDBusConnection* DBusConnection, const char* sender, const char*, const char*,
+    extern (C) static void methodHandler(GDBusConnection* dbusConnection,
+            const char* sender, const char* objectPath, const char* interfaceName,
             const char* methodName, GVariant* parameters,
-            GDBusMethodInvocation* invocation, void*)
+            GDBusMethodInvocation* invocation, void* allowUntrustedRepositoriesPtr)
     {
         tracef("Handling method %s from sender %s", methodName.to!string, sender.to!string);
         auto dbusInvocation = new DBusMethodInvocation(invocation);
+        auto variant = new Variant(parameters);
 
         ApkDataBaseOperations databaseOperations;
         try
         {
-            databaseOperations = ApkDataBaseOperations(methodName.to!string);
+            if (interfaceName.to!string == "org.freedesktop.DBus.Properties")
+            {
+                switch (methodName.to!string)
+                {
+                case "Get":
+                    ulong len;
+                    auto propertyName = variant.getChildValue(1).getString(len);
+                    databaseOperations = ApkDataBaseOperations(
+                            "get" ~ propertyName[0].toUpper ~ propertyName[1 .. $]);
+                    break;
+                case "Set":
+                    ulong len;
+                    auto propertyName = variant.getChildValue(1).getString(len);
+                    databaseOperations = ApkDataBaseOperations(
+                            "set" ~ propertyName[0].toUpper ~ propertyName[1 .. $]);
+                    break;
+                case "GetAll":
+                    databaseOperations = ApkDataBaseOperations(
+                            ApkDataBaseOperations.Enum.getAllProperties);
+                    break;
+                default:
+                    assert(0);
+                }
+            }
+            else
+            {
+                databaseOperations = ApkDataBaseOperations(methodName.to!string);
+            }
         }
         catch (ConvException e)
         {
-            errorf("Unkown method name %s!", methodName.to!string);
+            errorf("Unkown method name %s: %s!", methodName.to!string, e);
             return;
         }
 
@@ -118,6 +197,8 @@ class DBusServer
         }
         catch (GException e)
         {
+            errorf("Authorization for operation %s for has failed due to error '%s'!",
+                    databaseOperations, e);
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.AUTH_FAILED,
                     format("Authorization for operation %s for has failed due to error '%s'!",
                         databaseOperations, e));
@@ -131,9 +212,7 @@ class DBusServer
             final switch (databaseOperations.val) with (ApkDataBaseOperations.Enum)
             {
             case addPackage:
-                auto variant = new Variant(parameters);
-                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
-                auto pkgnames = variant.getChildValue(1).getStrv();
+                auto pkgnames = variant.getChildValue(0).getStrv();
                 try
                 {
                     ret ~= new Variant(ApkInterfacer.addPackage(pkgnames));
@@ -148,7 +227,6 @@ class DBusServer
                 }
                 break;
             case deletePackage:
-                auto variant = new Variant(parameters);
                 auto pkgnames = variant.getChildValue(0).getStrv();
                 try
                 {
@@ -163,9 +241,20 @@ class DBusServer
                     return;
                 }
                 break;
+            case getAllowUntrustedRepos:
+                auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
+                ret ~= new Variant(new Variant(*allowUntrustedRepositories));
+                break;
+            case getAllProperties:
+                auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
+                auto builder = new VariantBuilder(new VariantType("a{sv}"));
+                builder.open(new VariantType("{sv}"));
+                builder.addValue(new Variant("allowUntrustedRepos"));
+                builder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
+                builder.close();
+                ret ~= builder.end();
+                break;
             case listAvailablePackages:
-                auto variant = new Variant(parameters);
-                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
                 try
                 {
                     ret ~= apkPackageArrayToVariant(ApkInterfacer.getAvailablePackages());
@@ -192,8 +281,6 @@ class DBusServer
                 }
                 break;
             case listUpgradablePackages:
-                auto variant = new Variant(parameters);
-                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
                 try
                 {
                     ret ~= apkPackageArrayToVariant(ApkInterfacer.getUpgradablePackages());
@@ -207,9 +294,25 @@ class DBusServer
                     return;
                 }
                 break;
+            case setAllowUntrustedRepos:
+                auto connection = new DBusConnection(dbusConnection);
+                auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
+                *allowUntrustedRepositories = variant.getChildValue(2).getVariant().getBoolean();
+                auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
+                dictBuilder.open(new VariantType("{sv}"));
+                dictBuilder.addValue(new Variant("allowUntrustedRepos"));
+                dictBuilder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
+                dictBuilder.close();
+                auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
+                valBuilder.addValue(new Variant(interfaceName.to!string));
+                valBuilder.addValue(dictBuilder.end());
+                valBuilder.open(new VariantType("as"));
+                valBuilder.addValue(new Variant(""));
+                valBuilder.close();
+                connection.emitSignal(null, objectPath.to!string,
+                        "org.freedesktop.DBus.Properties", "PropertiesChanged", valBuilder.end());
+                break;
             case updateRepositories:
-                auto variant = new Variant(parameters);
-                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
                 try
                 {
                     ret ~= new Variant(ApkInterfacer.updateRepositories());
@@ -237,8 +340,6 @@ class DBusServer
                 }
                 break;
             case upgradePackage:
-                auto variant = new Variant(parameters);
-                const auto allowUntrustedRepos = variant.getChildValue(0).getBoolean();
                 auto pkgnames = variant.getChildValue(1).getStrv();
                 try
                 {
@@ -271,7 +372,8 @@ class DBusServer
     * Passed to GDBus to be executed once we've successfully established a connection to the
     * DBus bus. We register our methods here.
     */
-    extern (C) static void onBusAcquired(GDBusConnection* gdbusConnection, const char*, void*)
+    extern (C) static void onBusAcquired(GDBusConnection* gdbusConnection,
+            const char*, void* allowUntrustedRepositories)
     {
         trace("Acquired the DBus connection");
         auto interfaceVTable = GDBusInterfaceVTable(&methodHandler, null, null, null);
@@ -281,8 +383,8 @@ class DBusServer
         enforce(dbusIntrospectionData !is null);
 
         const auto regId = dbusConnection.registerObject(apkd_common.globals.dbusObjectPath,
-                dbusIntrospectionData.interfaces[0], &interfaceVTable, null, null);
-
+                dbusIntrospectionData.interfaces[0], &interfaceVTable,
+                allowUntrustedRepositories, null);
         enforce(regId > 0);
     }
 
@@ -334,6 +436,7 @@ private:
     }
 
     uint ownerId;
+    bool allowUntrustedRepositories;
 }
 
 /**

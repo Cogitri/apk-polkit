@@ -21,8 +21,8 @@ module apkd_common.ApkDatabaseOperations;
 
 import std.conv : to;
 
-// Helper struct that aids in translating from a db operation (function)
-// one wants to run to the dbus method or the polkit action.
+/// Helper struct that aids in translating from a db operation (function)
+/// one wants to run to the dbus method or the polkit action.
 struct ApkDataBaseOperations
 {
     enum Enum
@@ -35,6 +35,9 @@ struct ApkDataBaseOperations
         updateRepositories,
         upgradeAllPackages,
         upgradePackage,
+        setAllowUntrustedRepos,
+        getAllowUntrustedRepos,
+        getAllProperties,
     }
 
     this(Enum val) nothrow
@@ -81,6 +84,15 @@ struct ApkDataBaseOperations
         case upgradeAllPackages:
         case upgradePackage:
             action = "upgrade";
+            break;
+        case setAllowUntrustedRepos:
+            action = "setAllowUntrustedRepos";
+            break;
+        case getAllowUntrustedRepos:
+            action = "getAllowUntrustedRepos";
+            break;
+        case getAllProperties:
+            action = "getAllProperties";
             break;
         }
 

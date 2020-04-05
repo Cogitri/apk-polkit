@@ -24,32 +24,28 @@
 <node name="/" xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
     <interface name="dev.Cogitri.apkPolkit.Helper">
         <method name="updateRepositories">
-            <arg name="allowUntrustedRepos" type="b" direction="in"/>
         </method>
         <method name="upgradePackage">
-            <arg name="allowUntrustedRepos" type="b" direction="in"/>
             <arg name="packages" type="as" direction="in"/>
         </method>
         <method name="upgradeAllPackages">
-            <arg name="allowUntrustedRepos" type="b" direction="in"/>
         </method>
         <method name="deletePackage">
             <arg name="packages" type="as" direction="in"/>
         </method>
         <method name="addPackage">
-            <arg name="allowUntrustedRepos" type="b" direction="in"/>
             <arg name="packages" type="as" direction="in"/>
         </method>
         <method name="listAvailablePackages">
-            <arg name="allowUntrustedRepos" type="b" direction="in"/>
             <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
         </method>
         <method name="listInstalledPackages">
             <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
         </method>
         <method name="listUpgradablePackages">
-            <arg name="allowUntrustedRepos" type="b" direction="in"/>
             <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
         </method>
+
+        <property name="allowUntrustedRepos" type="b" access="readwrite"/>
     </interface>
 </node>

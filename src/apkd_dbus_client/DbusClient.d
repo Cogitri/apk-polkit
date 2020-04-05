@@ -63,22 +63,21 @@ class DBusClient
         return m_instance;
     }
 
-    void queryAsync(string[] packageNames, ApkDataBaseOperations dbOp, bool allowUntrustedRepos,
+    void queryAsync(string[] packageNames, ApkDataBaseOperations dbOp,
             Cancellable cancellable, GAsyncReadyCallback callback, void* userData)
     {
         this.queryAsyncTask = new Task(null, cancellable, callback, userData);
-        this.queryAsync(packageNames, dbOp, allowUntrustedRepos, cancellable);
+        this.queryAsync(packageNames, dbOp, cancellable);
     }
 
     void queryAsync(string[] packageNames, ApkDataBaseOperations dbOp,
-            bool allowUntrustedRepos, Cancellable cancellable, Task task)
+            Cancellable cancellable, Task task)
     {
         this.queryAsyncTask = task;
-        this.queryAsync(packageNames, dbOp, allowUntrustedRepos, cancellable);
+        this.queryAsync(packageNames, dbOp, cancellable);
     }
 
-    void queryAsync(string[] packageNames, ApkDataBaseOperations dbOp,
-            bool allowUntrustedRepos, Cancellable cancellable)
+    void queryAsync(string[] packageNames, ApkDataBaseOperations dbOp, Cancellable cancellable)
     {
         Variant params;
         final switch (dbOp.val) with (ApkDataBaseOperations.Enum)
@@ -87,25 +86,24 @@ class DBusClient
         case listUpgradablePackages:
         case upgradeAllPackages:
         case updateRepositories:
-            params = new Variant([new Variant(allowUntrustedRepos)]);
-            break;
         case listInstalledPackages:
             params = null;
             break;
         case addPackage:
         case upgradePackage:
-            params = new Variant([
-                    new Variant(allowUntrustedRepos), new Variant(packageNames)
-                    ]);
+            params = new Variant([new Variant(packageNames)]);
             break;
         case deletePackage:
             params = new Variant([new Variant(packageNames)]);
             break;
+        case getAllowUntrustedRepos:
+        case getAllProperties:
+        case setAllowUntrustedRepos:
+            assert(0);
         }
 
         this.proxy.call(dbOp.toString(), params, DBusCallFlags.NONE, G_MAXINT32,
                 cancellable, &queryAsyncDbusCallFinish, &this.queryAsyncTask);
-
     }
 
     static Variant* queryFinish(GAsyncResult* res)
@@ -123,8 +121,7 @@ class DBusClient
         return cast(Variant*) task.propagatePointer();
     }
 
-    Variant querySync(string[] packageNames, ApkDataBaseOperations dbOp,
-            bool allowUntrustedRepos, Cancellable cancellable)
+    Variant querySync(string[] packageNames, ApkDataBaseOperations dbOp, Cancellable cancellable)
     {
         Variant params;
         final switch (dbOp.val) with (ApkDataBaseOperations.Enum)
@@ -133,23 +130,43 @@ class DBusClient
         case listUpgradablePackages:
         case upgradeAllPackages:
         case updateRepositories:
-            params = new Variant([new Variant(allowUntrustedRepos)]);
-            break;
         case listInstalledPackages:
             params = null;
             break;
         case addPackage:
         case upgradePackage:
-            params = new Variant([
-                    new Variant(allowUntrustedRepos), new Variant(packageNames)
-                    ]);
+            params = new Variant([new Variant(packageNames)]);
             break;
         case deletePackage:
             params = new Variant([new Variant(packageNames)]);
             break;
+        case getAllowUntrustedRepos:
+        case getAllProperties:
+        case setAllowUntrustedRepos:
+            assert(0);
         }
         return this.proxy.callSync(dbOp.toString(), params, DBusCallFlags.NONE,
                 G_MAXINT32, cancellable);
+    }
+
+    Variant getProperty(ApkDataBaseOperations op, Cancellable cancellable)
+    {
+        auto params = new Variant([
+                new Variant(apkd_common.globals.dbusInterfaceName),
+                new Variant(op.toString()),
+                ]);
+        return this.proxy.callSync("org.freedesktop.DBus.Properties.Get",
+                params, DBusCallFlags.NONE, G_MAXINT32, cancellable);
+    }
+
+    void setProperty(Variant param, Cancellable cancellable)
+    {
+        auto params = new Variant([
+                new Variant(apkd_common.globals.dbusInterfaceName),
+                new Variant("allowUntrustedRepos"), new Variant(param),
+                ]);
+        this.proxy.callSync("org.freedesktop.DBus.Properties.Set", params,
+                DBusCallFlags.NONE, G_MAXINT32, cancellable);
     }
 
 private:

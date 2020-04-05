@@ -1,3 +1,22 @@
+/*
+    Copyright (c) 2020 Rasmus Thomsen <oss@cogitri.dev>
+
+    This file is part of apk-polkit (see https://github.com/Cogitri/apk-polkit).
+
+    apk-polkit is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    apk-polkit is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with apk-polkit.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 module apkd_dbus_client.DbusClientC;
 
 import core.runtime;
@@ -41,9 +60,8 @@ extern (C) bool apkd_deinit()
     return cast(bool) rt_term();
 }
 
-extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray,
-        uint len, ApkDataBaseOperations.Enum rawDbOp,
-        bool allowUntrustedRepos, GCancellable* cancellable,
+extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray, uint len,
+        ApkDataBaseOperations.Enum rawDbOp, GCancellable* cancellable,
         GAsyncReadyCallback callback, void* userData) nothrow
 {
     string[] pkgNames;
@@ -80,8 +98,7 @@ extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray,
 
     try
     {
-        dbusClient.queryAsync(pkgNames, dbOp, allowUntrustedRepos,
-                new Cancellable(cancellable), task);
+        dbusClient.queryAsync(pkgNames, dbOp, new Cancellable(cancellable), task);
     }
     catch (Exception e)
     {
@@ -119,8 +136,7 @@ do
 }
 
 extern (C) GVariant* apkd_dbus_client_query_sync(GPtrArray* rawPkgNamesPtrArray, uint len,
-        ApkDataBaseOperations.Enum rawDbOp, bool allowUntrustedRepos,
-        GCancellable* cancellable, GError** error) nothrow
+        ApkDataBaseOperations.Enum rawDbOp, GCancellable* cancellable, GError** error) nothrow
 in
 {
     assert(!(rawPkgNamesPtrArray is null && len != 0),
@@ -164,8 +180,7 @@ do
     Variant variant;
     try
     {
-        variant = dbusClient.querySync(pkgNames, dbOp, allowUntrustedRepos,
-                new Cancellable(cancellable));
+        variant = dbusClient.querySync(pkgNames, dbOp, new Cancellable(cancellable));
     }
     catch (Exception e)
     {
