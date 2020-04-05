@@ -96,10 +96,6 @@ class DBusClient
         case deletePackage:
             params = new Variant([new Variant(packageNames)]);
             break;
-        case getAllowUntrustedRepos:
-        case getAllProperties:
-        case setAllowUntrustedRepos:
-            assert(0);
         }
 
         this.proxy.call(dbOp.toString(), params, DBusCallFlags.NONE, G_MAXINT32,
@@ -140,33 +136,9 @@ class DBusClient
         case deletePackage:
             params = new Variant([new Variant(packageNames)]);
             break;
-        case getAllowUntrustedRepos:
-        case getAllProperties:
-        case setAllowUntrustedRepos:
-            assert(0);
         }
         return this.proxy.callSync(dbOp.toString(), params, DBusCallFlags.NONE,
                 G_MAXINT32, cancellable);
-    }
-
-    Variant getProperty(ApkDataBaseOperations op, Cancellable cancellable)
-    {
-        auto params = new Variant([
-                new Variant(apkd_common.globals.dbusInterfaceName),
-                new Variant(op.toString()),
-                ]);
-        return this.proxy.callSync("org.freedesktop.DBus.Properties.Get",
-                params, DBusCallFlags.NONE, G_MAXINT32, cancellable);
-    }
-
-    void setProperty(Variant param, Cancellable cancellable)
-    {
-        auto params = new Variant([
-                new Variant(apkd_common.globals.dbusInterfaceName),
-                new Variant("allowUntrustedRepos"), new Variant(param),
-                ]);
-        this.proxy.callSync("org.freedesktop.DBus.Properties.Set", params,
-                DBusCallFlags.NONE, G_MAXINT32, cancellable);
     }
 
 private:

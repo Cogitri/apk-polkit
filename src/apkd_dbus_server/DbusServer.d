@@ -22,7 +22,9 @@ module apkd_dbus_server.DBusServer;
 import apkd.ApkDataBase;
 import apkd.ApkPackage;
 import apkd.exceptions;
+import apkd_common.CommonOperations;
 import apkd_common.ApkDatabaseOperations;
+import apkd_common.DBusPropertyOperations;
 static import apkd_common.globals;
 import apkd_dbus_server.Polkit;
 import gio.Cancellable;
@@ -150,7 +152,7 @@ class DBusServer
         auto dbusInvocation = new DBusMethodInvocation(invocation);
         auto variant = new Variant(parameters);
 
-        ApkDataBaseOperations databaseOperations;
+        CommonOperations operation;
         try
         {
             if (interfaceName.to!string == "org.freedesktop.DBus.Properties")
@@ -160,18 +162,17 @@ class DBusServer
                 case "Get":
                     ulong len;
                     auto propertyName = variant.getChildValue(1).getString(len);
-                    databaseOperations = ApkDataBaseOperations(
+                    operation = new DBusPropertyOperations(
                             "get" ~ propertyName[0].toUpper ~ propertyName[1 .. $]);
                     break;
                 case "Set":
                     ulong len;
                     auto propertyName = variant.getChildValue(1).getString(len);
-                    databaseOperations = ApkDataBaseOperations(
+                    operation = new DBusPropertyOperations(
                             "set" ~ propertyName[0].toUpper ~ propertyName[1 .. $]);
                     break;
                 case "GetAll":
-                    databaseOperations = ApkDataBaseOperations(
-                            ApkDataBaseOperations.Enum.getAllProperties);
+                    operation = new DBusPropertyOperations(DBusPropertyOperations.Enum.getAll);
                     break;
                 default:
                     assert(0);
@@ -179,7 +180,7 @@ class DBusServer
             }
             else
             {
-                databaseOperations = ApkDataBaseOperations(methodName.to!string);
+                operation = new ApkDataBaseOperations(methodName.to!string);
             }
         }
         catch (ConvException e)
@@ -193,15 +194,14 @@ class DBusServer
         info("Tying to authorized user...");
         try
         {
-            authorized = queryPolkitAuth(databaseOperations.toPolkitAction(), sender.to!string);
+            authorized = queryPolkitAuth(operation.toPolkitAction(), sender.to!string);
         }
         catch (GException e)
         {
-            errorf("Authorization for operation %s for has failed due to error '%s'!",
-                    databaseOperations, e);
+            errorf("Authorization for operation %s for has failed due to error '%s'!", operation, e);
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.AUTH_FAILED,
                     format("Authorization for operation %s for has failed due to error '%s'!",
-                        databaseOperations, e));
+                        operation, e));
             return;
         }
 
@@ -209,151 +209,165 @@ class DBusServer
         {
             info("Authorization succeeded!");
             Variant[] ret;
-            final switch (databaseOperations.val) with (ApkDataBaseOperations.Enum)
+            auto databaseOperation = cast(ApkDataBaseOperations) operation;
+            if (databaseOperation)
             {
-            case addPackage:
-                auto pkgnames = variant.getChildValue(0).getStrv();
-                try
+                final switch (databaseOperation.val) with (ApkDataBaseOperations.Enum)
                 {
-                    ret ~= new Variant(ApkInterfacer.addPackage(pkgnames));
-                }
-                catch (Exception e)
-                {
-                    dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                            ApkdDbusServerErrorQuarkEnum.AddError,
-                            format("Couldn't add package%s %s due to error %s",
-                                pkgnames.length == 0 ? "" : "s", pkgnames, e));
-                    return;
-                }
-                break;
-            case deletePackage:
-                auto pkgnames = variant.getChildValue(0).getStrv();
-                try
-                {
-                    ret ~= new Variant(ApkInterfacer.deletePackage(pkgnames));
-                }
-                catch (Exception e)
-                {
-                    dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                            ApkdDbusServerErrorQuarkEnum.DeleteError,
-                            format("Couldn't delete package%s %s due to error %s",
-                                pkgnames.length == 0 ? "" : "s", pkgnames, e));
-                    return;
-                }
-                break;
-            case getAllowUntrustedRepos:
-                auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
-                ret ~= new Variant(new Variant(*allowUntrustedRepositories));
-                break;
-            case getAllProperties:
-                auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
-                auto builder = new VariantBuilder(new VariantType("a{sv}"));
-                builder.open(new VariantType("{sv}"));
-                builder.addValue(new Variant("allowUntrustedRepos"));
-                builder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
-                builder.close();
-                ret ~= builder.end();
-                break;
-            case listAvailablePackages:
-                try
-                {
-                    ret ~= apkPackageArrayToVariant(ApkInterfacer.getAvailablePackages());
-                }
-                catch (Exception e)
-                {
-                    dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                            ApkdDbusServerErrorQuarkEnum.ListAvailableError,
-                            format("Couldn't list available packages due to error %s", e));
-                    return;
-                }
-                break;
-            case listInstalledPackages:
-                try
-                {
-                    ret ~= apkPackageArrayToVariant(ApkInterfacer.getInstalledPackages());
-                }
-                catch (Exception e)
-                {
-                    dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                            ApkdDbusServerErrorQuarkEnum.ListInstalledError,
-                            format("Couldn't list installed packages due to error %s", e));
-                    return;
-                }
-                break;
-            case listUpgradablePackages:
-                try
-                {
-                    ret ~= apkPackageArrayToVariant(ApkInterfacer.getUpgradablePackages());
+                case addPackage:
+                    auto pkgnames = variant.getChildValue(0).getStrv();
+                    try
+                    {
+                        ret ~= new Variant(ApkInterfacer.addPackage(pkgnames));
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.AddError,
+                                format("Couldn't add package%s %s due to error %s",
+                                    pkgnames.length == 0 ? "" : "s", pkgnames, e));
+                        return;
+                    }
+                    break;
+                case deletePackage:
+                    auto pkgnames = variant.getChildValue(0).getStrv();
+                    try
+                    {
+                        ret ~= new Variant(ApkInterfacer.deletePackage(pkgnames));
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.DeleteError,
+                                format("Couldn't delete package%s %s due to error %s",
+                                    pkgnames.length == 0 ? "" : "s", pkgnames, e));
+                        return;
+                    }
+                    break;
+                case listAvailablePackages:
+                    try
+                    {
+                        ret ~= apkPackageArrayToVariant(ApkInterfacer.getAvailablePackages());
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.ListAvailableError,
+                                format("Couldn't list available packages due to error %s", e));
+                        return;
+                    }
+                    break;
+                case listInstalledPackages:
+                    try
+                    {
+                        ret ~= apkPackageArrayToVariant(ApkInterfacer.getInstalledPackages());
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.ListInstalledError,
+                                format("Couldn't list installed packages due to error %s", e));
+                        return;
+                    }
+                    break;
+                case listUpgradablePackages:
+                    try
+                    {
+                        ret ~= apkPackageArrayToVariant(ApkInterfacer.getUpgradablePackages());
 
-                }
-                catch (Exception e)
-                {
-                    dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                            ApkdDbusServerErrorQuarkEnum.ListUpgradableError,
-                            format("Couldn't list upgradable packages due to error %s", e));
-                    return;
-                }
-                break;
-            case setAllowUntrustedRepos:
-                auto connection = new DBusConnection(dbusConnection);
-                auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
-                *allowUntrustedRepositories = variant.getChildValue(2).getVariant().getBoolean();
-                auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
-                dictBuilder.open(new VariantType("{sv}"));
-                dictBuilder.addValue(new Variant("allowUntrustedRepos"));
-                dictBuilder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
-                dictBuilder.close();
-                auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
-                valBuilder.addValue(new Variant(interfaceName.to!string));
-                valBuilder.addValue(dictBuilder.end());
-                valBuilder.open(new VariantType("as"));
-                valBuilder.addValue(new Variant(""));
-                valBuilder.close();
-                connection.emitSignal(null, objectPath.to!string,
-                        "org.freedesktop.DBus.Properties", "PropertiesChanged", valBuilder.end());
-                break;
-            case updateRepositories:
-                try
-                {
-                    ret ~= new Variant(ApkInterfacer.updateRepositories());
-                }
-                catch (Exception e)
-                {
-                    dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                            ApkdDbusServerErrorQuarkEnum.UpdateRepositoriesError,
-                            format("Couldn't update repositories due to error %s", e));
-                    return;
-                }
-                break;
-            case upgradeAllPackages:
-                try
-                {
-                    ret ~= new Variant(ApkInterfacer.upgradeAllPackages());
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.ListUpgradableError,
+                                format("Couldn't list upgradable packages due to error %s", e));
+                        return;
+                    }
+                    break;
+                case updateRepositories:
+                    try
+                    {
+                        ret ~= new Variant(ApkInterfacer.updateRepositories());
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.UpdateRepositoriesError,
+                                format("Couldn't update repositories due to error %s", e));
+                        return;
+                    }
+                    break;
+                case upgradeAllPackages:
+                    try
+                    {
+                        ret ~= new Variant(ApkInterfacer.upgradeAllPackages());
 
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.UpgradeAllPackagesError,
+                                format("Couldn't upgrade all packages due to error %s", e));
+                        return;
+                    }
+                    break;
+                case upgradePackage:
+                    auto pkgnames = variant.getChildValue(1).getStrv();
+                    try
+                    {
+                        ret ~= new Variant(ApkInterfacer.upgradePackage(pkgnames));
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.DeleteError,
+                                format("Couldn't upgrade package%s %s due to error %s",
+                                    pkgnames.length == 0 ? "" : "s", pkgnames, e));
+                        return;
+                    }
+                    break;
                 }
-                catch (Exception e)
+            }
+            else
+            {
+                auto dbusOperation = cast(DBusPropertyOperations) operation;
+                final switch (dbusOperation.val) with (DBusPropertyOperations.Enum)
                 {
-                    dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                            ApkdDbusServerErrorQuarkEnum.UpgradeAllPackagesError,
-                            format("Couldn't upgrade all packages due to error %s", e));
-                    return;
+                case getAll:
+                    auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
+                    auto builder = new VariantBuilder(new VariantType("a{sv}"));
+                    builder.open(new VariantType("{sv}"));
+                    builder.addValue(new Variant("allowUntrustedRepos"));
+                    builder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
+                    builder.close();
+                    ret ~= builder.end();
+                    break;
+                case getAllowUntrustedRepos:
+                    auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
+                    ret ~= new Variant(new Variant(*allowUntrustedRepositories));
+                    break;
+                case setAllowUntrustedRepos:
+                    auto connection = new DBusConnection(dbusConnection);
+                    auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
+                    *allowUntrustedRepositories = variant.getChildValue(2)
+                        .getVariant().getBoolean();
+                    auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
+                    dictBuilder.open(new VariantType("{sv}"));
+                    dictBuilder.addValue(new Variant("allowUntrustedRepos"));
+                    dictBuilder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
+                    dictBuilder.close();
+                    auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
+                    valBuilder.addValue(new Variant(interfaceName.to!string));
+                    valBuilder.addValue(dictBuilder.end());
+                    valBuilder.open(new VariantType("as"));
+                    valBuilder.addValue(new Variant(""));
+                    valBuilder.close();
+                    connection.emitSignal(null, objectPath.to!string,
+                            "org.freedesktop.DBus.Properties",
+                            "PropertiesChanged", valBuilder.end());
+                    break;
                 }
-                break;
-            case upgradePackage:
-                auto pkgnames = variant.getChildValue(1).getStrv();
-                try
-                {
-                    ret ~= new Variant(ApkInterfacer.upgradePackage(pkgnames));
-                }
-                catch (Exception e)
-                {
-                    dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                            ApkdDbusServerErrorQuarkEnum.DeleteError,
-                            format("Couldn't upgrade package%s %s due to error %s",
-                                pkgnames.length == 0 ? "" : "s", pkgnames, e));
-                    return;
-                }
-                break;
+
             }
 
             auto retVariant = new Variant(ret);
@@ -363,8 +377,7 @@ class DBusServer
         {
             error("Autorization failed!");
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.ACCESS_DENIED,
-                    format("Authorization for operation %s for has failed for user!",
-                        databaseOperations));
+                    format("Authorization for operation %s for has failed for user!", operation));
         }
     }
 

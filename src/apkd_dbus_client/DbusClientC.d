@@ -94,7 +94,7 @@ extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray, uin
         return;
     }
 
-    auto dbOp = ApkDataBaseOperations(rawDbOp);
+    auto dbOp = new ApkDataBaseOperations(rawDbOp);
 
     try
     {
@@ -175,7 +175,7 @@ do
         return null;
     }
 
-    auto dbOp = ApkDataBaseOperations(rawDbOp);
+    auto dbOp = new ApkDataBaseOperations(rawDbOp);
 
     Variant variant;
     try

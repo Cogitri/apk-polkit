@@ -92,12 +92,11 @@ int main(string[] args)
         assert(0);
     }
 
-    auto dbOp = ApkDataBaseOperations(methodName);
+    auto dbOp = new ApkDataBaseOperations(methodName);
 
     auto mainContext = MainContext.default_();
     auto mainLoop = new MainLoop(mainContext, false);
     auto dbusClient = DBusClient.get();
-    dbusClient.setProperty(new Variant(true), null);
     dbusClient.queryAsync(options.packageNames, dbOp, null, &checkAuth, &dbOp);
     mainLoop.run();
     return 0;
