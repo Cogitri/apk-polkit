@@ -27,3 +27,4 @@ build-ldc-sanitizer:
   extends: .build
   variables:
      DFLAGS: "-fsanitize=address -g -disable-fp-elim"
+     ASAN_OPTIONS: "detect_leaks=0" # disable for now
