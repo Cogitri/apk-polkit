@@ -145,7 +145,7 @@ in
 }
 out (result)
 {
-    assert((result is null) ^ (*error is null),
+    assert((!(result is null && *error is null) || (result && *error)),
             "If result is null error musn't be null (and the other way around)!");
 }
 do
