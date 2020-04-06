@@ -217,7 +217,7 @@ class DBusServer
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ret ~= new Variant(ApkInterfacer.addPackage(pkgnames));
+                        ApkInterfacer.addPackage(pkgnames);
                     }
                     catch (Exception e)
                     {
@@ -232,7 +232,7 @@ class DBusServer
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ret ~= new Variant(ApkInterfacer.deletePackage(pkgnames));
+                        ApkInterfacer.deletePackage(pkgnames);
                     }
                     catch (Exception e)
                     {
@@ -286,7 +286,7 @@ class DBusServer
                 case updateRepositories:
                     try
                     {
-                        ret ~= new Variant(ApkInterfacer.updateRepositories());
+                        ApkInterfacer.updateRepositories();
                     }
                     catch (Exception e)
                     {
@@ -299,7 +299,7 @@ class DBusServer
                 case upgradeAllPackages:
                     try
                     {
-                        ret ~= new Variant(ApkInterfacer.upgradeAllPackages());
+                        ApkInterfacer.upgradeAllPackages();
 
                     }
                     catch (Exception e)
@@ -311,10 +311,10 @@ class DBusServer
                     }
                     break;
                 case upgradePackage:
-                    auto pkgnames = variant.getChildValue(1).getStrv();
+                    auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ret ~= new Variant(ApkInterfacer.upgradePackage(pkgnames));
+                        ApkInterfacer.upgradePackage(pkgnames);
                     }
                     catch (Exception e)
                     {
