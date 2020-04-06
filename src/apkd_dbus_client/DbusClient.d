@@ -17,7 +17,7 @@
     along with apk-polkit.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-module libapkd_dbus_client.DbusClient;
+module apkd_dbus_client.DbusClient;
 
 import apkd_common.ApkDatabaseOperations;
 import apkd_common.DBusPropertyOperations;
