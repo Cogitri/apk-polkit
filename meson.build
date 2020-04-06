@@ -2,7 +2,7 @@ project(
     'apk-polkit',
     ['c', 'd'],
     license: 'GPL-3.0-or-later',
-    meson_version: '>=0.50',
+    meson_version: '>=0.51',
     version: '0.0.1',
 )
 

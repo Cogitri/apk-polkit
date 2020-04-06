@@ -6,6 +6,8 @@ test_src_files = [
 ]
 
 test_runner = find_program('test-runner.sh')
+find_program('dbus-launch')
+import('python').find_installation('python3', modules : ['dbusmock'])
 
 foreach src: test_src_files
     test_name = src.underscorify()
