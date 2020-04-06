@@ -32,7 +32,8 @@ apkd_dbus_client_lib_dep = declare_dependency(
     link_with: apkd_dbus_client_lib,
     include_directories: src_inc,
     link_args: link_runtime_shared_arg,
-    dependencies: [apkd_dbus_client_deps, apkd_dep]
+    dependencies: [apkd_dbus_client_deps, apkd_dep],
+    compile_args: '-J' + join_paths(meson.source_root(), 'data'),
 )
 
 pkgc.generate(
@@ -55,7 +56,6 @@ executable(
     d_module_versions: d_mod_version,
     include_directories: src_inc,
     dependencies: [apkd_dbus_client_lib_dep],
-    d_args: '-J' + join_paths(meson.current_source_dir(), '..', '..', 'data'),
 )
 
 apkd_test = executable(
@@ -65,7 +65,6 @@ apkd_test = executable(
     include_directories: src_inc,
     dependencies: [apkd_dbus_client_lib_dep],
     d_unittest: true,
-    d_args: '-J' + join_paths(meson.current_source_dir(), '..', '..', 'data'),
 )
 
 test('Test apkd_dbus_client', apkd_test)
