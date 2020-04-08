@@ -1,4 +1,4 @@
-test_preparer = find_program('prepare.sh')
+test_preparer = find_program('../apkd_test_common/prepare.sh')
 
 test_src_files = [
     'install.d',
@@ -11,9 +11,9 @@ test_src_files = [
 foreach src: test_src_files
     test_name = src.underscorify()
     apkd_test_exe = executable(
-        'test_apkd_' + test_name + '_exe',
-        ['testlib.d', src],
-        dependencies: [apkd_dep, apk_toolsd_dep],
+        'test_apkd_dbus_server_' + test_name + '_exe',
+        src,
+        dependencies: [apkd_dep, libapkd_test_common_dep],
         d_unittest: true,
         include_directories: include_directories('../../')
     )

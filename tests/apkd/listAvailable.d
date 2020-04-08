@@ -22,7 +22,7 @@ module tests.apkd.listAvailable;
 import apkd.ApkDataBase;
 import std.exception;
 import std.format;
-import tests.apkd.testlib;
+import tests.apkd_test_common.testlib;
 
 int main(string[] args)
 {

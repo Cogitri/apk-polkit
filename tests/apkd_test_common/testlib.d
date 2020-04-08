@@ -17,7 +17,7 @@
     along with apk-polkit.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-module tests.apkd.testlib;
+module tests.testlib;
 
 import deimos.apk_toolsd.apk_defines;
 import std.exception;

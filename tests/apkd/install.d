@@ -27,7 +27,7 @@ import std.path;
 import std.process;
 import std.stdio;
 import std.string;
-import tests.apkd.testlib;
+import tests.apkd_test_common.testlib;
 
 int main(string[] args)
 {
