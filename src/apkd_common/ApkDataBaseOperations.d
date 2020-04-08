@@ -17,7 +17,7 @@
     along with apk-polkit.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-module apkd_common.ApkDatabaseOperations;
+module apkd_common.ApkDataBaseOperations;
 
 import apkd_common.CommonOperations;
 import std.conv : to;

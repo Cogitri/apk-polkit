@@ -20,7 +20,7 @@
 module apkd_dbus_client.DbusClientC;
 
 import core.runtime;
-import apkd_common.ApkDatabaseOperations;
+import apkd_common.ApkDataBaseOperations;
 import apkd_dbus_client.DbusClient;
 import gio.c.types : GAsyncReadyCallback, GAsyncResult, GCancellable, GError;
 import gio.Cancellable;

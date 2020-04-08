@@ -20,7 +20,7 @@
 module tests.apkd_dbus_client.queryAsync;
 
 import apkd.ApkPackage;
-import apkd_common.ApkDatabaseOperations;
+import apkd_common.ApkDataBaseOperations;
 import apkd_dbus_client.DbusClient;
 import core.stdc.stdlib : exit;
 import gio.c.types : GAsyncResult;

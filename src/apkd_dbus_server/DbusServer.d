@@ -23,7 +23,7 @@ import apkd.ApkDataBase;
 import apkd.ApkPackage;
 import apkd.exceptions;
 import apkd_common.CommonOperations;
-import apkd_common.ApkDatabaseOperations;
+import apkd_common.ApkDataBaseOperations;
 import apkd_common.DBusPropertyOperations;
 static import apkd_common.globals;
 import apkd_dbus_server.Polkit;

@@ -20,7 +20,7 @@
 module apkd_dbus_client.main;
 
 import apkd.ApkPackage;
-import apkd_common.ApkDatabaseOperations;
+import apkd_common.ApkDataBaseOperations;
 static import apkd_common.globals;
 import apkd_dbus_client.DbusClient;
 import apkd_dbus_client.Options;

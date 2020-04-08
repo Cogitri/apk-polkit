@@ -19,7 +19,7 @@
 
 module apkd_dbus_client.DbusClient;
 
-import apkd_common.ApkDatabaseOperations;
+import apkd_common.ApkDataBaseOperations;
 import apkd_common.DBusPropertyOperations;
 static import apkd_common.globals;
 import gio.AsyncResultIF;
