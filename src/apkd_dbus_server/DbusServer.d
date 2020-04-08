@@ -116,20 +116,28 @@ private:
 /// The DBus interface this dbus application exposes as XML
 auto immutable dbusIntrospectionXML = import("dev.Cogitri.apkPolkit.interface");
 
+struct UserData
+{
+    bool allowUntrustedRepositories;
+    string root;
+}
+
 /// DBusServer class, that is used to setup the dbus connection and handle method calls
 class DBusServer
 {
     /**
     * While construction apkd-dbus-server's DBus name is acquired and handler methods are set,
     * which are invoked by GDBus upon receiving a method call/losing the name etc.
+    * Parameters:
+    *   root    = The root of the database. Useful to install to places other than /
     */
-    this()
+    this(in string root = null)
     {
         tracef("Trying to acquire DBus name %s", apkd_common.globals.dbusBusName);
+        this.userData = UserData(false, null);
         auto dbusFlags = BusNameOwnerFlags.NONE;
-        this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName, dbusFlags,
-                &onBusAcquired, &onNameAcquired, &onNameLost,
-                &this.allowUntrustedRepositories, null);
+        this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName,
+                dbusFlags, &onBusAcquired, &onNameAcquired, &onNameLost, &this.userData, null);
     }
 
     ~this()
@@ -145,11 +153,12 @@ class DBusServer
     extern (C) static void methodHandler(GDBusConnection* dbusConnection,
             const char* sender, const char* objectPath, const char* interfaceName,
             const char* methodName, GVariant* parameters,
-            GDBusMethodInvocation* invocation, void* allowUntrustedRepositoriesPtr)
+            GDBusMethodInvocation* invocation, void* userDataPtr)
     {
         tracef("Handling method %s from sender %s", methodName.to!string, sender.to!string);
         auto dbusInvocation = new DBusMethodInvocation(invocation);
         auto variant = new Variant(parameters);
+        auto userData = cast(UserData*) userDataPtr;
 
         CommonOperations operation;
         try
@@ -217,7 +226,7 @@ class DBusServer
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ApkInterfacer.addPackage(pkgnames);
+                        ApkInterfacer.addPackage(pkgnames, userData.root);
                     }
                     catch (Exception e)
                     {
@@ -232,7 +241,7 @@ class DBusServer
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ApkInterfacer.deletePackage(pkgnames);
+                        ApkInterfacer.deletePackage(pkgnames, userData.root);
                     }
                     catch (Exception e)
                     {
@@ -246,7 +255,8 @@ class DBusServer
                 case listAvailablePackages:
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(ApkInterfacer.getAvailablePackages());
+                        ret ~= apkPackageArrayToVariant(
+                                ApkInterfacer.getAvailablePackages(userData.root));
                     }
                     catch (Exception e)
                     {
@@ -259,7 +269,8 @@ class DBusServer
                 case listInstalledPackages:
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(ApkInterfacer.getInstalledPackages());
+                        ret ~= apkPackageArrayToVariant(
+                                ApkInterfacer.getInstalledPackages(userData.root));
                     }
                     catch (Exception e)
                     {
@@ -272,7 +283,8 @@ class DBusServer
                 case listUpgradablePackages:
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(ApkInterfacer.getUpgradablePackages());
+                        ret ~= apkPackageArrayToVariant(
+                                ApkInterfacer.getUpgradablePackages(userData.root));
 
                     }
                     catch (Exception e)
@@ -286,7 +298,7 @@ class DBusServer
                 case updateRepositories:
                     try
                     {
-                        ApkInterfacer.updateRepositories();
+                        ApkInterfacer.updateRepositories(userData.root);
                     }
                     catch (Exception e)
                     {
@@ -299,7 +311,7 @@ class DBusServer
                 case upgradeAllPackages:
                     try
                     {
-                        ApkInterfacer.upgradeAllPackages();
+                        ApkInterfacer.upgradeAllPackages(userData.root);
 
                     }
                     catch (Exception e)
@@ -314,7 +326,7 @@ class DBusServer
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ApkInterfacer.upgradePackage(pkgnames);
+                        ApkInterfacer.upgradePackage(pkgnames, userData.root);
                     }
                     catch (Exception e)
                     {
@@ -333,30 +345,28 @@ class DBusServer
                 final switch (dbusOperation.val) with (DBusPropertyOperations.Enum)
                 {
                 case getAll:
-                    auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
                     auto builder = new VariantBuilder(new VariantType("a{sv}"));
                     builder.open(new VariantType("{sv}"));
                     builder.addValue(new Variant("allowUntrustedRepos"));
-                    builder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
+                    builder.addValue(new Variant(new Variant(userData.allowUntrustedRepositories)));
                     builder.close();
                     ret ~= builder.end();
                     break;
                 case allowUntrustedRepos:
                     if (dbusOperation.direction == DBusPropertyOperations.DirectionEnum.get)
                     {
-                        auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
-                        ret ~= new Variant(new Variant(*allowUntrustedRepositories));
+                        ret ~= new Variant(new Variant(userData.allowUntrustedRepositories));
                     }
                     else
                     {
                         auto connection = new DBusConnection(dbusConnection);
-                        auto allowUntrustedRepositories = cast(bool*) allowUntrustedRepositoriesPtr;
-                        *allowUntrustedRepositories = variant.getChildValue(2)
+                        userData.allowUntrustedRepositories = variant.getChildValue(2)
                             .getVariant().getBoolean();
                         auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
                         dictBuilder.open(new VariantType("{sv}"));
                         dictBuilder.addValue(new Variant("allowUntrustedRepos"));
-                        dictBuilder.addValue(new Variant(new Variant(*allowUntrustedRepositories)));
+                        dictBuilder.addValue(new Variant(
+                                new Variant(userData.allowUntrustedRepositories)));
                         dictBuilder.close();
                         auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
                         valBuilder.addValue(new Variant(interfaceName.to!string));
@@ -389,7 +399,7 @@ class DBusServer
     * DBus bus. We register our methods here.
     */
     extern (C) static void onBusAcquired(GDBusConnection* gdbusConnection,
-            const char*, void* allowUntrustedRepositories)
+            const char*, void* userData)
     {
         trace("Acquired the DBus connection");
         auto interfaceVTable = GDBusInterfaceVTable(&methodHandler, null, null, null);
@@ -399,8 +409,7 @@ class DBusServer
         enforce(dbusIntrospectionData !is null);
 
         const auto regId = dbusConnection.registerObject(apkd_common.globals.dbusObjectPath,
-                dbusIntrospectionData.interfaces[0], &interfaceVTable,
-                allowUntrustedRepositories, null);
+                dbusIntrospectionData.interfaces[0], &interfaceVTable, userData, null);
         enforce(regId > 0);
     }
 
@@ -452,7 +461,7 @@ private:
     }
 
     uint ownerId;
-    bool allowUntrustedRepositories;
+    UserData userData;
 }
 
 /**
@@ -461,17 +470,17 @@ private:
 */
 class ApkInterfacer
 {
-    static bool updateRepositories()
+    static bool updateRepositories(in string root = null)
     {
         trace("Trying to update repositories");
-        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
         return dbGuard.db.updateRepositories(false);
     }
 
-    static bool upgradePackage(string[] pkgname)
+    static bool upgradePackage(string[] pkgname, in string root = null)
     {
         tracef("Trying to upgrade package '%s'", pkgname);
-        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
         try
         {
             dbGuard.db.upgradePackage(pkgname);
@@ -489,10 +498,10 @@ class ApkInterfacer
         }
     }
 
-    static bool upgradeAllPackages()
+    static bool upgradeAllPackages(in string root = null)
     {
         trace("Trying upgrade all packages");
-        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
         try
         {
             dbGuard.db.upgradeAllPackages();
@@ -510,10 +519,10 @@ class ApkInterfacer
         }
     }
 
-    static bool deletePackage(string[] pkgname)
+    static bool deletePackage(string[] pkgname, in string root = null)
     {
         tracef("Trying to delete package %s", pkgname);
-        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
         try
         {
             dbGuard.db.deletePackage(pkgname);
@@ -532,10 +541,10 @@ class ApkInterfacer
         }
     }
 
-    static bool addPackage(string[] pkgname)
+    static bool addPackage(string[] pkgname, in string root = null)
     {
         tracef("Trying to add package: %s", pkgname);
-        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
         try
         {
             dbGuard.db.addPackage(pkgname);
@@ -553,10 +562,10 @@ class ApkInterfacer
         }
     }
 
-    static ApkPackage[] getAvailablePackages()
+    static ApkPackage[] getAvailablePackages(in string root = null)
     {
         trace("Trying to list all available packages");
-        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
         try
         {
             return dbGuard.db.getAvailablePackages();
@@ -568,10 +577,10 @@ class ApkInterfacer
         }
     }
 
-    static ApkPackage[] getInstalledPackages()
+    static ApkPackage[] getInstalledPackages(in string root = null)
     {
         trace("Trying to list all installed packages");
-        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
         try
         {
             return dbGuard.db.getInstalledPackages();
@@ -583,10 +592,10 @@ class ApkInterfacer
         }
     }
 
-    static ApkPackage[] getUpgradablePackages()
+    static ApkPackage[] getUpgradablePackages(in string root = null)
     {
         trace("Trying to list upgradable packages");
-        auto dbGuard = DatabaseGuard(new ApkDataBase());
+        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
         try
         {
             return dbGuard.db.getUpgradablePackages();

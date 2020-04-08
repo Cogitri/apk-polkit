@@ -67,6 +67,24 @@ class ApkDataBase
     *
     * Params:
     *   dbRoot      = The root of the database, by default "/"
+    *   readOnly    =  Whether to open the database in readonly mode, e.g. to list
+    *                  available packages
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    */
+    this(in string dbRoot, in bool readOnly = false)
+    {
+        this.dbOptions.root = dbRoot.toUTFz!(char*);
+        this(readOnly);
+    }
+
+    /**
+    * Open the apk database. Be mindful that the lock is held for as long as the
+    * object exists, so make sure to destory this as soon as possible.
+    *
+    * Params:
+    *   dbRoot      = The root of the database, by default "/"
     *   repoUrl     = The URL to an additional repo to consider (e.g. for tests/local repos)
     *   readOnly    =  Whether to open the database in readonly mode, e.g. to list
     *                  available packages
