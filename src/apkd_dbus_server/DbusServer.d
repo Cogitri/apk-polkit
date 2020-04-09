@@ -133,7 +133,7 @@ class DBusServer
     */
     this(in string root = null)
     {
-        tracef("Trying to acquire DBus name %s", apkd_common.globals.dbusBusName);
+        tracef("Trying to acquire DBus name %s.", apkd_common.globals.dbusBusName);
         this.userData = UserData(false, null);
         auto dbusFlags = BusNameOwnerFlags.NONE;
         this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName,
@@ -495,141 +495,71 @@ private:
 */
 class ApkInterfacer
 {
-    static bool updateRepositories(in string root = null)
+    static void updateRepositories(in string root = null)
     {
-        trace("Trying to update repositories");
+        trace("Trying to update repositories.");
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
-        return dbGuard.db.updateRepositories(false);
+        dbGuard.db.updateRepositories(false);
+        trace("Successfully updated repositories.");
     }
 
-    static bool upgradePackage(string[] pkgname, in string root = null)
+    static void upgradePackage(string[] pkgname, in string root = null)
     {
-        tracef("Trying to upgrade package '%s'", pkgname);
+        tracef("Trying to upgrade package '%s'.", pkgname);
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
-        try
-        {
-            dbGuard.db.upgradePackage(pkgname);
-            return true;
-        }
-        catch (ApkException e)
-        {
-            criticalf("Failed to upgrade package '%s' due to APK error '%s'", pkgname, e);
-            return false;
-        }
-        catch (UserErrorException e)
-        {
-            criticalf("Failed to upgrade package '%s' due to error '%s'", pkgname, e);
-            return false;
-        }
+        dbGuard.db.upgradePackage(pkgname);
+        tracef("Successfully upgraded package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
     }
 
-    static bool upgradeAllPackages(in string root = null)
+    static void upgradeAllPackages(in string root = null)
     {
-        trace("Trying upgrade all packages");
+        trace("Trying upgrade all packages.");
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
-        try
-        {
-            dbGuard.db.upgradeAllPackages();
-            return true;
-        }
-        catch (ApkException e)
-        {
-            criticalf("Failed to upgrade all packages due to APK error '%s'", e);
-            return false;
-        }
-        catch (UserErrorException e)
-        {
-            criticalf("Failed to upgrade all packages due to error '%s'", e);
-            return false;
-        }
+        dbGuard.db.upgradeAllPackages();
+        trace("Succesfully upgraded all packages.");
     }
 
-    static bool deletePackage(string[] pkgname, in string root = null)
+    static void deletePackage(string[] pkgname, in string root = null)
     {
-        tracef("Trying to delete package %s", pkgname);
+        tracef("Trying to delete package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
-        try
-        {
-            dbGuard.db.deletePackage(pkgname);
-            infof("Successfully deleted pakage '%s'", pkgname);
-            return true;
-        }
-        catch (ApkException e)
-        {
-            criticalf("Failed to delete package '%s' due to APK error '%s'", pkgname, e);
-            return false;
-        }
-        catch (UserErrorException e)
-        {
-            criticalf("Failed to delete package '%s' due to error '%s'", pkgname, e);
-            return false;
-        }
+        dbGuard.db.deletePackage(pkgname);
+        tracef("Successfully deleted package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
     }
 
-    static bool addPackage(string[] pkgname, in string root = null)
+    static void addPackage(string[] pkgname, in string root = null)
     {
-        tracef("Trying to add package: %s", pkgname);
+        tracef("Trying to add package%s: %s", pkgname.length > 1 ? "s" : "", pkgname);
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
-        try
-        {
-            dbGuard.db.addPackage(pkgname);
-            return true;
-        }
-        catch (ApkException e)
-        {
-            criticalf("Failed to add package '%s' due to APK error '%s'", pkgname, e);
-            return false;
-        }
-        catch (UserErrorException e)
-        {
-            criticalf("Failed to add package '%s' due to error '%s'", pkgname, e);
-            return false;
-        }
+        dbGuard.db.addPackage(pkgname);
+        tracef("Successfully added package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
     }
 
     static ApkPackage[] getAvailablePackages(in string root = null)
     {
         trace("Trying to list all available packages");
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
-        try
-        {
-            return dbGuard.db.getAvailablePackages();
-        }
-        catch (ApkException e)
-        {
-            criticalf("Failed to list all available packages due to APK error '%s'", e);
-            return [];
-        }
+        auto packages = dbGuard.db.getAvailablePackages();
+        trace("Successfully listed all available packages");
+        return packages;
     }
 
     static ApkPackage[] getInstalledPackages(in string root = null)
     {
         trace("Trying to list all installed packages");
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
-        try
-        {
-            return dbGuard.db.getInstalledPackages();
-        }
-        catch (ApkException e)
-        {
-            criticalf("Failed to list all installed packages due to APK error '%s'", e);
-            return [];
-        }
+        auto packages = dbGuard.db.getInstalledPackages();
+        trace("Successfully listed all installed packages");
+        return packages;
     }
 
     static ApkPackage[] getUpgradablePackages(in string root = null)
     {
         trace("Trying to list upgradable packages");
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
-        try
-        {
-            return dbGuard.db.getUpgradablePackages();
-        }
-        catch (ApkException e)
-        {
-            criticalf("Failed to list upgradable packages due to APK error '%s'", e);
-            return [];
-        }
+        auto packages = dbGuard.db.getUpgradablePackages();
+        trace("Successfully listed all upgradable packages");
+        return packages;
     }
 }
 
