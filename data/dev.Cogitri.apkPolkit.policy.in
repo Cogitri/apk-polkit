@@ -37,8 +37,8 @@
           - Normal users need admin authentication to install packages
           - Users in the "wheel" group can install packages without authentication
      -->
-    <description>Install package</description>
-    <message>Authentication is required to install package</message>
+    <description>Install new package(s)</description>
+    <message>Authentication is required to install new package(s)</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>auth_admin</allow_any>
@@ -68,8 +68,8 @@
           - Normal users need admin authentication to upgrade packages
           - Users in the "wheel" group can upgrade packages without authentication
      -->
-    <description>Upgrade package</description>
-    <message>Authentication is required to upgrade package</message>
+    <description>Upgrade package(s)</description>
+    <message>Authentication is required to upgrade package(s)</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>auth_admin</allow_any>
@@ -84,8 +84,8 @@
           - Normal users need admin authentication to delete packages
           - Users in the "wheel" group can delete packages without authentication
      -->
-    <description>Delete package</description>
-    <message>Authentication is required to delete package</message>
+    <description>Delete package(s)</description>
+    <message>Authentication is required to delete package(s)</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>auth_admin</allow_any>
@@ -160,8 +160,8 @@
           - Everyone is allowed to get the property "allowUntrustedRepos". This
             rule is only here so you can restrict this if you so desire.
      -->
-    <description>Get value of property "allowUntrustedRepos"</description>
-    <message>Authentication is required to get the value of the property "allowUntrustedRepos"</message>
+    <description>Query if untrusted repositories are allowed</description>
+    <message>Authentication is required to query whether or not untrusted repositories are allowed</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>yes</allow_any>
@@ -174,8 +174,8 @@
     <!-- SECURITY:
           - Only admins WITH AUTH are allowed to enable untrusted repositories (e.g. for local installs)
     -->
-    <description>Allow untrusted repositories</description>
-    <message>Authentication is required to allow usage of untrusted repositories</message>
+    <description>Set if untrusted repositories are allowed</description>
+    <message>Authentication is required set whether or not untrusted repositories are allowed</message>
     <defaults>
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
@@ -189,8 +189,8 @@
           - Everyone is allowed to get the property "root". This
             rule is only here so you can restrict this if you so desire.
      -->
-    <description>Get value of property "root"</description>
-    <message>Authentication is required to get the value of the property "root"</message>
+    <description>Query the location of the package database root</description>
+    <message>Authentication is required to query the package database root</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>yes</allow_any>
@@ -203,8 +203,8 @@
     <!-- SECURITY:
           - Only admins WITH AUTH are allowed to install to a different root (since this could hold back security updates on /)
     -->
-    <description>Install to a different root</description>
-    <message>Authentication is required to install to a different root</message>
+    <description>Set the location of the package database root</description>
+    <message>Authentication is required set the package database root</message>
     <defaults>
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
