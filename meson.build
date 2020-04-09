@@ -61,6 +61,7 @@ conf.set('LIBEXEC_DIR', libexec_dir)
 conf.set('PRIVILEGED_GROUP', get_option('privileged-group'))
 conf.set('APKD_VERSION', apkd_version)
 
+subdir('po')
 subdir('src')
 subdir('data')
 subdir('tests')
