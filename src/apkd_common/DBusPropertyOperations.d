@@ -9,6 +9,7 @@ class DBusPropertyOperations : CommonOperations
     {
         getAll,
         allowUntrustedRepos,
+        root,
     }
 
     enum DirectionEnum
@@ -45,15 +46,10 @@ class DBusPropertyOperations : CommonOperations
             action = "getAllProperties";
             break;
         case allowUntrustedRepos:
-            if (this.m_direction == DirectionEnum.get)
-            {
-                action = "getAllowUntrustedRepos";
-            }
-            else
-            {
-                action = "setAllowUntrustedRepos";
-            }
-
+            action = this.direction.to!string ~ "AllowUntrustedRepos";
+            break;
+        case root:
+            action = this.direction.to!string ~ "Root";
             break;
         }
 

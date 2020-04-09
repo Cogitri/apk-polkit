@@ -379,8 +379,33 @@ class DBusServer
                                 "PropertiesChanged", valBuilder.end());
                     }
                     break;
+                case root:
+                    if (dbusOperation.direction == DBusPropertyOperations.DirectionEnum.get)
+                    {
+                        ret ~= new Variant(new Variant(userData.root));
+                    }
+                    else
+                    {
+                        auto connection = new DBusConnection(dbusConnection);
+                        ulong len;
+                        userData.root = variant.getChildValue(2).getVariant().getString(len);
+                        auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
+                        dictBuilder.open(new VariantType("{sv}"));
+                        dictBuilder.addValue(new Variant("root"));
+                        dictBuilder.addValue(new Variant(new Variant(userData.root)));
+                        dictBuilder.close();
+                        auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
+                        valBuilder.addValue(new Variant(interfaceName.to!string));
+                        valBuilder.addValue(dictBuilder.end());
+                        valBuilder.open(new VariantType("as"));
+                        valBuilder.addValue(new Variant(""));
+                        valBuilder.close();
+                        connection.emitSignal(null, objectPath.to!string,
+                                "org.freedesktop.DBus.Properties",
+                                "PropertiesChanged", valBuilder.end());
+                    }
+                    break;
                 }
-
             }
 
             auto retVariant = new Variant(ret);

@@ -47,5 +47,6 @@
         </method>
 
         <property name="allowUntrustedRepos" type="b" access="readwrite"/>
+        <property name="root" type="s" access="readwrite"/>
     </interface>
 </node>
