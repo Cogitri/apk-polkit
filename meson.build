@@ -21,6 +21,8 @@ polkit_gobjectd_dep = dependency('polkit-gobjectd-1')
 apk_toolsd_dep = dependency('apk-toolsd')
 apk_dep = dependency('apk')
 dbus_dep = dependency('dbus-1')
+# Required to translate (and install!) polkit policy
+find_program('xgettext')
 
 dbus_service_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir')
 dbus_config_dir = join_paths(data_dir, 'dbus-1', 'system.d')
