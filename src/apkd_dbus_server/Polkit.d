@@ -44,7 +44,7 @@ bool queryPolkitAuth(string action, string sender)
     auto subject = systemBusName.getProcessSync(null);
     //auto callbackData = PolkitCallbackData(operation, origThreadId);
     auto details = new Details();
-    details.insert("polkit.gettext_domain", "apkd");
+    details.insert("polkit.gettext_domain", "apk-polkit");
 
     auto polkitResult = authority.checkAuthorizationSync(subject, action,
             details, CheckAuthorizationFlags.ALLOW_USER_INTERACTION, null);
