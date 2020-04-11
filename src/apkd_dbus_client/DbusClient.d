@@ -122,6 +122,11 @@ class DBusClient
     }
 
     Variant querySync(string[] packageNames, ApkDataBaseOperations dbOp, Cancellable cancellable)
+    out (result)
+    {
+        assert(result);
+    }
+    do
     {
         Variant params;
         final switch (dbOp.val) with (ApkDataBaseOperations.Enum)
@@ -144,6 +149,7 @@ class DBusClient
             params = new Variant([new Variant(packageNames)]);
             break;
         }
+
         return this.proxy.callSync(dbOp.toString(), params, DBusCallFlags.NONE,
                 G_MAXINT32, cancellable);
     }
@@ -152,6 +158,10 @@ class DBusClient
     in
     {
         assert(operation.direction == DBusPropertyOperations.DirectionEnum.get);
+    }
+    out (result)
+    {
+        assert(result);
     }
     do
     {
