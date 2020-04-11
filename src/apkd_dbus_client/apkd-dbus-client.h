@@ -28,6 +28,7 @@ typedef enum
     listInstalledPackages,
     listAvailablePackages,
     listUpgradablePackages,
+    searchForPackages,
     updateRepositories,
     upgradeAllPackages,
     upgradePackage,

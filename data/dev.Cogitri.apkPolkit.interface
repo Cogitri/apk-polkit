@@ -45,6 +45,10 @@
         <method name="listUpgradablePackages">
             <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
         </method>
+        <method name="searchForPackages">
+            <arg name="packages" type="as" direction="in"/>
+            <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
+        </method>
 
         <property name="allowUntrustedRepos" type="b" access="readwrite"/>
         <property name="root" type="s" access="readwrite"/>

@@ -59,6 +59,7 @@ enum ApkdDbusServerErrorQuarkEnum
     UpdateRepositoriesError,
     UpgradePackageError,
     UpgradeAllPackagesError,
+    SearchForPackagesError,
 }
 
 extern (C) GQuark ApkdDbusServerErrorQuark() nothrow
@@ -292,6 +293,21 @@ class DBusServer
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.ListUpgradableError,
                                 format("Couldn't list upgradable packages due to error %s", e));
+                        return;
+                    }
+                    break;
+                case searchForPackages:
+                    auto pkgnames = variant.getChildValue(0).getStrv();
+                    try
+                    {
+                        ret ~= apkPackageArrayToVariant(ApkInterfacer.searchForPackage(pkgnames,
+                                userData.root));
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.SearchForPackagesError,
+                                format("Couldn't search for packages due to error %s", e));
                         return;
                     }
                     break;
@@ -559,6 +575,15 @@ class ApkInterfacer
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
         auto packages = dbGuard.db.getUpgradablePackages();
         trace("Successfully listed all upgradable packages");
+        return packages;
+    }
+
+    static ApkPackage[] searchForPackage(string[] pkgname, in string root = null)
+    {
+        tracef("Trying to search for packages %s", pkgname);
+        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto packages = dbGuard.db.searchPackages(pkgname);
+        tracef("Successfully searched for packages. %s hits.", packages.length);
         return packages;
     }
 }

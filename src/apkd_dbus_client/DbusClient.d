@@ -97,6 +97,9 @@ class DBusClient
         case deletePackage:
             params = new Variant([new Variant(packageNames)]);
             break;
+        case searchForPackages:
+            params = new Variant([new Variant(packageNames)]);
+            break;
         }
 
         this.proxy.call(dbOp.toString(), params, DBusCallFlags.NONE, G_MAXINT32,
@@ -135,6 +138,9 @@ class DBusClient
             params = new Variant([new Variant(packageNames)]);
             break;
         case deletePackage:
+            params = new Variant([new Variant(packageNames)]);
+            break;
+        case searchForPackages:
             params = new Variant([new Variant(packageNames)]);
             break;
         }
