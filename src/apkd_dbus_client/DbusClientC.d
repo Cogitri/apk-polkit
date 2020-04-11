@@ -145,8 +145,8 @@ in
 }
 out (result)
 {
-    assert((!(result is null && *error is null) || (result && *error)),
-            "If result is null error musn't be null (and the other way around)!");
+    assert(!((result is null && *error is null) || (result && *error)),
+            "result and error can't both be null or set at the same time!");
 }
 do
 {
@@ -187,6 +187,7 @@ do
         assumeWontThrow(g_set_error(error, apkd_dbus_client_error_quark(), ApkDbusClientErrorEnum.APK_OP_FAILED,
                 assumeWontThrow(format("Executing the transaction %s failed due to error %s",
                 dbOp, e)).toStringz()));
+        return null;
     }
     return assumeWontThrow(variant.getVariantStruct());
 }
