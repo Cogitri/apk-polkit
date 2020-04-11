@@ -1,0 +1,149 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the apk-polkit package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: apk-polkit\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-04-11 08:08+0200\n"
+"PO-Revision-Date: 2020-04-11 03:22-0300\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.3\n"
+"Last-Translator: Leo <thinkabit.ukim@gmail.com>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Language: pt_BR\n"
+
+#. SECURITY:
+#. - Normal users need admin authentication to install packages
+#. - Users in the "wheel" group can install packages without authentication
+#: data/dev.Cogitri.apkPolkit.policy.in:40
+msgid "Install new package(s)"
+msgstr "Instalar novo(s) pacote(s)"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:41
+msgid "Authentication is required to install new package(s)"
+msgstr "Autenticação é necessária para instalar novo(s) pacote(s)"
+
+#. SECURITY:
+#. - Normal users need admin authentication to update the package database
+#. - Users in the "wheel" group can update the package database without authentication
+#: data/dev.Cogitri.apkPolkit.policy.in:56
+msgid "Update the package database"
+msgstr "Atualizar o banco de dados de pacotes"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:57
+msgid "Authentication is required to update the package database"
+msgstr "Autenticação é necessária para atualizar o banco de dados de pacotes"
+
+#. SECURITY:
+#. - Normal users need admin authentication to upgrade packages
+#. - Users in the "wheel" group can upgrade packages without authentication
+#: data/dev.Cogitri.apkPolkit.policy.in:71
+msgid "Upgrade package(s)"
+msgstr "Atualizar pacote(s)"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:72
+msgid "Authentication is required to upgrade package(s)"
+msgstr "Autenticação é necessária para atualizar pacote(s)"
+
+#. SECURITY:
+#. - Normal users need admin authentication to delete packages
+#. - Users in the "wheel" group can delete packages without authentication
+#: data/dev.Cogitri.apkPolkit.policy.in:87
+msgid "Delete package(s)"
+msgstr "Remover pacote(s)"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:88
+msgid "Authentication is required to delete package(s)"
+msgstr "Autenticação é necessária para remover pacote(s)"
+
+#. SECURITY:
+#. - Everyone is allowed to list available packages in the database by default. This
+#. rule is only here so you can restrict this if you so desire.
+#: data/dev.Cogitri.apkPolkit.policy.in:103
+msgid "List all available packages"
+msgstr "Listar todos os pacotes disponíveis"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:104
+msgid "Authentication is required to list all available packages"
+msgstr "Autenticação é necessária para listar todos os pacotes disponíveis"
+
+#. SECURITY:
+#. - Everyone is allowed to list installed packages in the database by default. This
+#. rule is only here so you can restrict this if you so desire.
+#: data/dev.Cogitri.apkPolkit.policy.in:118
+msgid "List all installed packages"
+msgstr "Listar todos os pacotes instalados"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:119
+msgid "Authentication is required to list all installed packages"
+msgstr "Autenticação é necessária para listar todos os pacotes instalados"
+
+#. SECURITY:
+#. - Everyone is allowed to list upgradable packages in the database by default. This
+#. rule is only here so you can restrict this if you so desire.
+#: data/dev.Cogitri.apkPolkit.policy.in:133
+msgid "List upgradable packages"
+msgstr "Listar pacotes que podem ser atualizados"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:134
+msgid "Authentication is required to list all upgradable packages"
+msgstr "Autenticação é necessária para listar pacotes que podem ser atualizados"
+
+#. SECURITY:
+#. - Everyone is allowed to get all properties. This
+#. rule is only here so you can restrict this if you so desire.
+#: data/dev.Cogitri.apkPolkit.policy.in:148
+msgid "Get all DBus properties"
+msgstr "Inquirir todas as propriedades do barramento"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:149
+msgid "Authentication is required to get all DBus properties"
+msgstr "Autenticação é necessária para inquirir todas as propriedades do barramento"
+
+#. SECURITY:
+#. - Everyone is allowed to get the property "allowUntrustedRepos". This
+#. rule is only here so you can restrict this if you so desire.
+#: data/dev.Cogitri.apkPolkit.policy.in:163
+msgid "Query if untrusted repositories are allowed"
+msgstr "Inquirir se repositórios não verificados são permitidos"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:164
+msgid "Authentication is required to query if untrusted repositories are allowed"
+msgstr "Autenticação é necessária para inquirir se repositórios não verificados são permitidos"
+
+#. SECURITY:
+#. - Only admins WITH AUTH are allowed to enable untrusted repositories (e.g. for local installs)
+#: data/dev.Cogitri.apkPolkit.policy.in:177
+msgid "Allow or disallow untrusted repositories"
+msgstr "Permitir ou bloquear repositórios não verificados"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:178
+msgid "Authentication is required to allow or disallow untrusted repositories"
+msgstr "Autenticação é necessária para permitir ou bloquear repositórios não verificados"
+
+#. SECURITY:
+#. - Everyone is allowed to get the property "root". This
+#. rule is only here so you can restrict this if you so desire.
+#: data/dev.Cogitri.apkPolkit.policy.in:192
+msgid "Query the location of the installation root"
+msgstr "Inquirir caminho da raiz de instalação"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:193
+msgid "Authentication is required to query the location of the installation root"
+msgstr "Autenticação é necessária para inquirir caminho da raiz de instalação"
+
+#. SECURITY:
+#. - Only admins WITH AUTH are allowed to install to a different root (since this could hold back security updates on /)
+#: data/dev.Cogitri.apkPolkit.policy.in:206
+msgid "Set the location of the installation root"
+msgstr "Mudar caminho da raiz de instalação"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:207
+msgid "Authentication is required to set a different installation root"
+msgstr "Autenticação é necessária para mudar caminho da raiz de instalação"
