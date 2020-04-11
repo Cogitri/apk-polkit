@@ -71,7 +71,7 @@ extern (C) void nameVanishedCallback(GDBusConnection*, const(char)* name, void*)
     exit(1);
 }
 
-void setupDbusServer(string dbusServerPath, string polkitAction, GBusNameAppearedCallback nameAppearedCallback,
+void setupDbusServer(string dbusServerPath, string[] polkitActions, GBusNameAppearedCallback nameAppearedCallback,
         GBusNameVanishedCallback nameVanishedCallback = &nameVanishedCallback, void* userData = null)
 {
     auto tester = new TestDBus(GTestDBusFlags.NONE);
@@ -97,12 +97,17 @@ void setupDbusServer(string dbusServerPath, string polkitAction, GBusNameAppeare
 
     auto proxy = new DBusProxy(BusType.SYSTEM, DBusProxyFlags.DO_NOT_AUTO_START, null, "org.freedesktop.PolicyKit1",
             "/org/freedesktop/PolicyKit1/Authority", "org.freedesktop.PolicyKit1.Authority", null);
+    Variant[] permittedActions;
+    foreach (action; polkitActions)
+    {
+        permittedActions ~= new Variant(action);
+    }
     proxy.callSync("org.freedesktop.DBus.Mock.SetAllowed",
             new Variant([
                     new Variant([
                         new Variant("dev.Cogitri.apkPolkit.Helper.setRoot"),
-                        new Variant(polkitAction)
-                    ])
+                        new Variant("dev.Cogitri.apkPolkit.Helper.setAllowUntrustedRepos"),
+                    ] ~ permittedActions)
                 ]), GDBusCallFlags.NO_AUTO_START, 1000, null);
 
     DBusNames.watchName(GBusType.SYSTEM, "dev.Cogitri.apkPolkit.Helper",
