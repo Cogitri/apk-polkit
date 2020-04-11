@@ -22,6 +22,7 @@ module apkd_dbus_server.DBusServer;
 import apkd.ApkDataBase;
 import apkd.ApkPackage;
 import apkd.exceptions;
+static import apkd.functions;
 import apkd_common.CommonOperations;
 import apkd_common.ApkDataBaseOperations;
 import apkd_common.DBusPropertyOperations;
@@ -379,6 +380,14 @@ class DBusServer
                         auto connection = new DBusConnection(dbusConnection);
                         userData.allowUntrustedRepositories = variant.getChildValue(2)
                             .getVariant().getBoolean();
+                        if (userData.allowUntrustedRepositories)
+                        {
+                            apkd.functions.allowUntrusted();
+                        }
+                        else
+                        {
+                            apkd.functions.disallowUntrusted();
+                        }
                         auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
                         dictBuilder.open(new VariantType("{sv}"));
                         dictBuilder.addValue(new Variant("allowUntrustedRepos"));
