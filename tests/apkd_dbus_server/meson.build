@@ -3,6 +3,7 @@ test_preparer = find_program('../apkd_test_common/prepare.sh')
 test_src_files = [
     'installFail.d',
     'update.d',
+    'search.d',
 ]
 
 foreach src: test_src_files
