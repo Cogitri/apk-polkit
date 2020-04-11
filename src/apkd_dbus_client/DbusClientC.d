@@ -43,6 +43,7 @@ enum ApkDbusClientErrorEnum
     APK_OP_FAILED,
     APK_QUERY_ASYNC_FAILED,
     APK_QUERY_ASYNC_FINISH_FAILED,
+    DBUS_SIGNAL_CONNECT_FAILED,
 }
 
 extern (C) GQuark apkd_dbus_client_error_quark() nothrow
@@ -190,4 +191,36 @@ do
         return null;
     }
     return assumeWontThrow(variant.getVariantStruct());
+}
+
+extern (C) ulong apkd_dbus_client_connect_signals(GCallback cb, void* userData, GError** error)
+in
+{
+    assert(error is null || *error is null, "Musn't reuse an error!");
+}
+do
+{
+    DBusClient dbusClient;
+    try
+    {
+        dbusClient = DBusClient.get();
+    }
+    catch (Exception e)
+    {
+        assumeWontThrow(g_set_error(error, apkd_dbus_client_error_quark(), ApkDbusClientErrorEnum.DBUS_SPAWN_FAILED,
+                assumeWontThrow(format("Spawning the DBusClient failed due to error %s!", e)).toStringz()));
+        return 0;
+    }
+
+    try
+    {
+        return dbusClient.connectSignals(cb, userData);
+    }
+    catch (Exception e)
+    {
+        assumeWontThrow(g_set_error(error, apkd_dbus_client_error_quark(),
+                ApkDbusClientErrorEnum.DBUS_SIGNAL_CONNECT_FAILED,
+                assumeWontThrow(format("Connecting the signals failed due to error %s!", e)).toStringz()));
+        return 0;
+    }
 }

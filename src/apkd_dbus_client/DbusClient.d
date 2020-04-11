@@ -33,6 +33,7 @@ import gio.Task;
 import glib.Variant;
 import glib.VariantType;
 import gobject.ObjectG;
+import gobject.Signals;
 import std.conv;
 import std.datetime : SysTime;
 import std.exception;
@@ -186,6 +187,11 @@ class DBusClient
                 ]);
         this.proxy.callSync("org.freedesktop.DBus.Properties.Set", params,
                 DBusCallFlags.NONE, G_MAXINT32, cancellable);
+    }
+
+    ulong connectSignals(GCallback cb, void* userData)
+    {
+        return Signals.connect(this.proxy, "g-signal", cb, userData);
     }
 
 private:

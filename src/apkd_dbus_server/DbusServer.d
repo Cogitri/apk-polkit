@@ -39,15 +39,22 @@ import gio.c.types : BusNameOwnerFlags, BusType, GDBusInterfaceVTable,
 import glib.c.functions : g_quark_from_static_string, g_set_error,
     g_variant_new, g_variant_builder_add;
 import glib.GException;
+import glib.MainContext;
+import glib.MainLoop;
+import glib.Source;
+import glib.Thread;
+import glib.Timeout;
 import glib.Variant;
 import glib.VariantBuilder;
 import glib.VariantType;
+import std.array : split;
 import std.conv : to, ConvException;
 import std.concurrency : receive;
 import std.exception;
 import std.experimental.logger;
 import std.format : format;
-import std.string : capitalize;
+import std.stdio : readln;
+import std.string : chomp;
 
 enum ApkdDbusServerErrorQuarkEnum
 {
@@ -219,6 +226,7 @@ class DBusServer
         {
             info("Authorization succeeded!");
             Variant[] ret;
+            auto interfacer = ApkInterfacer(new DBusConnection(dbusConnection), userData.root);
             auto databaseOperation = cast(ApkDataBaseOperations) operation;
             if (databaseOperation)
             {
@@ -228,7 +236,7 @@ class DBusServer
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ApkInterfacer.addPackage(pkgnames, userData.root);
+                        interfacer.addPackage(pkgnames);
                     }
                     catch (Exception e)
                     {
@@ -243,7 +251,7 @@ class DBusServer
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ApkInterfacer.deletePackage(pkgnames, userData.root);
+                        interfacer.deletePackage(pkgnames);
                     }
                     catch (Exception e)
                     {
@@ -257,8 +265,7 @@ class DBusServer
                 case listAvailablePackages:
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(
-                                ApkInterfacer.getAvailablePackages(userData.root));
+                        ret ~= apkPackageArrayToVariant(interfacer.getAvailablePackages());
                     }
                     catch (Exception e)
                     {
@@ -271,8 +278,7 @@ class DBusServer
                 case listInstalledPackages:
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(
-                                ApkInterfacer.getInstalledPackages(userData.root));
+                        ret ~= apkPackageArrayToVariant(interfacer.getInstalledPackages());
                     }
                     catch (Exception e)
                     {
@@ -285,8 +291,7 @@ class DBusServer
                 case listUpgradablePackages:
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(
-                                ApkInterfacer.getUpgradablePackages(userData.root));
+                        ret ~= apkPackageArrayToVariant(interfacer.getUpgradablePackages());
 
                     }
                     catch (Exception e)
@@ -301,8 +306,7 @@ class DBusServer
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(ApkInterfacer.searchForPackage(pkgnames,
-                                userData.root));
+                        ret ~= apkPackageArrayToVariant(interfacer.searchForPackage(pkgnames));
                     }
                     catch (Exception e)
                     {
@@ -315,8 +319,7 @@ class DBusServer
                 case updateRepositories:
                     try
                     {
-                        ApkInterfacer.updateRepositories(userData.allowUntrustedRepositories,
-                                userData.root);
+                        interfacer.updateRepositories(userData.allowUntrustedRepositories);
                     }
                     catch (Exception e)
                     {
@@ -329,7 +332,7 @@ class DBusServer
                 case upgradeAllPackages:
                     try
                     {
-                        ApkInterfacer.upgradeAllPackages(userData.root);
+                        interfacer.upgradeAllPackages();
 
                     }
                     catch (Exception e)
@@ -344,7 +347,7 @@ class DBusServer
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ApkInterfacer.upgradePackage(pkgnames, userData.root);
+                        interfacer.upgradePackage(pkgnames);
                     }
                     catch (Exception e)
                     {
@@ -519,83 +522,177 @@ private:
 * Helper class that is used in DBusServer.handleMethod to call the right functions on
 * apkd.ApkDatabase, handle logging etc.
 */
-class ApkInterfacer
+struct ApkInterfacer
 {
-    static void updateRepositories(in bool allowUntrustedRepositories, in string root = null)
+    this(DBusConnection connection, string root = null)
+    {
+        this.userData = InterfacerUserData(null, connection);
+        this.root = root;
+    }
+
+    void updateRepositories(in bool allowUntrustedRepositories)
     {
         trace("Trying to update repositories.");
-        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
+        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        scope (exit)
+        {
+            timeoutSource.destroy();
+        }
         dbGuard.db.updateRepositories(allowUntrustedRepositories);
         trace("Successfully updated repositories.");
     }
 
-    static void upgradePackage(string[] pkgname, in string root = null)
+    void upgradePackage(string[] pkgname)
     {
         tracef("Trying to upgrade package '%s'.", pkgname);
-        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
+        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        scope (exit)
+        {
+            timeoutSource.destroy();
+        }
         dbGuard.db.upgradePackage(pkgname);
         tracef("Successfully upgraded package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
     }
 
-    static void upgradeAllPackages(in string root = null)
+    void upgradeAllPackages()
     {
         trace("Trying upgrade all packages.");
-        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
+        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        scope (exit)
+        {
+            timeoutSource.destroy();
+        }
         dbGuard.db.upgradeAllPackages();
         trace("Succesfully upgraded all packages.");
     }
 
-    static void deletePackage(string[] pkgname, in string root = null)
+    void deletePackage(string[] pkgname)
     {
         tracef("Trying to delete package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
-        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
+        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        scope (exit)
+        {
+            timeoutSource.destroy();
+        }
         dbGuard.db.deletePackage(pkgname);
         tracef("Successfully deleted package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
     }
 
-    static void addPackage(string[] pkgname, in string root = null)
+    void addPackage(string[] pkgname)
     {
         tracef("Trying to add package%s: %s", pkgname.length > 1 ? "s" : "", pkgname);
-        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
+        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        scope (exit)
+        {
+            timeoutSource.destroy();
+        }
         dbGuard.db.addPackage(pkgname);
         tracef("Successfully added package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
     }
 
-    static ApkPackage[] getAvailablePackages(in string root = null)
+    ApkPackage[] getAvailablePackages()
     {
         trace("Trying to list all available packages");
-        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
         auto packages = dbGuard.db.getAvailablePackages();
         trace("Successfully listed all available packages");
         return packages;
     }
 
-    static ApkPackage[] getInstalledPackages(in string root = null)
+    ApkPackage[] getInstalledPackages()
     {
         trace("Trying to list all installed packages");
-        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
         auto packages = dbGuard.db.getInstalledPackages();
         trace("Successfully listed all installed packages");
         return packages;
     }
 
-    static ApkPackage[] getUpgradablePackages(in string root = null)
+    ApkPackage[] getUpgradablePackages()
     {
         trace("Trying to list upgradable packages");
-        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
         auto packages = dbGuard.db.getUpgradablePackages();
         trace("Successfully listed all upgradable packages");
         return packages;
     }
 
-    static ApkPackage[] searchForPackage(string[] pkgname, in string root = null)
+    ApkPackage[] searchForPackage(string[] pkgname)
     {
         tracef("Trying to search for packages %s", pkgname);
-        auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
+        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
         auto packages = dbGuard.db.searchPackages(pkgname);
         tracef("Successfully searched for packages. %s hits.", packages.length);
         return packages;
     }
+
+private:
+    struct InterfacerUserData
+    {
+        DatabaseGuard* dbGuard;
+        DBusConnection connection;
+    }
+
+    extern (C) static void* startProgressWorkerThread(void* contextPtr)
+    {
+        auto context = new MainContext(cast(GMainContext*) contextPtr);
+        context.pushThreadDefault();
+        auto mainLoop = new MainLoop(context, false);
+        mainLoop.run();
+        context.popThreadDefault();
+        context.unref();
+        return null;
+    }
+
+    extern (C) static int progressSenderFn(void* userData)
+    {
+        auto interfacerUserData = cast(InterfacerUserData*) userData;
+        const auto progress = interfacerUserData.dbGuard.db.progressFd.readln().chomp().split('/');
+        float percentage;
+        if (progress.length == 0)
+        {
+            percentage = 100.0;
+        }
+        else
+        {
+            auto done = progress[0].to!uint;
+            auto total = progress[1].to!uint;
+            if (total == 0)
+            {
+                percentage = 0;
+            }
+            else
+            {
+                percentage = (done.to!float / total.to!float) * 100;
+            }
+        }
+        interfacerUserData.connection.emitSignal(null, apkd_common.globals.dbusObjectPath,
+                apkd_common.globals.dbusInterfaceName, "progress",
+                new Variant([new Variant(percentage.to!uint)]));
+        return G_SOURCE_CONTINUE;
+    }
+
+    Source connectProgressSignal(DatabaseGuard* dbGuard)
+    {
+        this.userData.dbGuard = dbGuard;
+        auto mainContext = new MainContext();
+        auto progressWorkerThread = new Thread("progressWorker",
+                &startProgressWorkerThread, mainContext.getMainContextStruct());
+
+        auto timeoutSource = Timeout.sourceNew(1);
+        timeoutSource.setCallback(&progressSenderFn, &this.userData, null);
+        timeoutSource.setPriority(G_PRIORITY_HIGH);
+        timeoutSource.attach(mainContext);
+        return timeoutSource;
+    }
+
+    string root;
+    InterfacerUserData userData;
 }
 
 /**

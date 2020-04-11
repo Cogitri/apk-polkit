@@ -44,6 +44,13 @@ pkgc.generate(
     requires: apkd_dbus_client_deps,
 )
 
+pkgc.generate(
+    apkd_dbus_client_lib,
+    name: 'apkd-dbus-client-c-0',
+    subdirs: 'apk-polkit',
+    version: meson.project_version(),
+)
+
 apkd_dbus_client_exe_src = [
     'main.d',
     'Options.d',

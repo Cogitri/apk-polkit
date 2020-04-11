@@ -36,6 +36,8 @@ import std.conv : to;
 import std.exception : enforce;
 import std.experimental.logger;
 import std.format : format;
+import std.process : pipe, Pipe;
+import std.stdio : File, write;
 import std.string : toStringz;
 import std.utf : toUTFz;
 
@@ -55,10 +57,11 @@ class ApkDataBase
     */
     this(in bool readOnly = false)
     {
-
         this.dbOptions.lock_wait = TRUE;
         apkd.functions.list_init(&this.dbOptions.repository_list);
+        this.m_progressFd = pipe();
         this.openDatabase(readOnly);
+        apk_progress_fd = this.m_progressFd.writeEnd.fileno();
     }
 
     /**
@@ -100,7 +103,9 @@ class ApkDataBase
         apkd.functions.list_init(&this.additionalRepo.list);
         apkd.functions.list_init(&this.dbOptions.repository_list);
         apkd.functions.apk_list_add(&this.additionalRepo.list, &this.dbOptions.repository_list);
+        this.m_progressFd = pipe();
         this.openDatabase(readOnly);
+        apk_progress_fd = this.m_progressFd.writeEnd.fileno();
     }
 
     /// Destroy the object and close the database
@@ -135,6 +140,8 @@ class ApkDataBase
                 continue;
             }
 
+            this.m_progressFd.writeEnd().write(format("%d/%d\n", i, this.db.num_repos));
+            this.m_progressFd.writeEnd().flush();
             auto repo = &this.db.repos[i];
 
             try
@@ -373,6 +380,11 @@ class ApkDataBase
         return apkPackages;
     }
 
+    @property File progressFd()
+    {
+        return this.m_progressFd.readEnd();
+    }
+
 private:
     /**
     * Update a certain repository.
@@ -586,4 +598,5 @@ private:
     apk_database db;
     apk_db_options dbOptions;
     apk_repository_list* additionalRepo;
+    Pipe m_progressFd;
 }
