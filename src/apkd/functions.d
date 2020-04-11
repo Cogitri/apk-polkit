@@ -29,7 +29,10 @@ import deimos.apk_toolsd.apk_io;
 import deimos.apk_toolsd.apk_package;
 import deimos.apk_toolsd.apk_provider_data;
 import deimos.apk_toolsd.apk_solver;
+import std.algorithm : canFind;
+import std.exception : assumeWontThrow;
 import std.experimental.logger;
+import std.conv : to;
 
 /// Taken from apk_defines.h. It's only declared&defined in the
 /// header, so it doesn't end up in libapk...
@@ -156,24 +159,7 @@ body
 {
     auto apkPackages = cast(ApkPackage[]*) ctx;
     auto newPackage = cast(apk_package*) item;
-    try
-    {
-        *apkPackages ~= ApkPackage(*newPackage);
-    }
-    catch (Exception e)
-    {
-        try
-        {
-            error("Appending a new apkPackage to the array failed!");
-        }
-        catch (Exception e)
-        {
-        }
-        auto retCode = 1;
-        // Don't do assert(0) here - that'd end up in release builds!
-        assert(retCode == 0);
-        return retCode;
-    }
+    assumeWontThrow(*apkPackages ~= ApkPackage(*newPackage));
     return 0;
 }
 
@@ -183,6 +169,33 @@ StructType* container_of(StructType, string member)(typeof(__traits(getMember,
 {
     enum offset = __traits(getMember, StructType, member).offsetof;
     return cast(StructType*)(cast(void*) pointer - offset);
+}
+
+struct SearchContext
+{
+    string[] specs;
+    ApkPackage[]* packages;
+}
+
+extern (C) int appendMatchingApkPackageArray(apk_hash_item item, void* ctx) nothrow
+in
+{
+    assert(cast(SearchContext*) ctx);
+    assert(cast(apk_package*) item);
+}
+do
+{
+    auto searchContext = cast(SearchContext*) ctx;
+    auto apkPackage = cast(apk_package*) item;
+
+    foreach (spec; searchContext.specs)
+    {
+        if (apkPackage.name.name.to!string.canFind(spec))
+        {
+            assumeWontThrow(*searchContext.packages ~= ApkPackage(*apkPackage));
+        }
+    }
+    return 0;
 }
 
 /**
@@ -203,3 +216,4 @@ void apk_list_add(list_head* new_, list_head* head)
 /// From our C Helper lib
 alias getterCb = extern (C) void function(apk_package* oldPkg, apk_package* newPkg, void* ctx);
 extern (C) int getUpgradablePackages(apk_database* db, getterCb cb, void* ctx);
+extern (C) apk_string_array* stringToApkAString(char* string_);

@@ -5,6 +5,7 @@ test_src_files = [
     'listAvailable.d',
     'listInstalled.d',
     'listUpgradable.d',
+    'search.d',
     'update.d',
 ]
 

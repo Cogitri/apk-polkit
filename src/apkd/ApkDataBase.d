@@ -318,7 +318,6 @@ class ApkDataBase
     * Get a list of all packages that are installed.
     *
     * Returns: An array of all installed packages.
-    * Throws: An ApkListException if no packages could be found.
     */
     ApkPackage[] getInstalledPackages()
     {
@@ -327,6 +326,7 @@ class ApkDataBase
         apk_installed_package* installedPackage = null;
         ApkPackage[] ret;
 
+        // dfmt off
         for(
             installedPackage = (&this.db.installed.packages).next.container_of!(apk_installed_package, "installed_pkgs_list");
             &installedPackage.installed_pkgs_list != &this.db.installed.packages;
@@ -334,6 +334,7 @@ class ApkDataBase
         {
             ret ~= ApkPackage(*installedPackage.pkg);
         }
+        // dfmt on
 
         return ret;
     }
@@ -342,13 +343,32 @@ class ApkDataBase
     * Get a list of all packages that are installed.
     *
     * Returns: An array of all installed packages.
-    * Throws: An ApkListException if no packages could be found.
+    * Throws: An ApkListException if something went wrong in iterating over packages
     */
     ApkPackage[] getAvailablePackages()
     {
         ApkPackage[] apkPackages;
         auto apkHashRes = apk_hash_foreach(&this.db.available.packages,
-                &apkd.functions.appendApkPackageToArray, cast(void*)&apkPackages);
+                &apkd.functions.appendApkPackageToArray, &apkPackages);
+        enforce!ApkListException(apkHashRes == 0, "Failed to enumerate available packages!");
+        return apkPackages;
+    }
+
+    /**
+    * Get a list of all packages whose name matches one of the names in specs
+    *
+    * Params:
+    *   specs    = An array of package names to search for.
+    *
+    * Returns: An array of all matching packages.
+    * Throws: An ApkListException if something went wrong in iterating over packages
+    */
+    ApkPackage[] searchPackages(string[] specs)
+    {
+        ApkPackage[] apkPackages;
+        auto context = apkd.functions.SearchContext(specs, &apkPackages);
+        auto apkHashRes = apk_hash_foreach(&this.db.available.packages,
+                &apkd.functions.appendMatchingApkPackageArray, &context);
         enforce!ApkListException(apkHashRes == 0, "Failed to enumerate available packages!");
         return apkPackages;
     }
