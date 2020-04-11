@@ -314,7 +314,8 @@ class DBusServer
                 case updateRepositories:
                     try
                     {
-                        ApkInterfacer.updateRepositories(userData.root);
+                        ApkInterfacer.updateRepositories(userData.allowUntrustedRepositories,
+                                userData.root);
                     }
                     catch (Exception e)
                     {
@@ -511,11 +512,11 @@ private:
 */
 class ApkInterfacer
 {
-    static void updateRepositories(in string root = null)
+    static void updateRepositories(in bool allowUntrustedRepositories, in string root = null)
     {
         trace("Trying to update repositories.");
         auto dbGuard = DatabaseGuard(root ? new ApkDataBase(root) : new ApkDataBase());
-        dbGuard.db.updateRepositories(false);
+        dbGuard.db.updateRepositories(allowUntrustedRepositories);
         trace("Successfully updated repositories.");
     }
 
