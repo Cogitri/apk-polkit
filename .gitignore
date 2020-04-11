@@ -14,3 +14,7 @@ tmp*.o
 
 # Should never be commited, generate when need with ninja -C build apk-polkit-pot
 po/apk-polkit.pot
+
+# Should never be commited, it is generated while translating, the .po files should
+# be commited
+po/*.mo
