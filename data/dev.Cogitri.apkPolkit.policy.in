@@ -145,8 +145,8 @@
           - Everyone is allowed to get all properties. This
             rule is only here so you can restrict this if you so desire.
      -->
-    <description>Get all properties</description>
-    <message>Authentication is required to get all properties</message>
+    <description>Get all DBus properties</description>
+    <message>Authentication is required to get all DBus properties</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>yes</allow_any>
@@ -161,7 +161,7 @@
             rule is only here so you can restrict this if you so desire.
      -->
     <description>Query if untrusted repositories are allowed</description>
-    <message>Authentication is required to query whether or not untrusted repositories are allowed</message>
+    <message>Authentication is required to query if untrusted repositories are allowed</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>yes</allow_any>
@@ -174,8 +174,8 @@
     <!-- SECURITY:
           - Only admins WITH AUTH are allowed to enable untrusted repositories (e.g. for local installs)
     -->
-    <description>Set if untrusted repositories are allowed</description>
-    <message>Authentication is required set whether or not untrusted repositories are allowed</message>
+    <description>Allow or disallow untrusted repositories</description>
+    <message>Authentication is required to allow or disallow untrusted repositories</message>
     <defaults>
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
@@ -189,8 +189,8 @@
           - Everyone is allowed to get the property "root". This
             rule is only here so you can restrict this if you so desire.
      -->
-    <description>Query the location of the package database root</description>
-    <message>Authentication is required to query the package database root</message>
+    <description>Query the location of the installation root</description>
+    <message>Authentication is required to query the location of the installation root</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>yes</allow_any>
@@ -203,8 +203,8 @@
     <!-- SECURITY:
           - Only admins WITH AUTH are allowed to install to a different root (since this could hold back security updates on /)
     -->
-    <description>Set the location of the package database root</description>
-    <message>Authentication is required set the package database root</message>
+    <description>Set the location of the installation root</description>
+    <message>Authentication is required to set a different installation root</message>
     <defaults>
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
