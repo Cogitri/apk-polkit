@@ -22,8 +22,15 @@ module apkd_common.DBusPropertyOperations;
 import apkd_common.CommonOperations;
 import std.conv : to;
 
+/**
+* Helper class for dealing with DBus properties, getting their polkit
+* actions, etc.
+*/
 class DBusPropertyOperations : CommonOperations
 {
+    /**
+    * All different DBus properties that might be set or gotten
+    */
     enum Enum
     {
         getAll,
@@ -31,6 +38,9 @@ class DBusPropertyOperations : CommonOperations
         root,
     }
 
+    /**
+    * Whether to get or set the property
+    */
     enum DirectionEnum
     {
         get,
@@ -53,6 +63,9 @@ class DBusPropertyOperations : CommonOperations
         return this.val.to!string;
     }
 
+    /**
+    * Get the polkit action that should be run for an operation
+    */
     override string toPolkitAction() const
     {
         immutable auto prefix = "dev.Cogitri.apkPolkit.Helper";

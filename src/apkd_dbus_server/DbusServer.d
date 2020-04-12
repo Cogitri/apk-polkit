@@ -56,6 +56,10 @@ import std.format : format;
 import std.stdio : readln;
 import std.string : chomp;
 
+/**
+* Different errors that might occur during operations. This is only
+* used to send it back over DBus in case something goes wrong.
+*/
 enum ApkdDbusServerErrorQuarkEnum
 {
     Failed,
@@ -70,6 +74,9 @@ enum ApkdDbusServerErrorQuarkEnum
     SearchForPackagesError,
 }
 
+/**
+* GQuark for our error domain
+*/
 extern (C) GQuark ApkdDbusServerErrorQuark() nothrow
 {
     return assumeWontThrow(g_quark_from_static_string("apkd-dbus-server-error-quark"));
@@ -157,7 +164,7 @@ class DBusServer
     /**
     * Passed to GDBus to handle incoming method calls. In this function we match the method name to the function to be
     * executed, authorize the user via polkit and send the return value back. We try very hard not to throw here and
-    * instead send a dbus error mesage back and return early, since throwing here would mean crashing the entire server.
+    * instead send a dbus error message back and return early, since throwing here would mean crashing the entire server.
     */
     extern (C) static void methodHandler(GDBusConnection* dbusConnection,
             const char* sender, const char* objectPath, const char* interfaceName,
@@ -545,7 +552,7 @@ struct ApkInterfacer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
     *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
-    *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
+    *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     *
     */
@@ -606,7 +613,7 @@ struct ApkInterfacer
             timeoutSource.destroy();
         }
         dbGuard.db.upgradeAllPackages();
-        trace("Succesfully upgraded all packages.");
+        trace("Successfully upgraded all packages.");
     }
 
     /**
@@ -621,7 +628,7 @@ struct ApkInterfacer
     *   due to being unable to find the requested package name.
     *   Throws an ApkSolverException if the solver can't figure out a way to solve
     *   the deletion, e.g. due to conflicts.
-    *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
+    *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
     *   due to missing permissions.
     */
     void deletePackage(string[] pkgnames)
@@ -647,7 +654,7 @@ struct ApkInterfacer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
     *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
-    *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
+    *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
     void addPackage(string[] pkgnames)

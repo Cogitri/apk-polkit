@@ -26,6 +26,9 @@ import std.conv : to;
 /// one wants to run to the dbus method or the polkit action.
 class ApkDataBaseOperations : CommonOperations
 {
+    /**
+    * All operations that can be done on the database
+    */
     enum Enum
     {
         addPackage,
@@ -54,6 +57,9 @@ class ApkDataBaseOperations : CommonOperations
         return this.val.to!string;
     }
 
+    /**
+    * Get the polkit action that should be run for an operation
+    */
     override string toPolkitAction() const
     {
         immutable auto prefix = "dev.Cogitri.apkPolkit.Helper";

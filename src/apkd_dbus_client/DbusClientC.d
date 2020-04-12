@@ -36,6 +36,9 @@ import std.exception : assumeWontThrow;
 import std.format : format;
 import std.string;
 
+/**
+* Different errors that might occur during operations.
+*/
 enum ApkDbusClientErrorEnum
 {
     FAILED,
@@ -46,22 +49,46 @@ enum ApkDbusClientErrorEnum
     DBUS_SIGNAL_CONNECT_FAILED,
 }
 
+/**
+* GQuark for our error domain
+*/
 extern (C) GQuark apkd_dbus_client_error_quark() nothrow
 {
     return assumeWontThrow(g_quark_from_static_string("apkd-dbus-client-error-quark"));
 }
 
+/**
+* Initialize the library. This must be called before any other functions
+* of this library.
+*/
 extern (C) bool apkd_init()
 {
     return cast(bool) rt_init();
 }
 
+/**
+* Deinitialize the library. No other function of this library may be called
+* after this.
+*/
 extern (C) bool apkd_deinit()
 {
     return cast(bool) rt_term();
 }
 
-extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray, uint len,
+/**
+* Query a method in an async manner. The callback passed to this will be called
+* once the result is ready.
+*
+* Params:
+*   rawPkgNamesPtrArray = The package names to run this operation on. Can be null if the operation
+*                         doesn't need it (e.g. for updateRepositories which doesn't take pkgnames).
+*   rawDbOp             = The operation to run on the database.
+*   cancellable         = A Cancellable to cancel the operation if so desired.
+*   callback            = The callback to run once the operation is ready.
+*   userData            = Data to pass to the callback.
+*   error               = A location to save errors to. May be null to ignore erors.
+*/
+extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray,
         ApkDataBaseOperations.Enum rawDbOp, GCancellable* cancellable,
         GAsyncReadyCallback callback, void* userData) nothrow
 {
@@ -111,6 +138,14 @@ extern (C) void apkd_dbus_client_query_async(GPtrArray* rawPkgNamesPtrArray, uin
     }
 }
 
+/**
+* Get the result of an async query. You'd typically call this in your callback
+* to get the actual result.
+*
+* Params:
+*   res   = The GAsyncResult you got in your callback. Mustn't be null.
+*   error = A location to save errors to. May be null to ignore erors.
+*/
 extern (C) GVariant* apkd_dbus_client_query_finish(GAsyncResult* res, GError** error) nothrow
 in
 {
@@ -136,12 +171,20 @@ do
     }
 }
 
-extern (C) GVariant* apkd_dbus_client_query_sync(GPtrArray* rawPkgNamesPtrArray, uint len,
+/**
+* Query a method in a synchronous manner. You probably want to use apkd_dbus_client_query_async instead.
+*
+* Params:
+*   rawPkgNamesPtrArray = The package names to run this operation on. Can be null if the operation
+*                         doesn't need it (e.g. for updateRepositories which doesn't take pkgnames).
+*   rawDbOp             = The operation to run on the database.
+*   cancellable         = A Cancellable to cancel the operation if so desired.
+*   error               = A location to save errors to. May be null to ignore erors.
+*/
+extern (C) GVariant* apkd_dbus_client_query_sync(GPtrArray* rawPkgNamesPtrArray,
         ApkDataBaseOperations.Enum rawDbOp, GCancellable* cancellable, GError** error) nothrow
 in
 {
-    assert(!(rawPkgNamesPtrArray is null && len != 0),
-            "Tried to pass in a non-null GPtrArray with a len > 0!");
     assert(error is null || *error is null, "Musn't reuse an error!");
 }
 out (result)
@@ -193,6 +236,14 @@ do
     return assumeWontThrow(variant.getVariantStruct());
 }
 
+/**
+* Connect DBus signals. Returns the source ID of the connection.
+*
+* Params:
+*   cb       = Callback to call when the signal is received
+*   userData = userData to pass to the callback
+*   error    = A location to save errors to. May be null to ignore erors.
+*/
 extern (C) ulong apkd_dbus_client_connect_signals(GCallback cb, void* userData, GError** error)
 in
 {

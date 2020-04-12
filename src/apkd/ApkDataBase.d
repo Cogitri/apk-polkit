@@ -41,6 +41,10 @@ import std.stdio : File, write;
 import std.string : toStringz;
 import std.utf : toUTFz;
 
+/**
+* Class for dealing with the functionality of the APK Database. It can remove/add
+* packages, upgrade them, update repositories, search for packages etc.
+*/
 class ApkDataBase
 {
     /**
@@ -241,7 +245,7 @@ class ApkDataBase
                     apk_error_str(solverCommitRes).to!string));
     }
 
-    /*
+    /**
     * Add (install) packages specified by pkgnames
     *
     * Params:
@@ -277,7 +281,7 @@ class ApkDataBase
                     solverCommitErrorCount, solverCommitErrorCount > 1 ? "s" : "", pkgnames));
     }
 
-    /*
+    /**
     * Delete (uninstall) packages specified by pkgnames and its dependants.
     *
     * Params:
@@ -380,6 +384,11 @@ class ApkDataBase
         return apkPackages;
     }
 
+    /**
+    * Returns read-end of a pipe to which apk writes progress in
+    * the format %d/%d where the first digit is the amount of work
+    * done and the second digit is the total amount of work to be done.
+    */
     @property File progressFd()
     {
         return this.m_progressFd.readEnd();
