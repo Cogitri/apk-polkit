@@ -654,14 +654,16 @@ private:
         auto interfacerUserData = cast(InterfacerUserData*) userData;
         const auto progress = interfacerUserData.dbGuard.db.progressFd.readln().chomp().split('/');
         float percentage;
+        // If we didn't hear back from APK, assume we don't have any progress
         if (progress.length == 0)
         {
-            percentage = 100.0;
+            return G_SOURCE_CONTINUE;
         }
         else
         {
             auto done = progress[0].to!uint;
             auto total = progress[1].to!uint;
+            // We can't dive through 0
             if (total == 0)
             {
                 percentage = 0;
