@@ -82,53 +82,6 @@ extern (C) GQuark ApkdDbusServerErrorQuark() nothrow
     return assumeWontThrow(g_quark_from_static_string("apkd-dbus-server-error-quark"));
 }
 
-struct ApkdDbusServerProperties
-{
-    enum Enum
-    {
-        allowUntrustedRepos,
-    }
-
-    this(Enum val)
-    {
-        this.m_val = val;
-    }
-
-    this(string name)
-    {
-        this.m_val = name.to!Enum;
-    }
-
-    string toString() const
-    {
-        return this.m_val.to!string;
-    }
-
-    string toPolkitAction() const
-    {
-        immutable auto prefix = "dev.Cogitri.apkPolkit.Helper";
-
-        string action;
-
-        final switch (this.m_val) with (Enum)
-        {
-        case allowUntrustedRepos:
-            action = "setAllowUntrustedRepos";
-            break;
-        }
-
-        return prefix ~ "." ~ action;
-    }
-
-    @property Enum val() const
-    {
-        return this.m_val;
-    }
-
-private:
-    Enum m_val;
-}
-
 /// The DBus interface this dbus application exposes as XML
 auto immutable dbusIntrospectionXML = import("dev.Cogitri.apkPolkit.interface");
 
