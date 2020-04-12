@@ -524,12 +524,31 @@ private:
 */
 struct ApkInterfacer
 {
+    /**
+    * Params:
+    *   connection = The DBusConnection to send progressNotification signals on
+    *   root       = If not null, the install location of packages
+    */
     this(DBusConnection connection, string root = null)
     {
         this.userData = InterfacerUserData(null, connection);
         this.root = root;
     }
 
+    /**
+    * Update all repositories available and send progress notifications via DBus.
+    *
+    * Params:
+    *   allowUntrustedRepositories = True if repos without a trusted key should be used
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
+    *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
+    *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
+    *   due to missing permissions, a conflict, etc.
+    *
+    */
     void updateRepositories(in bool allowUntrustedRepositories)
     {
         trace("Trying to update repositories.");
@@ -543,19 +562,40 @@ struct ApkInterfacer
         trace("Successfully updated repositories.");
     }
 
-    void upgradePackage(string[] pkgname)
+    /**
+    * Upgrade packages and send progress notifications via DBus.
+    *
+    * Params:
+    *   pkgnames = Packages to upgrade. Keep in mind that apk will also upgrade dependencies of that package.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
+    *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
+    *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
+    *   due to missing permissions, a conflict, etc.
+    */
+    void upgradePackage(string[] pkgnames)
     {
-        tracef("Trying to upgrade package '%s'.", pkgname);
+        tracef("Trying to upgrade package '%s'.", pkgnames);
         auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
         auto timeoutSource = this.connectProgressSignal(&dbGuard);
         scope (exit)
         {
             timeoutSource.destroy();
         }
-        dbGuard.db.upgradePackage(pkgname);
-        tracef("Successfully upgraded package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
+        dbGuard.db.upgradePackage(pkgnames);
+        tracef("Successfully upgraded package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
+    /**
+    * Upgrade all packages
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws an ApkSolverException if the solver can't figure out a way to solve
+    *   the upgrade, e.g. due to conflicts.
+    */
     void upgradeAllPackages()
     {
         trace("Trying upgrade all packages.");
@@ -569,32 +609,67 @@ struct ApkInterfacer
         trace("Succesfully upgraded all packages.");
     }
 
-    void deletePackage(string[] pkgname)
+    /**
+    * Delete (uninstall) packages and send progress notifications via DBus.
+    *
+    * Params:
+    *   pkgnames = Packages to delete.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws an ApkException if something went wrong while trying to delete packages, e.g.
+    *   due to being unable to find the requested package name.
+    *   Throws an ApkSolverException if the solver can't figure out a way to solve
+    *   the deletion, e.g. due to conflicts.
+    *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
+    *   due to missing permissions.
+    */
+    void deletePackage(string[] pkgnames)
     {
-        tracef("Trying to delete package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
+        tracef("Trying to delete package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
         auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
         auto timeoutSource = this.connectProgressSignal(&dbGuard);
         scope (exit)
         {
             timeoutSource.destroy();
         }
-        dbGuard.db.deletePackage(pkgname);
-        tracef("Successfully deleted package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
+        dbGuard.db.deletePackage(pkgnames);
+        tracef("Successfully deleted package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
-    void addPackage(string[] pkgname)
+    /**
+    * Add (install) packages and send progress notifications via DBus.
+    *
+    * Params:
+    *   pkgnames = Packages to add.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
+    *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
+    *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
+    *   due to missing permissions, a conflict, etc.
+    */
+    void addPackage(string[] pkgnames)
     {
-        tracef("Trying to add package%s: %s", pkgname.length > 1 ? "s" : "", pkgname);
+        tracef("Trying to add package%s: %s", pkgnames.length > 1 ? "s" : "", pkgnames);
         auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
         auto timeoutSource = this.connectProgressSignal(&dbGuard);
         scope (exit)
         {
             timeoutSource.destroy();
         }
-        dbGuard.db.addPackage(pkgname);
-        tracef("Successfully added package%s '%s'.", pkgname.length > 1 ? "s" : "", pkgname);
+        dbGuard.db.addPackage(pkgnames);
+        tracef("Successfully added package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
+    /**
+    * Get an array of all available packages. This also includes already installed packages.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   An ApkListException if something went wrong in iterating over packages
+    */
     ApkPackage[] getAvailablePackages()
     {
         trace("Trying to list all available packages");
@@ -604,6 +679,12 @@ struct ApkInterfacer
         return packages;
     }
 
+    /**
+    * Get an array of all packages that are installed on the machine.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    */
     ApkPackage[] getInstalledPackages()
     {
         trace("Trying to list all installed packages");
@@ -613,6 +694,13 @@ struct ApkInterfacer
         return packages;
     }
 
+    /**
+    * Get an array of all packages that can be upgraded on the machine.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   An ApkListException if something went wrong in iterating over packages
+    */
     ApkPackage[] getUpgradablePackages()
     {
         trace("Trying to list upgradable packages");
@@ -622,22 +710,37 @@ struct ApkInterfacer
         return packages;
     }
 
-    ApkPackage[] searchForPackage(string[] pkgname)
+    /**
+    * Get an array of all packages that match one of the pkgnames given. Uses substring searching.
+    *
+    * Params:
+    *   pkgnames = pkgnames to search for
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   An ApkListException if something went wrong in iterating over packages
+    */
+    ApkPackage[] searchForPackage(string[] pkgnames)
     {
-        tracef("Trying to search for packages %s", pkgname);
+        tracef("Trying to search for packages %s", pkgnames);
         auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto packages = dbGuard.db.searchPackages(pkgname);
+        auto packages = dbGuard.db.searchPackages(pkgnames);
         tracef("Successfully searched for packages. %s hits.", packages.length);
         return packages;
     }
 
 private:
+    /// Passed to  progressSenderFn as userData
     struct InterfacerUserData
     {
         DatabaseGuard* dbGuard;
         DBusConnection connection;
     }
 
+    /**
+    * Start the thread that sends progress notifications while our
+    * main thread is busy running the actual database operation
+    */
     extern (C) static void* startProgressWorkerThread(void* contextPtr)
     {
         auto context = new MainContext(cast(GMainContext*) contextPtr);
@@ -649,6 +752,7 @@ private:
         return null;
     }
 
+    /// Sends progressNotification signal
     extern (C) static int progressSenderFn(void* userData)
     {
         auto interfacerUserData = cast(InterfacerUserData*) userData;
@@ -679,6 +783,7 @@ private:
         return G_SOURCE_CONTINUE;
     }
 
+    /// Connect a Database's progress pipe to our DBus progressNotification signal
     Source connectProgressSignal(DatabaseGuard* dbGuard)
     {
         this.userData.dbGuard = dbGuard;
@@ -693,6 +798,7 @@ private:
         return timeoutSource;
     }
 
+    /// Installation root
     string root;
     InterfacerUserData userData;
 }
