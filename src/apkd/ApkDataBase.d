@@ -285,7 +285,7 @@ class ApkDataBase
     *   solverFlags = Additional APK_SOLVERF* flags to pass to the solver.
     *
     * Throws:
-    *   Throws an ApkException if somethinh went wrong while trying to delete packages, e.g.
+    *   Throws an ApkException if something went wrong while trying to delete packages, e.g.
     *   due to being unable to find the requested package name.
     *   Throws an ApkSolverException if the solver can't figure out a way to solve
     *   the deletion, e.g. due to conflicts.
