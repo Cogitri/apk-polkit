@@ -6,7 +6,8 @@ stages:
   stage: build
   script:
     - apt update
-    - DEBIAN_FRONTEND=noninteractive apt-get -y install libpolkit-gobject-1-dev policykit-1 libglibd-2.0-dev libssl-dev meson ldc git build-essential gir-to-d libgirepository1.0-dev libdbus-1-dev dbus-x11 python3-dbusmock gettext
+    - DEBIAN_FRONTEND=noninteractive apt-get -y install libpolkit-gobject-1-dev policykit-1 libglibd-2.0-dev libssl-dev ldc git build-essential gir-to-d libgirepository1.0-dev libdbus-1-dev dbus-x11 python3-dbusmock gettext python3-pip
+    - pip3 install meson ninja
     - git clone https://gitlab.alpinelinux.org/alpine/abuild
     - git clone https://gitlab.alpinelinux.org/alpine/apk-tools
     - git clone https://gitlab.alpinelinux.org/Cogitri/apk-toolsd
