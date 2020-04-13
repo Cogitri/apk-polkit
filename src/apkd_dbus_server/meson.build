@@ -19,14 +19,22 @@ apkd_dbus_server_lib = library(
     install: true,
     d_module_versions: d_mod_version,
     include_directories: src_inc,
-    dependencies: [apkd_dep, apkd_dbus_server_deps, libapkd_common_dep],
+    dependencies: [
+        apkd_dep,
+        apkd_dbus_server_deps,
+        libapkd_common_dep,
+    ],
     d_args: '-J' + join_paths(meson.current_source_dir(), '..', '..', 'data'),
 )
 
 apkd_dbus_server_lib_dep = declare_dependency(
     link_with: apkd_dbus_server_lib,
     include_directories: src_inc,
-    dependencies: [apkd_dep, apkd_dbus_server_deps, libapkd_common_dep],
+    dependencies: [
+        apkd_dep.partial_dependency(compile_args: true),
+        apkd_dbus_server_deps,
+        libapkd_common_dep.partial_dependency(compile_args: true),
+    ],
     compile_args: '-J' + join_paths(meson.current_source_dir(), '..', '..', 'data'),
 )
 
@@ -37,7 +45,7 @@ apkd_dbus_exe = executable(
     install_dir: libexec_dir,
     d_module_versions: d_mod_version,
     include_directories: src_inc,
-    dependencies: [apkd_dbus_server_lib_dep ],
+    dependencies: [apkd_dbus_server_lib_dep, libapkd_common_dep],
 )
 
 apkd_dbus_client_lib_src = [

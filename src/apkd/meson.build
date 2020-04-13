@@ -21,13 +21,13 @@ apkd_lib = library(
     install: true,
     d_module_versions: d_mod_version,
     include_directories: src_inc,
-    dependencies: [apkd_deps, libapkd_common_dep, c_helper_lib_dep],
+    dependencies: [apk_toolsd_dep, libapkd_common_dep, c_helper_lib_dep],
 )
 
 apkd_dep = declare_dependency(
     link_with: apkd_lib,
     include_directories: src_inc,
-    dependencies: apkd_deps,
+    dependencies: apk_toolsd_dep.partial_dependency(compile_args: true),
 )
 
 pkgc.generate(
@@ -35,7 +35,7 @@ pkgc.generate(
     name: 'apkd-0',
     subdirs: 'd/apk-polkit',
     version: meson.project_version(),
-    requires: apkd_deps,
+    requires: apk_toolsd_dep,
 )
 
 
