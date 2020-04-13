@@ -39,11 +39,11 @@ import gio.c.types : BusNameOwnerFlags, BusType, GDBusInterfaceVTable,
 import glib.c.functions : g_quark_from_static_string, g_set_error,
     g_variant_new, g_variant_builder_add;
 import glib.GException;
+import glib.Idle;
 import glib.MainContext;
 import glib.MainLoop;
 import glib.Source;
 import glib.Thread;
-import glib.Timeout;
 import glib.Variant;
 import glib.VariantBuilder;
 import glib.VariantType;
@@ -515,10 +515,10 @@ struct ApkInterfacer
     {
         trace("Trying to update repositories.");
         auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        auto idleSource = this.connectProgressSignal(&dbGuard);
         scope (exit)
         {
-            timeoutSource.destroy();
+            idleSource.destroy();
         }
         dbGuard.db.updateRepositories(allowUntrustedRepositories);
         trace("Successfully updated repositories.");
@@ -541,10 +541,10 @@ struct ApkInterfacer
     {
         tracef("Trying to upgrade package '%s'.", pkgnames);
         auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        auto idleSource = this.connectProgressSignal(&dbGuard);
         scope (exit)
         {
-            timeoutSource.destroy();
+            idleSource.destroy();
         }
         dbGuard.db.upgradePackage(pkgnames);
         tracef("Successfully upgraded package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
@@ -562,10 +562,10 @@ struct ApkInterfacer
     {
         trace("Trying upgrade all packages.");
         auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        auto idleSource = this.connectProgressSignal(&dbGuard);
         scope (exit)
         {
-            timeoutSource.destroy();
+            idleSource.destroy();
         }
         dbGuard.db.upgradeAllPackages();
         trace("Successfully upgraded all packages.");
@@ -590,10 +590,10 @@ struct ApkInterfacer
     {
         tracef("Trying to delete package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
         auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        auto idleSource = this.connectProgressSignal(&dbGuard);
         scope (exit)
         {
-            timeoutSource.destroy();
+            idleSource.destroy();
         }
         dbGuard.db.deletePackage(pkgnames);
         tracef("Successfully deleted package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
@@ -616,10 +616,10 @@ struct ApkInterfacer
     {
         tracef("Trying to add package%s: %s", pkgnames.length > 1 ? "s" : "", pkgnames);
         auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto timeoutSource = this.connectProgressSignal(&dbGuard);
+        auto idleSource = this.connectProgressSignal(&dbGuard);
         scope (exit)
         {
-            timeoutSource.destroy();
+            idleSource.destroy();
         }
         dbGuard.db.addPackage(pkgnames);
         tracef("Successfully added package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
@@ -753,11 +753,11 @@ private:
         auto progressWorkerThread = new Thread("progressWorker",
                 &startProgressWorkerThread, mainContext.getMainContextStruct());
 
-        auto timeoutSource = Timeout.sourceNew(1);
-        timeoutSource.setCallback(&progressSenderFn, &this.userData, null);
-        timeoutSource.setPriority(G_PRIORITY_HIGH);
-        timeoutSource.attach(mainContext);
-        return timeoutSource;
+        auto idleSource = Idle.sourceNew();
+        idleSource.setCallback(&progressSenderFn, &this.userData, null);
+        idleSource.setPriority(G_PRIORITY_HIGH);
+        idleSource.attach(mainContext);
+        return idleSource;
     }
 
     /// Installation root
