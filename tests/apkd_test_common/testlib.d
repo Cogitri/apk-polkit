@@ -105,6 +105,8 @@ void setupDbusServer(string dbusServerPath, string[] polkitActions, GBusNameAppe
     proxy.callSync("org.freedesktop.DBus.Mock.SetAllowed",
             new Variant([
                     new Variant([
+                        new Variant("dev.Cogitri.apkPolkit.Helper.getAllProperties"),
+                        new Variant("dev.Cogitri.apkPolkit.Helper.setAllowUntrustedRepos"),
                         new Variant("dev.Cogitri.apkPolkit.Helper.setRoot"),
                         new Variant("dev.Cogitri.apkPolkit.Helper.setAllowUntrustedRepos"),
                     ] ~ permittedActions)
