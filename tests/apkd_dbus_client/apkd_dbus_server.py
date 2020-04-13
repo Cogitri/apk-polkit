@@ -100,8 +100,32 @@ def listInstalledPackages(self):
     return returnList
 
 
-@dbus.service.method(MAIN_IFACE, in_signature="", out_signature="a(ssssssssssstt)")
+@dbus.service.method(MAIN_IFACE, in_signature="", out_signature="a(sssssssssssttx)")
 def listUpgradablePackages(self):
+    returnList = []
+    returnList.append(
+        (
+            dbus.String("test-a"),
+            dbus.String("1.0"),
+            dbus.String("0.9"),
+            dbus.String("all"),
+            dbus.String("GPL-3.0-or-later"),
+            dbus.String("Cogitri"),
+            dbus.String("Rasmus Thomsen <oss@cogitri.dev>"),
+            dbus.String("https://gitlab.alpinelinux.org/Cogitri/apk-polkit"),
+            dbus.String("description"),
+            dbus.String("abcdef"),
+            dbus.String("test-a-1.0.apk"),
+            dbus.UInt64(513),
+            dbus.UInt64(337),
+            dbus.Int64(0),
+        ),
+    )
+    return returnList
+
+
+@dbus.service.method(MAIN_IFACE, in_signature="as", out_signature="a(sssssssssssttx)")
+def searchForPackages(self, _):
     returnList = []
     returnList.append(
         (
