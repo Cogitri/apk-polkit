@@ -2,7 +2,7 @@ project(
     'apk-polkit',
     ['c', 'd'],
     license: 'GPL-3.0-or-later',
-    meson_version: '>=0.51',
+    meson_version: '>=0.54',
     version: '0.1.0',
 )
 
@@ -30,7 +30,7 @@ dbus_config_dir = join_paths(data_dir, 'dbus-1', 'system.d')
 dbus_interface_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir')
 polkit_policy_dir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir')
 
-apkd_dbus_client_deps = [glibd_dep, gio_unix_dep]
+apkd_dbus_client_deps = [gio_unix_dep]
 apkd_dbus_server_deps = [glibd_dep, polkit_gobjectd_dep]
 apkd_deps = [apk_toolsd_dep]
 
@@ -44,16 +44,6 @@ else
 endif
 
 compiler_id = meson.get_compiler('d').get_id()
-
-link_runtime_shared_arg = []
-
-if compiler_id == 'llvm'
-    link_runtime_shared_arg = ['-link-defaultlib-shared']
-elif compiler_id == 'dmd'
-    link_runtime_shared_arg = ['-defaultlib=phobos2', '-debuglib=phobos2']
-elif compiler_id == 'gcc'
-    link_runtime_shared_arg = ['-shared-libphobos']
-endif
 
 i18n = import('i18n')
 

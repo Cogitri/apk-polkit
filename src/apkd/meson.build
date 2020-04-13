@@ -22,13 +22,11 @@ apkd_lib = library(
     d_module_versions: d_mod_version,
     include_directories: src_inc,
     dependencies: [apkd_deps, libapkd_common_dep, c_helper_lib_dep],
-    link_args: ['-shared', link_runtime_shared_arg],
 )
 
 apkd_dep = declare_dependency(
     link_with: apkd_lib,
     include_directories: src_inc,
-    link_args: link_runtime_shared_arg,
     dependencies: apkd_deps,
 )
 
