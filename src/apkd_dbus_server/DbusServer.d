@@ -50,6 +50,7 @@ import glib.VariantType;
 import std.array : split;
 import std.conv : to, ConvException;
 import std.concurrency : receive;
+import std.datetime : SysTime;
 import std.exception;
 import std.experimental.logger;
 import std.format : format;
@@ -450,25 +451,26 @@ private:
     /// Helper method to convert a ApkPackage array to a Variant for sending it over DBus
     static Variant apkPackageArrayToVariant(ApkPackage[] pkgArr)
     {
-        auto arrBuilder = new VariantBuilder(new VariantType("a(ssssssssssstt)"));
+        auto arrBuilder = new VariantBuilder(new VariantType("a(sssssssssssttx)"));
 
         foreach (pkg; pkgArr)
         {
-            auto pkgBuilder = new VariantBuilder(new VariantType("(ssssssssssstt)"));
+            arrBuilder.open(new VariantType("(sssssssssssttx)"));
             static foreach (member; [
                     "name", "newVersion", "oldVersion", "arch", "license",
                     "origin", "maintainer", "url", "description", "commit",
                     "filename"
                 ])
             {
-                pkgBuilder.addValue(new Variant(__traits(getMember, pkg,
+                arrBuilder.addValue(new Variant(__traits(getMember, pkg,
                         member) ? __traits(getMember, pkg, member) : ""));
             }
             static foreach (member; ["installedSize", "size"])
             {
-                pkgBuilder.addValue(new Variant(__traits(getMember, pkg, member)));
+                arrBuilder.addValue(new Variant(__traits(getMember, pkg, member)));
             }
-            arrBuilder.addValue(pkgBuilder.end());
+            arrBuilder.addValue(new Variant(pkg.buildTime.toUnixTime!long()));
+            arrBuilder.close();
         }
 
         return arrBuilder.end();

@@ -49,7 +49,7 @@ typedef struct
     char *m_filename;
     unsigned long m_installedSize;
     unsigned long m_size;
-    time_t m_buildTime;
+    long m_buildTime;
 } apkd_package;
 
 bool apkd_init();

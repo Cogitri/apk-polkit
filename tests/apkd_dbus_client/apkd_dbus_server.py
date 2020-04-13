@@ -52,7 +52,7 @@ def load(mock, parameters):
     )
 
 
-@dbus.service.method(MAIN_IFACE, in_signature="", out_signature="a(ssssssssssstt)")
+@dbus.service.method(MAIN_IFACE, in_signature="", out_signature="a(sssssssssssttx)")
 def listAvailablePackages(self):
     returnList = []
     returnList.append(
@@ -70,12 +70,13 @@ def listAvailablePackages(self):
             dbus.String("test-a-1.0.apk"),
             dbus.UInt64(513),
             dbus.UInt64(337),
+            dbus.Int64(0),
         ),
     )
     return returnList
 
 
-@dbus.service.method(MAIN_IFACE, in_signature="", out_signature="a(ssssssssssstt)")
+@dbus.service.method(MAIN_IFACE, in_signature="", out_signature="a(sssssssssssttx)")
 def listInstalledPackages(self):
     returnList = []
     returnList.append(
@@ -93,6 +94,7 @@ def listInstalledPackages(self):
             dbus.String("test-a-1.0.apk"),
             dbus.UInt64(513),
             dbus.UInt64(337),
+            dbus.Int64(0),
         ),
     )
     return returnList
@@ -116,6 +118,7 @@ def listUpgradablePackages(self):
             dbus.String("test-a-1.0.apk"),
             dbus.UInt64(513),
             dbus.UInt64(337),
+            dbus.Int64(0),
         ),
     )
     return returnList

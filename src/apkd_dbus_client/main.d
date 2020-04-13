@@ -146,7 +146,7 @@ extern (C) void checkAuth(GObject*, GAsyncResult* res, void* userData)
                         valueTuple.getChildValue(10).getString(len),
                         valueTuple.getChildValue(11).getUint64(),
                         valueTuple.getChildValue(12).getUint64(),
-                        SysTime(0), //FIXME
+                        SysTime(valueTuple.getChildValue(13).getInt64()),
                     );
                 // dfmt on
             pkgArr ~= pkg;

@@ -37,17 +37,17 @@
             <arg name="packages" type="as" direction="in"/>
         </method>
         <method name="listAvailablePackages">
-            <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
+            <arg name="matchingPackages" type="a(sssssssssssttx)" direction="out"/>
         </method>
         <method name="listInstalledPackages">
-            <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
+            <arg name="matchingPackages" type="a(sssssssssssttx)" direction="out"/>
         </method>
         <method name="listUpgradablePackages">
-            <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
+            <arg name="matchingPackages" type="a(sssssssssssttx)" direction="out"/>
         </method>
         <method name="searchForPackages">
             <arg name="packages" type="as" direction="in"/>
-            <arg name="matchingPackages" type="a(ssssssssssstt)" direction="out"/>
+            <arg name="matchingPackages" type="a(sssssssssssttx)" direction="out"/>
         </method>
 
         <property name="allowUntrustedRepos" type="b" access="readwrite"/>
