@@ -65,6 +65,7 @@ int main(string[] args)
     setupLogging(logLevel);
 
     auto mainContext = MainContext.default_();
+    mainContext.pushThreadDefault();
     auto mainLoop = new MainLoop(mainContext, false);
     auto dbusServer = new DBusServer();
     mainLoop.run();
