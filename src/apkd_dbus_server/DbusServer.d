@@ -740,7 +740,7 @@ private:
             }
         }
         interfacerUserData.connection.emitSignal(null, apkd_common.globals.dbusObjectPath,
-                apkd_common.globals.dbusInterfaceName, "progress",
+                apkd_common.globals.dbusInterfaceName, "progressNotification",
                 new Variant([new Variant(percentage.to!uint)]));
         return G_SOURCE_CONTINUE;
     }
