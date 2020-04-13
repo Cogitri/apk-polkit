@@ -22,29 +22,32 @@ module tests.apkd_dbus_client.search;
 import apkd.ApkPackage;
 import apkd_common.ApkDataBaseOperations;
 import apkd_common.DBusPropertyOperations;
-import apkd_dbus_client.DbusClient;
 import core.stdc.stdlib : exit;
 import tests.apkd_test_common.testlib;
-import gio.c.types : GDBusConnection;
+import tests.apkd_test_common.apkd_dbus_client;
+import gio.c.types : GDBusConnection, BusType, GDBusProxyFlags;
 import glib.Variant;
 import std.datetime : SysTime;
-import std.stdio;
+import std.exception : enforce;
+import std.string : toStringz;
 
 extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
         const(char)* nameOwner, void* userData)
 {
     auto testHelper = cast(TestHelper*) userData;
 
-    auto client = DBusClient.get();
-    client.setProperty(new DBusPropertyOperations(DBusPropertyOperations.Enum.root,
-            DBusPropertyOperations.DirectionEnum.set), new Variant(testHelper.apkRootDir), null);
-    client.setProperty(new DBusPropertyOperations(DBusPropertyOperations.Enum.allowUntrustedRepos,
-            DBusPropertyOperations.DirectionEnum.set), new Variant(true), null);
-    client.querySync([],
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.updateRepositories), null);
-    auto dbusRes = client.querySync(["test"],
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.searchForPackages), null);
-    auto dbusRet = dbusRes.getChildValue(0);
+    auto apkdHelper = apkd_helper_proxy_new_for_bus_sync(BusType.SYSTEM, GDBusProxyFlags.NONE,
+            "dev.Cogitri.apkPolkit.Helper".toStringz(),
+            "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
+    apkd_helper_set_allow_untrusted_repos(apkdHelper, true);
+    apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz);
+    enforce(apkd_helper_call_update_repositories_sync(apkdHelper, null, null));
+
+    auto packages = ["test".toStringz(), null];
+    GVariant* dbusRes;
+    enforce(apkd_helper_call_search_for_packages_sync(apkdHelper, packages.ptr,
+            &dbusRes, null, null));
+    auto dbusRet = new Variant(dbusRes);
     ApkPackage[] pkgArr;
 
     for (uint i; i < dbusRet.nChildren(); i++)
@@ -67,7 +70,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
                         valueTuple.getChildValue(10).getString(len),
                         valueTuple.getChildValue(11).getUint64(),
                         valueTuple.getChildValue(12).getUint64(),
-                        SysTime(0), //FIXME
+                        SysTime.fromUnixTime(valueTuple.getChildValue(13).getInt64),
                     );
                 // dfmt on
         pkgArr ~= pkg;

@@ -32,3 +32,14 @@ install_data(
     install_dir: dbus_interface_dir,
     rename: 'dev.cogitri.apkPolkit.xml',
 )
+
+gnome = import('gnome')
+
+dbus_interface_src = gnome.gdbus_codegen(
+    'apkd-dbus-client',
+    sources: 'dev.Cogitri.apkPolkit.interface',
+    interface_prefix: 'dev.Cogitri.apkPolkit.',
+    namespace: 'Apkd',
+    install_header: true,
+    install_dir: join_paths(get_option('includedir'), 'apk-polkit'),
+)

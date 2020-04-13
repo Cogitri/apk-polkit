@@ -1,5 +1,6 @@
 common_test_src = [
     'testlib.d',
+    'apkd_dbus_client.d',
 ]
 
 libapkd_test_common = shared_library(

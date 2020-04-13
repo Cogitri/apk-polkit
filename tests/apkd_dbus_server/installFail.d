@@ -21,24 +21,26 @@ module tests.apkd_dbus_server.installFail;
 
 import apkd_common.ApkDataBaseOperations;
 import apkd_common.DBusPropertyOperations;
-import apkd_dbus_client.DbusClient;
 import core.stdc.stdlib : exit;
 import tests.apkd_test_common.testlib;
-import gio.c.types : GDBusConnection;
+import tests.apkd_test_common.apkd_dbus_client;
+import gio.c.types : GDBusConnection, BusType, GDBusProxyFlags;
 import glib.GException;
 import glib.Variant;
 import std.exception;
+import std.string : toStringz;
 
 extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
         const(char)* nameOwner, void* userData)
 {
     auto testHelper = cast(TestHelper*) userData;
 
-    auto client = DBusClient.get();
-    client.setProperty(new DBusPropertyOperations(DBusPropertyOperations.Enum.root,
-            DBusPropertyOperations.DirectionEnum.set), new Variant(testHelper.apkRootDir), null);
-    assertThrown!GException(client.querySync(["doesntExist"],
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.addPackage), null));
+    auto apkdHelper = apkd_helper_proxy_new_for_bus_sync(BusType.SYSTEM, GDBusProxyFlags.NONE,
+            "dev.Cogitri.apkPolkit.Helper".toStringz(),
+            "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
+    apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz());
+    auto pkgs = ["doesNotExist".toStringz(), null];
+    enforce(!apkd_helper_call_add_package_sync(apkdHelper, pkgs.ptr, null, null));
     exit(0);
 }
 

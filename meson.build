@@ -16,6 +16,7 @@ sysconf_dir = join_paths(prefix, get_option('sysconfdir'))
 include_dir = join_paths(prefix, get_option('includedir'), 'd', 'apk-polkit')
 data_dir = join_paths(prefix, get_option('datadir'))
 
+gio_unix_dep = dependency('gio-unix-2.0')
 glibd_dep = dependency('glibd-2.0')
 polkit_gobjectd_dep = dependency('polkit-gobjectd-1')
 apk_toolsd_dep = dependency('apk-toolsd')
@@ -29,7 +30,7 @@ dbus_config_dir = join_paths(data_dir, 'dbus-1', 'system.d')
 dbus_interface_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir')
 polkit_policy_dir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir')
 
-apkd_dbus_client_deps = [glibd_dep]
+apkd_dbus_client_deps = [glibd_dep, gio_unix_dep]
 apkd_dbus_server_deps = [glibd_dep, polkit_gobjectd_dep]
 apkd_deps = [apk_toolsd_dep]
 
@@ -63,7 +64,7 @@ conf.set('LIBEXEC_DIR', libexec_dir)
 conf.set('PRIVILEGED_GROUP', get_option('privileged-group'))
 conf.set('APKD_VERSION', apkd_version)
 
+subdir('data')
 subdir('po')
 subdir('src')
-subdir('data')
 subdir('tests')
