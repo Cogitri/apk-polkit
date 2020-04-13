@@ -2,6 +2,7 @@ test_preparer = find_program('../apkd_test_common/prepare.sh')
 
 test_src_files = [
     'installFail.d',
+    'progressNotification.d',
     'search.d',
     'update.d',
 ]
