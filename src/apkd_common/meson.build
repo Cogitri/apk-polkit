@@ -12,10 +12,10 @@ common_src = [
     globals_d,
 ]
 
-libapkd_common = static_library(
+libapkd_common = library(
     'apkd_common',
     common_src,
-    pic: true,
+    install: true,
     include_directories: src_inc,
 )
 
