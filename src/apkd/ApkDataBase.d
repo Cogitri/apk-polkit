@@ -201,9 +201,9 @@ class ApkDataBase
     *   Throws an ApkSolverException if the solver can't figure out a way to solve
     *   the upgrade, e.g. due to conflicts.
     */
-    void upgradeAllPackages(ushort solverFlags = 0)
+    void upgradeAllPackages(ushort solverFlags = APK_SOLVERF_AVAILABLE)
     {
-        auto changeset = this.getAllUpgradeChangeset();
+        auto changeset = this.getAllUpgradeChangeset(solverFlags);
         const auto solverRes = apk_solver_commit_changeset(&this.db, &changeset, this.db.world);
         enforce!ApkSolverException(solverRes == 0,
                 format("Couldn't upgrade packages due to error '%s%",
@@ -223,7 +223,8 @@ class ApkDataBase
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
-    void upgradePackage(string[] pkgnames, ushort solverFlags = APK_SOLVERF_IGNORE_UPGRADE)
+    void upgradePackage(string[] pkgnames,
+            ushort solverFlags = APK_SOLVERF_IGNORE_UPGRADE | APK_SOLVERF_AVAILABLE)
     {
         apk_dependency_array* worldCopy = null;
         scope (exit)
@@ -236,7 +237,8 @@ class ApkDataBase
         {
             auto apkDep = this.packageNameToApkDependency(pkgname);
             apk_deps_add(&worldCopy, &apkDep);
-            apk_solver_set_name_flags(apkDep.name, APK_SOLVERF_UPGRADE, APK_SOLVERF_UPGRADE);
+            apk_solver_set_name_flags(apkDep.name,
+                    APK_SOLVERF_UPGRADE | solverFlags, APK_SOLVERF_UPGRADE | solverFlags);
         }
 
         const auto solverCommitRes = apk_solver_commit(&this.db, 0, worldCopy);
@@ -258,7 +260,7 @@ class ApkDataBase
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
-    void addPackage(string[] pkgnames, ushort solverFlags = 0)
+    void addPackage(string[] pkgnames, ushort solverFlags = APK_SOLVERF_AVAILABLE)
     {
         apk_dependency_array* worldCopy = null;
         scope (exit)
@@ -272,7 +274,8 @@ class ApkDataBase
             auto dep = packageNameToApkDependency(pkgname);
 
             apk_deps_add(&worldCopy, &dep);
-            apk_solver_set_name_flags(dep.name, solverFlags, solverFlags);
+            apk_solver_set_name_flags(dep.name, APK_SOLVERF_IGNORE_UPGRADE | solverFlags,
+                    APK_SOLVERF_IGNORE_UPGRADE | solverFlags);
         }
 
         const auto solverCommitErrorCount = apk_solver_commit(&this.db, solverFlags, worldCopy);
