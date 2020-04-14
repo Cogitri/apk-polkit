@@ -33,6 +33,7 @@ import std.algorithm : canFind;
 import std.exception : assumeWontThrow;
 import std.experimental.logger;
 import std.conv : to;
+import std.utf : toUTFz;
 
 /// Taken from apk_defines.h. It's only declared&defined in the
 /// header, so it doesn't end up in libapk...
@@ -94,6 +95,26 @@ static foreach (typeName; [
     ])
 {
     mixin apkArrayFuncs!typeName;
+}
+
+bool packageIsInstalled(apk_database* db, string pkgname) nothrow
+{
+    apk_dependency apkDep;
+    apk_blob_t blob = apk_blob_t(pkgname.length, pkgname.toUTFz!(char*)());
+    apk_blob_pull_dep(&blob, db, &apkDep);
+
+    if (blob.ptr is null || blob.len > 0)
+    {
+        return false;
+    }
+
+    auto apkPackage = apk_pkg_get_installed(apkDep.name);
+    if (apk_dep_analyze(&apkDep, apkPackage) & APK_DEP_SATISFIES)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 /// User data passed into recursiveDeletePackages as void pointer
@@ -175,6 +196,7 @@ struct SearchContext
 {
     string[] specs;
     ApkPackage[]* packages;
+    apk_database* db;
 }
 
 extern (C) int appendMatchingApkPackageArray(apk_hash_item item, void* ctx) nothrow
@@ -190,9 +212,11 @@ do
 
     foreach (spec; searchContext.specs)
     {
-        if (apkPackage.name.name.to!string.canFind(spec))
+        auto pkgname = apkPackage.name.name.to!string;
+        if (pkgname.canFind(spec))
         {
-            assumeWontThrow(*searchContext.packages ~= ApkPackage(*apkPackage));
+            auto isInstalled = packageIsInstalled(searchContext.db, pkgname);
+            assumeWontThrow(*searchContext.packages ~= ApkPackage(*apkPackage, isInstalled));
         }
     }
     return 0;

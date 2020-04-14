@@ -451,11 +451,11 @@ private:
     /// Helper method to convert a ApkPackage array to a Variant for sending it over DBus
     static Variant apkPackageArrayToVariant(ApkPackage[] pkgArr)
     {
-        auto arrBuilder = new VariantBuilder(new VariantType("a(sssssssssssttx)"));
+        auto arrBuilder = new VariantBuilder(new VariantType("a(sssssssssssttxb)"));
 
         foreach (pkg; pkgArr)
         {
-            arrBuilder.open(new VariantType("(sssssssssssttx)"));
+            arrBuilder.open(new VariantType("(sssssssssssttxb)"));
             static foreach (member; [
                     "name", "newVersion", "oldVersion", "arch", "license",
                     "origin", "maintainer", "url", "description", "commit",
@@ -470,6 +470,7 @@ private:
                 arrBuilder.addValue(new Variant(__traits(getMember, pkg, member)));
             }
             arrBuilder.addValue(new Variant(pkg.buildTime.toUnixTime!long()));
+            arrBuilder.addValue(new Variant(pkg.isInstalled));
             arrBuilder.close();
         }
 

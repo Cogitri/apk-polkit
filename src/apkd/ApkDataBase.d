@@ -343,7 +343,7 @@ class ApkDataBase
             &installedPackage.installed_pkgs_list != &this.db.installed.packages;
             installedPackage = installedPackage.installed_pkgs_list.next.container_of!(apk_installed_package, "installed_pkgs_list"))
         {
-            ret ~= ApkPackage(*installedPackage.pkg);
+            ret ~= ApkPackage(*installedPackage.pkg, true);
         }
         // dfmt on
 
@@ -377,7 +377,7 @@ class ApkDataBase
     ApkPackage[] searchPackages(string[] specs)
     {
         ApkPackage[] apkPackages;
-        auto context = apkd.functions.SearchContext(specs, &apkPackages);
+        auto context = apkd.functions.SearchContext(specs, &apkPackages, &this.db);
         auto apkHashRes = apk_hash_foreach(&this.db.available.packages,
                 &apkd.functions.appendMatchingApkPackageArray, &context);
         enforce!ApkListException(apkHashRes == 0, "Failed to enumerate available packages!");

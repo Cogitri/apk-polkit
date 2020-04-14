@@ -28,8 +28,8 @@ import std.format : format;
 struct ApkPackage
 {
     this(string name, string packageVersion, string oldPackageVersion, string arch, string license,
-            string origin, string maintainer, string url, string description, string commit,
-            string filename, ulong installedSize, ulong size, SysTime buildTime)
+            string origin, string maintainer, string url, string description, string commit, string filename,
+            ulong installedSize, ulong size, SysTime buildTime, bool isInstalled)
     {
         this.m_name = name;
         this.m_version = packageVersion;
@@ -45,9 +45,10 @@ struct ApkPackage
         this.m_installedSize = installedSize;
         this.m_size = size;
         this.m_buildTime = buildTime;
+        this.m_isInstalled = isInstalled;
     }
 
-    this(apk_package apk_package)
+    this(apk_package apk_package, bool isInstalled = false)
     in
     {
         assert(apk_package.name.name);
@@ -79,6 +80,7 @@ struct ApkPackage
             apk_package.filename ? apk_package.filename.to!string() : null, apk_package.installed_size,
             apk_package.size,
             SysTime(unixTimeToStdTime(apk_package.build_time)),
+            isInstalled,
         );
         // dfmt on
     }
@@ -90,7 +92,7 @@ struct ApkPackage
     }
     do
     {
-        this(new_package);
+        this(new_package, true);
         this.m_oldVersion = old_package.version_.ptr[0 .. old_package.version_.len].to!string;
     }
 
@@ -169,6 +171,11 @@ struct ApkPackage
         return m_buildTime;
     }
 
+    @property bool isInstalled() const
+    {
+        return m_isInstalled;
+    }
+
 private:
     string m_name;
     string m_version;
@@ -184,4 +191,5 @@ private:
     ulong m_installedSize;
     ulong m_size;
     SysTime m_buildTime;
+    bool m_isInstalled;
 }
