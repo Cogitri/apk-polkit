@@ -1,13 +1,3 @@
-c_helper_lib = static_library(
-    'apkd_c_helper',
-    ['upgradeLister.c'],
-    dependencies: apk_dep,
-)
-
-c_helper_lib_dep = declare_dependency(
-    link_with: c_helper_lib,
-)
-
 lib_src = [
     'ApkDataBase.d',
     'ApkPackage.d',
@@ -21,7 +11,7 @@ apkd_lib = library(
     install: true,
     d_module_versions: d_mod_version,
     include_directories: src_inc,
-    dependencies: [apk_toolsd_dep, libapkd_common_dep, c_helper_lib_dep],
+    dependencies: [apk_toolsd_dep, libapkd_common_dep],
 )
 
 apkd_dep = declare_dependency(

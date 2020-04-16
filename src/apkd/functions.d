@@ -246,8 +246,3 @@ void disallowUntrusted()
 {
     apk_flags &= ~APK_ALLOW_UNTRUSTED;
 }
-
-/// From our C Helper lib
-alias getterCb = extern (C) void function(apk_package* oldPkg, apk_package* newPkg, void* ctx);
-extern (C) int getUpgradablePackages(apk_database* db, getterCb cb, void* ctx);
-extern (C) apk_string_array* stringToApkAString(char* string_);

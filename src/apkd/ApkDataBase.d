@@ -176,17 +176,24 @@ class ApkDataBase
     {
         ApkPackage[] packages;
 
-        extern (C) void addToArray(apk_package* oldPkg, apk_package* newPkg, void* ctx)
-        {
-            auto arr = cast(ApkPackage[]*) ctx;
-            *arr ~= ApkPackage(*oldPkg, *newPkg);
-        }
+        auto upgradeChangeset = this.getAllUpgradeChangeset();
 
-        auto getUpgradeRes = apkd.functions.getUpgradablePackages(&this.db,
-                &addToArray, &packages);
-        enforce!ApkSolverException(getUpgradeRes == 0,
-                format("Couldn't list upgradable packages due to error '%s'",
-                    apk_error_str(getUpgradeRes).to!string));
+        foreach (i; 0 .. upgradeChangeset.changes.num)
+        {
+            auto change = upgradeChangeset.changes.item(upgradeChangeset.changes.num)[i];
+
+            if (change.new_pkg is null || change.old_pkg is null)
+            {
+                continue;
+            }
+
+            if ((apk_pkg_version_compare(change.new_pkg,
+                    change.old_pkg) & (APK_VERSION_GREATER | APK_VERSION_EQUAL))
+                    && change.new_pkg != change.old_pkg)
+            {
+                packages ~= ApkPackage(*change.old_pkg, *change.new_pkg);
+            }
+        }
 
         return packages;
     }
