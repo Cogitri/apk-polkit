@@ -42,11 +42,13 @@ import std.string : toStringz;
 import std.utf : toUTFz;
 
 /**
-* Class for dealing with the functionality of the APK Database. It can remove/add
+* Struct for dealing with the functionality of the APK Database. It can remove/add
 * packages, upgrade them, update repositories, search for packages etc.
 */
-class ApkDataBase
+struct ApkDataBase
 {
+    @disable this();
+
     /**
     * Open the apk database. Be mindful that the lock is held for as long as the
     * object exists, so make sure to destory this as soon as possible. This uses
@@ -59,7 +61,7 @@ class ApkDataBase
     * Throws:
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     */
-    this(in bool readOnly = false)
+    this(in bool readOnly)
     {
         this.dbOptions.lock_wait = TRUE;
         apkd.functions.list_init(&this.dbOptions.repository_list);
@@ -73,7 +75,7 @@ class ApkDataBase
     * object exists, so make sure to destory this as soon as possible.
     *
     * Params:
-    *   dbRoot      = The root of the database, by default "/"
+    *   dbRoot      = The root of the database, by default "/" (if null)
     *   readOnly    =  Whether to open the database in readonly mode, e.g. to list
     *                  available packages
     *
@@ -82,7 +84,10 @@ class ApkDataBase
     */
     this(in string dbRoot, in bool readOnly = false)
     {
-        this.dbOptions.root = dbRoot.toUTFz!(char*);
+        if (dbRoot)
+        {
+            this.dbOptions.root = dbRoot.toUTFz!(char*);
+        }
         this(readOnly);
     }
 

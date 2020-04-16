@@ -515,13 +515,13 @@ struct ApkInterfacer
     void updateRepositories(in bool allowUntrustedRepositories)
     {
         trace("Trying to update repositories.");
-        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto idleSource = this.connectProgressSignal(&dbGuard);
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
         scope (exit)
         {
             idleSource.destroy();
         }
-        dbGuard.db.updateRepositories(allowUntrustedRepositories);
+        database.updateRepositories(allowUntrustedRepositories);
         trace("Successfully updated repositories.");
     }
 
@@ -541,13 +541,13 @@ struct ApkInterfacer
     void upgradePackage(string[] pkgnames)
     {
         tracef("Trying to upgrade package '%s'.", pkgnames);
-        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto idleSource = this.connectProgressSignal(&dbGuard);
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
         scope (exit)
         {
             idleSource.destroy();
         }
-        dbGuard.db.upgradePackage(pkgnames);
+        database.upgradePackage(pkgnames);
         tracef("Successfully upgraded package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
@@ -562,13 +562,13 @@ struct ApkInterfacer
     void upgradeAllPackages()
     {
         trace("Trying upgrade all packages.");
-        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto idleSource = this.connectProgressSignal(&dbGuard);
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
         scope (exit)
         {
             idleSource.destroy();
         }
-        dbGuard.db.upgradeAllPackages();
+        database.upgradeAllPackages();
         trace("Successfully upgraded all packages.");
     }
 
@@ -590,13 +590,13 @@ struct ApkInterfacer
     void deletePackage(string[] pkgnames)
     {
         tracef("Trying to delete package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
-        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto idleSource = this.connectProgressSignal(&dbGuard);
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
         scope (exit)
         {
             idleSource.destroy();
         }
-        dbGuard.db.deletePackage(pkgnames);
+        database.deletePackage(pkgnames);
         tracef("Successfully deleted package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
@@ -616,13 +616,13 @@ struct ApkInterfacer
     void addPackage(string[] pkgnames)
     {
         tracef("Trying to add package%s: %s", pkgnames.length > 1 ? "s" : "", pkgnames);
-        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto idleSource = this.connectProgressSignal(&dbGuard);
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
         scope (exit)
         {
             idleSource.destroy();
         }
-        dbGuard.db.addPackage(pkgnames);
+        database.addPackage(pkgnames);
         tracef("Successfully added package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
@@ -636,8 +636,8 @@ struct ApkInterfacer
     ApkPackage[] getAvailablePackages()
     {
         trace("Trying to list all available packages");
-        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto packages = dbGuard.db.getAvailablePackages();
+        auto database = ApkDataBase(this.root);
+        auto packages = database.getAvailablePackages();
         trace("Successfully listed all available packages");
         return packages;
     }
@@ -651,8 +651,8 @@ struct ApkInterfacer
     ApkPackage[] getInstalledPackages()
     {
         trace("Trying to list all installed packages");
-        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto packages = dbGuard.db.getInstalledPackages();
+        auto database = ApkDataBase(this.root);
+        auto packages = database.getInstalledPackages();
         trace("Successfully listed all installed packages");
         return packages;
     }
@@ -667,8 +667,8 @@ struct ApkInterfacer
     ApkPackage[] getUpgradablePackages()
     {
         trace("Trying to list upgradable packages");
-        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto packages = dbGuard.db.getUpgradablePackages();
+        auto database = ApkDataBase(this.root);
+        auto packages = database.getUpgradablePackages();
         trace("Successfully listed all upgradable packages");
         return packages;
     }
@@ -686,8 +686,8 @@ struct ApkInterfacer
     ApkPackage[] searchForPackage(string[] pkgnames)
     {
         tracef("Trying to search for packages %s", pkgnames);
-        auto dbGuard = DatabaseGuard(this.root ? new ApkDataBase(this.root) : new ApkDataBase());
-        auto packages = dbGuard.db.searchPackages(pkgnames);
+        auto database = ApkDataBase(this.root);
+        auto packages = database.searchPackages(pkgnames);
         tracef("Successfully searched for packages. %s hits.", packages.length);
         return packages;
     }
@@ -696,7 +696,7 @@ private:
     /// Passed to  progressSenderFn as userData
     struct InterfacerUserData
     {
-        DatabaseGuard* dbGuard;
+        ApkDataBase* db;
         DBusConnection connection;
     }
 
@@ -719,7 +719,7 @@ private:
     extern (C) static int progressSenderFn(void* userData)
     {
         auto interfacerUserData = cast(InterfacerUserData*) userData;
-        const auto progress = interfacerUserData.dbGuard.db.progressFd.readln().chomp().split('/');
+        const auto progress = interfacerUserData.db.progressFd.readln().chomp().split('/');
         float percentage;
         // If we didn't hear back from APK, assume we don't have any progress
         if (progress.length == 0)
@@ -747,9 +747,9 @@ private:
     }
 
     /// Connect a Database's progress pipe to our DBus progressNotification signal
-    Source connectProgressSignal(DatabaseGuard* dbGuard)
+    Source connectProgressSignal(ApkDataBase* db)
     {
-        this.userData.dbGuard = dbGuard;
+        this.userData.db = db;
         auto mainContext = new MainContext();
         auto progressWorkerThread = new Thread("progressWorker",
                 &startProgressWorkerThread, mainContext.getMainContextStruct());
@@ -764,24 +764,4 @@ private:
     /// Installation root
     string root;
     InterfacerUserData userData;
-}
-
-/**
-* Helper struct that is used to destroy the apkd.ApkDatabase class as soon as
-* it goes out of scope to ensure we don't lock the db for longer than we have to.
-*/
-struct DatabaseGuard
-{
-    @property ref ApkDataBase db()
-    {
-        return this.m_db;
-    }
-
-    ~this()
-    {
-        this.m_db.destroy;
-    }
-
-private:
-    ApkDataBase m_db;
 }
