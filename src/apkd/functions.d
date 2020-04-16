@@ -70,14 +70,14 @@ mixin template apkArrayFuncs(string name)
             return;
         }
         mixin(name ~ "_array_resize(a, b.num);");
-        memcpy(&(*a).item, &b.item, b.num * T.sizeof);
+        memcpy(&(*a).m_item, &b.m_item, b.num * T.sizeof);
     }
 
     T* _func_add(A** a)
     {
         auto size = 1 + (*a).num;
         mixin(name ~ "_array_resize(a, size);");
-        return &(*a).item[size - 1];
+        return &(*a).m_item[size - 1];
     }
 
     mixin("alias " ~ name ~ "_array_free = _func_free;");
