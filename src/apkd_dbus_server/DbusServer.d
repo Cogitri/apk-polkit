@@ -138,13 +138,13 @@ class DBusServer
                 switch (methodName.to!string)
                 {
                 case "Get":
-                    ulong len;
+                    size_t len;
                     auto propertyName = variant.getChildValue(1).getString(len);
                     operation = new DBusPropertyOperations(propertyName.to!(DBusPropertyOperations.Enum),
                             DBusPropertyOperations.DirectionEnum.get);
                     break;
                 case "Set":
-                    ulong len;
+                    size_t len;
                     auto propertyName = variant.getChildValue(1).getString(len);
                     operation = new DBusPropertyOperations(propertyName.to!(DBusPropertyOperations.Enum),
                             DBusPropertyOperations.DirectionEnum.set);
@@ -377,7 +377,7 @@ class DBusServer
                     else
                     {
                         auto connection = new DBusConnection(dbusConnection);
-                        ulong len;
+                        size_t len;
                         userData.root = variant.getChildValue(2).getVariant().getString(len);
                         auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
                         dictBuilder.open(new VariantType("{sv}"));

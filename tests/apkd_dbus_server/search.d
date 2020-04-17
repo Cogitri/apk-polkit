@@ -53,7 +53,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
     for (uint i; i < dbusRet.nChildren(); i++)
     {
         auto valueTuple = dbusRet.getChildValue(i);
-        ulong len;
+        size_t len;
 
         // dfmt off
         auto pkg = ApkPackage(
