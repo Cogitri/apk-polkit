@@ -185,7 +185,7 @@ struct ApkDataBase
 
         foreach (i; 0 .. upgradeChangeset.changes.num)
         {
-            auto change = upgradeChangeset.changes.item(upgradeChangeset.changes.num)[i];
+            auto change = upgradeChangeset.changes.item()[i];
 
             if (change.new_pkg is null || change.old_pkg is null)
             {
