@@ -80,7 +80,16 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
     exit(0);
 }
 
-int main(string[] args)
+extern extern (C) __gshared bool rt_trapExceptions;
+extern extern (C) int _d_run_main(int, char**, void*);
+
+extern (C) int main(int argc, char** argv)
+{
+    rt_trapExceptions = false;
+    return _d_run_main(argc, argv, &_main);
+}
+
+int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerSearch");
     setupDbusServer(args[5], [

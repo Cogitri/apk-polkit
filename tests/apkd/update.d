@@ -23,7 +23,16 @@ import apkd.ApkDataBase;
 import std.exception;
 import tests.apkd_test_common.testlib;
 
-int main(string[] args)
+extern extern (C) __gshared bool rt_trapExceptions;
+extern extern (C) int _d_run_main(int, char**, void*);
+
+extern (C) int main(int argc, char** argv)
+{
+    rt_trapExceptions = false;
+    return _d_run_main(argc, argv, &_main);
+}
+
+int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "update", false);
     auto database = new ApkDataBase(testHelper.apkRootDir, testHelper.repoDir);
