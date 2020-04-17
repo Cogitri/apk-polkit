@@ -12,6 +12,7 @@ apkd_lib = library(
     d_module_versions: d_mod_version,
     include_directories: src_inc,
     dependencies: [apk_toolsd_dep, libapkd_common_dep, apk_tools_dep],
+    version: meson.project_version(),
 )
 
 apkd_dep = declare_dependency(

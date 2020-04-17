@@ -36,6 +36,7 @@ apkd_dbus_server_lib_dep = declare_dependency(
         libapkd_common_dep.partial_dependency(compile_args: true),
     ],
     compile_args: '-J' + join_paths(meson.current_source_dir(), '..', '..', 'data'),
+    version: meson.project_version(),
 )
 
 apkd_dbus_exe = executable(
@@ -57,6 +58,7 @@ apkd_dbus_client_lib = library(
     apkd_dbus_client_lib_src,
     install: true,
     dependencies: [apkd_dbus_client_deps],
+    version: meson.project_version(),
 )
 
 apkd_dbus_client_lib_dep = declare_dependency(

@@ -17,6 +17,7 @@ libapkd_common = library(
     common_src,
     install: true,
     include_directories: src_inc,
+    version: meson.project_version(),
 )
 
 libapkd_common_dep = declare_dependency(
