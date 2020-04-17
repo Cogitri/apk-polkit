@@ -47,7 +47,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
 int main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerInstall");
-    setupDbusServer(args[4], [
+    setupDbusServer(args[5], [
             new ApkDataBaseOperations(ApkDataBaseOperations.Enum.addPackage).toPolkitAction()
             ], &onNameAppeared, &nameVanishedCallback, &testHelper);
     return 0;

@@ -1,5 +1,3 @@
-test_preparer = find_program('../apkd_test_common/prepare.sh')
-
 test_src_files = [
     'install.d',
     'listAvailable.d',
@@ -21,6 +19,6 @@ foreach src: test_src_files
     test(
         'test_apkd_' + test_name,
         apkd_test_exe,
-        args: [meson.build_root() / 'apk', meson.build_root() / 'abuildRepo', test_preparer.path()]
+        args: [meson.build_root() / 'apk', meson.build_root() / 'abuildRepo', test_preparer, apk]
         )
 endforeach

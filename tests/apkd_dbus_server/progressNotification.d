@@ -72,7 +72,7 @@ int main(string[] args)
         // the signal can be seen via dbus-monitor
         return 77;
         auto testHelper = TestHelper(args, "dbusServerProgressNotification");
-        setupDbusServer(args[4], [
+        setupDbusServer(args[5], [
                         new ApkDataBaseOperations(ApkDataBaseOperations.Enum.updateRepositories)
                         .toPolkitAction()
                         ], &onNameAppeared, &nameVanishedCallback, &testHelper);

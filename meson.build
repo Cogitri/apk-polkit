@@ -20,10 +20,30 @@ gio_unix_dep = dependency('gio-unix-2.0')
 glibd_dep = dependency('glibd-2.0')
 polkit_gobjectd_dep = dependency('polkit-gobjectd-1')
 apk_toolsd_dep = dependency('apk-toolsd')
-apk_dep = dependency('apk')
 dbus_dep = dependency('dbus-1')
 # Required to translate (and install!) polkit policy
 find_program('xgettext')
+
+apk_tools_dep = dependency('apk', required: false)
+use_static_apk_tools = false
+
+if not apk_tools_dep.found()
+    apk_tools_proj = subproject(
+        'apk-tools',
+        default_options: [
+            'default_library=static',
+            'docs=disabled',
+            'lua=disabled',
+        ],
+    )
+    apk_tools_lib = [apk_tools_proj.get_variable('libapk')]
+    apk_tools_dep = declare_dependency(
+        link_whole: apk_tools_lib,
+        dependencies: dependency('openssl'),
+    )
+    use_static_apk_tools = true
+endif
+
 
 dbus_service_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir')
 dbus_config_dir = join_paths(data_dir, 'dbus-1', 'system.d')

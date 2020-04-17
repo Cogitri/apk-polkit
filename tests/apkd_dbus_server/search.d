@@ -83,7 +83,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
 int main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerSearch");
-    setupDbusServer(args[4], [
+    setupDbusServer(args[5], [
             new ApkDataBaseOperations(ApkDataBaseOperations.Enum.searchForPackages).toPolkitAction(),
             new ApkDataBaseOperations(ApkDataBaseOperations.Enum.updateRepositories)
             .toPolkitAction()

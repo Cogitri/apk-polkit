@@ -1,5 +1,3 @@
-test_preparer = find_program('../apkd_test_common/prepare.sh')
-
 test_src_files = [
     'installFail.d',
     'progressNotification.d',
@@ -19,6 +17,6 @@ foreach src: test_src_files
     test(
         'test_apkd_dbus_server_' + test_name,
         apkd_test_exe,
-        args: [meson.build_root() / 'apk', meson.build_root() / 'abuildRepo', test_preparer.path(), apkd_dbus_exe.full_path()]
+        args: [meson.build_root() / 'apk', meson.build_root() / 'abuildRepo', test_preparer, apk, apkd_dbus_exe.full_path()]
         )
 endforeach

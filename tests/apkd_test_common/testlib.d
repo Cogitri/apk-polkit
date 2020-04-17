@@ -51,7 +51,9 @@ struct TestHelper
         }
         apk_verbosity = 2;
 
-        auto runScript = execute([args[3], this.apkRootDir, abuildBuildDir]);
+        auto runScript = execute([args[3], this.apkRootDir, abuildBuildDir], [
+                "APK": args[4]
+                ]);
         enforce(runScript[0] == 0, runScript[1]);
     }
 

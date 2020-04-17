@@ -8,7 +8,7 @@ touch installed lock scripts.tar triggers
 
 popd
 
-apk --allow-untrusted -X "$2"/repo add --root "$1" --initdb
+$APK --allow-untrusted -X "$2"/repo add --root "$1" --initdb
 export ABUILD_USERDIR="$2/abuildUserDir"
 abuild-keygen -anq
 
@@ -22,6 +22,6 @@ echo "$2"/abuilds > "$1"/etc/apk/repositories
 
 for x in abuilds/*/APKBUILD; do
     pushd ${x%/*}
-    APK="apk --allow-untrusted --root $1" SUDO_APK="abuild-apk --root $1" REPODEST="$2" abuild -F clean unpack prepare build rootpkg update_abuildrepo_index
+    APK="$APK --allow-untrusted --root $1" SUDO_APK="abuild-apk --root $1" REPODEST="$2" abuild -F clean unpack prepare build rootpkg update_abuildrepo_index
     popd
 done
