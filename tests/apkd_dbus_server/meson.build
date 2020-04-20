@@ -2,6 +2,7 @@ test_src_files = [
     'installFail.d',
     'progressNotification.d',
     'search.d',
+    'searchFileOwner.d',
     'update.d',
 ]
 

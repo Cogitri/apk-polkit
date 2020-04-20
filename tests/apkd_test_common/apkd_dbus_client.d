@@ -53,6 +53,9 @@ struct _ApkdHelperIface
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation,
                         const(char*)* arg_packages) handle_search_for_packages;
 
+        bool function(ApkdHelper* object, GDBusMethodInvocation* invocation,
+                        const(char*) arg_path) handle_search_file_owner;
+
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation) handle_update_repositories;
 
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation) handle_upgrade_all_packages;
@@ -99,6 +102,9 @@ void apkd_helper_complete_list_upgradable_packages(ApkdHelper* object,
                 GDBusMethodInvocation* invocation, GVariant* matchingPackages);
 
 void apkd_helper_complete_search_for_packages(ApkdHelper* object,
+                GDBusMethodInvocation* invocation, GVariant* matchingPackages);
+
+void apkd_helper_complete_search_file_owner(ApkdHelper* object,
                 GDBusMethodInvocation* invocation, GVariant* matchingPackages);
 
 /* D-Bus signal emissions functions: */
@@ -181,6 +187,15 @@ bool apkd_helper_call_search_for_packages_finish(ApkdHelper* proxy,
                 GVariant** out_matchingPackages, GAsyncResult* res, GError** error);
 
 bool apkd_helper_call_search_for_packages_sync(ApkdHelper* proxy, const(char*)* arg_packages,
+                GVariant** out_matchingPackages, GCancellable* cancellable, GError** error);
+
+void apkd_helper_call_search_file_owner(ApkdHelper* proxy, const(char*) arg_path,
+                GCancellable* cancellable, GAsyncReadyCallback callback, void* user_data);
+
+bool apkd_helper_call_search_file_owner_finish(ApkdHelper* proxy,
+                GVariant** out_matchingPackages, GAsyncResult* res, GError** error);
+
+bool apkd_helper_call_search_file_owner_sync(ApkdHelper* proxy, const(char*) arg_path,
                 GVariant** out_matchingPackages, GCancellable* cancellable, GError** error);
 
 /* D-Bus property accessors: */

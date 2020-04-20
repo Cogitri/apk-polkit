@@ -54,7 +54,7 @@ struct TestHelper
         auto runScript = execute([args[3], this.apkRootDir, abuildBuildDir], [
                 "APK": args[4]
                 ]);
-        enforce(runScript[0] == 0, runScript[1]);
+        enforce(runScript[0] == 0, format("Abuild error: '%s'", runScript[1]));
     }
 
     ~this()
