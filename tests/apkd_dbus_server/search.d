@@ -45,8 +45,8 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
 
     auto packages = ["test".toStringz(), null];
     GVariant* dbusRes;
-    enforce(apkd_helper_call_search_for_packages_sync(apkdHelper, packages.ptr,
-            &dbusRes, null, null));
+    enforce(apkd_helper_call_search_package_names_sync(apkdHelper,
+            packages.ptr, &dbusRes, null, null));
     auto dbusRet = new Variant(dbusRes);
     ApkPackage[] pkgArr;
 
@@ -93,7 +93,7 @@ int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerSearch");
     setupDbusServer(args[5], [
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.searchForPackages).toPolkitAction(),
+            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.searchPackageNames).toPolkitAction(),
             new ApkDataBaseOperations(ApkDataBaseOperations.Enum.updateRepositories)
             .toPolkitAction()
             ], &onNameAppeared, &nameVanishedCallback, &testHelper);

@@ -69,11 +69,11 @@ enum ApkdDbusServerErrorQuarkEnum
     ListAvailableError,
     ListInstalledError,
     ListUpgradableError,
+    SearchPackageNamesError,
+    SearchFileOwnerError,
     UpdateRepositoriesError,
     UpgradePackageError,
     UpgradeAllPackagesError,
-    SearchForPackagesError,
-    SearchFileOwnerError,
 }
 
 /**
@@ -194,11 +194,11 @@ class DBusServer
             {
                 final switch (databaseOperation.val) with (ApkDataBaseOperations.Enum)
                 {
-                case addPackage:
+                case addPackages:
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        interfacer.addPackage(pkgnames);
+                        interfacer.addPackages(pkgnames);
                     }
                     catch (Exception e)
                     {
@@ -209,11 +209,11 @@ class DBusServer
                         return;
                     }
                     break;
-                case deletePackage:
+                case deletePackages:
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        interfacer.deletePackage(pkgnames);
+                        interfacer.deletePackages(pkgnames);
                     }
                     catch (Exception e)
                     {
@@ -227,7 +227,7 @@ class DBusServer
                 case listAvailablePackages:
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(interfacer.getAvailablePackages());
+                        ret ~= apkPackageArrayToVariant(interfacer.listAvailablePackages());
                     }
                     catch (Exception e)
                     {
@@ -240,7 +240,7 @@ class DBusServer
                 case listInstalledPackages:
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(interfacer.getInstalledPackages());
+                        ret ~= apkPackageArrayToVariant(interfacer.listInstalledPackages());
                     }
                     catch (Exception e)
                     {
@@ -253,7 +253,7 @@ class DBusServer
                 case listUpgradablePackages:
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(interfacer.getUpgradablePackages());
+                        ret ~= apkPackageArrayToVariant(interfacer.listUpgradablePackages());
 
                     }
                     catch (Exception e)
@@ -279,16 +279,16 @@ class DBusServer
                         return;
                     }
                     break;
-                case searchForPackages:
+                case searchPackageNames:
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        ret ~= apkPackageArrayToVariant(interfacer.searchForPackage(pkgnames));
+                        ret ~= apkPackageArrayToVariant(interfacer.searchPackageNames(pkgnames));
                     }
                     catch (Exception e)
                     {
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.SearchForPackagesError,
+                                ApkdDbusServerErrorQuarkEnum.SearchPackageNamesError,
                                 format("Couldn't search for packages due to error %s", e));
                         return;
                     }
@@ -320,11 +320,11 @@ class DBusServer
                         return;
                     }
                     break;
-                case upgradePackage:
+                case upgradePackages:
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
                     {
-                        interfacer.upgradePackage(pkgnames);
+                        interfacer.upgradePackages(pkgnames);
                     }
                     catch (Exception e)
                     {
@@ -557,7 +557,7 @@ struct ApkInterfacer
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
-    void upgradePackage(string[] pkgnames)
+    void upgradePackages(string[] pkgnames)
     {
         tracef("Trying to upgrade package '%s'.", pkgnames);
         auto database = ApkDataBase(this.root);
@@ -566,7 +566,7 @@ struct ApkInterfacer
         {
             idleSource.destroy();
         }
-        database.upgradePackage(pkgnames);
+        database.upgradePackages(pkgnames);
         tracef("Successfully upgraded package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
@@ -606,7 +606,7 @@ struct ApkInterfacer
     *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
     *   due to missing permissions.
     */
-    void deletePackage(string[] pkgnames)
+    void deletePackages(string[] pkgnames)
     {
         tracef("Trying to delete package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
         auto database = ApkDataBase(this.root);
@@ -615,7 +615,7 @@ struct ApkInterfacer
         {
             idleSource.destroy();
         }
-        database.deletePackage(pkgnames);
+        database.deletePackages(pkgnames);
         tracef("Successfully deleted package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
@@ -632,7 +632,7 @@ struct ApkInterfacer
     *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
-    void addPackage(string[] pkgnames)
+    void addPackages(string[] pkgnames)
     {
         tracef("Trying to add package%s: %s", pkgnames.length > 1 ? "s" : "", pkgnames);
         auto database = ApkDataBase(this.root);
@@ -641,7 +641,7 @@ struct ApkInterfacer
         {
             idleSource.destroy();
         }
-        database.addPackage(pkgnames);
+        database.addPackages(pkgnames);
         tracef("Successfully added package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
@@ -652,11 +652,11 @@ struct ApkInterfacer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   An ApkListException if something went wrong in iterating over packages
     */
-    ApkPackage[] getAvailablePackages()
+    ApkPackage[] listAvailablePackages()
     {
         trace("Trying to list all available packages");
         auto database = ApkDataBase(this.root);
-        auto packages = database.getAvailablePackages();
+        auto packages = database.listAvailablePackages();
         trace("Successfully listed all available packages");
         return packages;
     }
@@ -667,11 +667,11 @@ struct ApkInterfacer
     * Throws:
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     */
-    ApkPackage[] getInstalledPackages()
+    ApkPackage[] listInstalledPackages()
     {
         trace("Trying to list all installed packages");
         auto database = ApkDataBase(this.root);
-        auto packages = database.getInstalledPackages();
+        auto packages = database.listInstalledPackages();
         trace("Successfully listed all installed packages");
         return packages;
     }
@@ -683,11 +683,11 @@ struct ApkInterfacer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   An ApkListException if something went wrong in iterating over packages
     */
-    ApkPackage[] getUpgradablePackages()
+    ApkPackage[] listUpgradablePackages()
     {
         trace("Trying to list upgradable packages");
         auto database = ApkDataBase(this.root);
-        auto packages = database.getUpgradablePackages();
+        auto packages = database.listUpgradablePackages();
         trace("Successfully listed all upgradable packages");
         return packages;
     }
@@ -702,11 +702,11 @@ struct ApkInterfacer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   An ApkListException if something went wrong in iterating over packages
     */
-    ApkPackage[] searchForPackage(string[] pkgnames)
+    ApkPackage[] searchPackageNames(string[] pkgnames)
     {
         tracef("Trying to search for packages %s", pkgnames);
         auto database = ApkDataBase(this.root);
-        auto packages = database.searchPackages(pkgnames);
+        auto packages = database.searchPackageNames(pkgnames);
         tracef("Successfully searched for packages. %s hits.", packages.length);
         return packages;
     }

@@ -25,15 +25,15 @@
     <interface name="dev.Cogitri.apkPolkit.Helper">
         <method name="updateRepositories">
         </method>
-        <method name="upgradePackage">
+        <method name="upgradePackages">
             <arg name="packages" type="as" direction="in"/>
         </method>
         <method name="upgradeAllPackages">
         </method>
-        <method name="deletePackage">
+        <method name="deletePackages">
             <arg name="packages" type="as" direction="in"/>
         </method>
-        <method name="addPackage">
+        <method name="addPackages">
             <arg name="packages" type="as" direction="in"/>
         </method>
         <method name="listAvailablePackages">
@@ -45,13 +45,13 @@
         <method name="listUpgradablePackages">
             <arg name="matchingPackages" type="a(sssssssssssttxb)" direction="out"/>
         </method>
-        <method name="searchForPackages">
+        <method name="searchPackageNames">
             <arg name="packages" type="as" direction="in"/>
             <arg name="matchingPackages" type="a(sssssssssssttxb)" direction="out"/>
         </method>
         <method name="searchFileOwner">
             <arg name="path" type="s" direction="in"/>
-            <arg name="matchingPackages" type="(sssssssssssttxb)" direction="out"/>
+            <arg name="matchingPackage" type="(sssssssssssttxb)" direction="out"/>
         </method>
 
         <property name="allowUntrustedRepos" type="b" access="readwrite"/>

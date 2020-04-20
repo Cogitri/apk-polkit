@@ -38,15 +38,15 @@ int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "listInstalled");
     auto database = new ApkDataBase(testHelper.apkRootDir, testHelper.repoDir);
-    enforce(database.getInstalledPackages().length == 0);
+    enforce(database.listInstalledPackages().length == 0);
     // FIXME: See install.d
     try
     {
-        database.addPackage(["test-a"]);
+        database.addPackages(["test-a"]);
     }
     catch (ApkDatabaseCommitException)
     {
     }
-    enforce(database.getInstalledPackages().length == 1);
+    enforce(database.listInstalledPackages().length == 1);
     return 0;
 }

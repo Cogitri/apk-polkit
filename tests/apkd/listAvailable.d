@@ -28,7 +28,7 @@ int main(string[] args)
 {
     auto testHelper = TestHelper(args, "listAvailable");
     auto database = new ApkDataBase(testHelper.apkRootDir, testHelper.repoDir);
-    auto availablePkgs = database.getAvailablePackages();
+    auto availablePkgs = database.listAvailablePackages();
     immutable auto expectedAvailablePkgs = 5;
     enforce(availablePkgs.length == expectedAvailablePkgs,
             format("Expected %s available packages, got %s",

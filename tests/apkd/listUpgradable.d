@@ -38,7 +38,7 @@ int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "listUpgradeable");
     auto database = new ApkDataBase(testHelper.apkRootDir, testHelper.repoDir);
-    auto upgradeablePkgsEmptyInstall = database.getUpgradablePackages();
+    auto upgradeablePkgsEmptyInstall = database.listUpgradablePackages();
     immutable auto expectedUpgradeablePkgsEmptyInstall = 0;
     enforce(upgradeablePkgsEmptyInstall.length == expectedUpgradeablePkgsEmptyInstall,
             format("Expected %s upgradable packages, got %s",
@@ -46,11 +46,11 @@ int _main(string[] args)
     // FIXME: see install.d
     try
     {
-        database.addPackage(["test-a", "test-b", "test-e"]);
+        database.addPackages(["test-a", "test-b", "test-e"]);
     }
     catch (ApkDatabaseCommitException)
     {
     }
-    auto upgradeablePkgs = database.getUpgradablePackages();
+    auto upgradeablePkgs = database.listUpgradablePackages();
     return 0;
 }

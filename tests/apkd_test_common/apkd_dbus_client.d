@@ -39,10 +39,10 @@ struct _ApkdHelperIface
         GTypeInterface parent_iface;
 
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation,
-                        const(char*)* arg_packages) handle_add_package;
+                        const(char*)* arg_packages) handle_add_packages;
 
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation,
-                        const(char*)* arg_packages) handle_delete_package;
+                        const(char*)* arg_packages) handle_delete_packages;
 
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation) handle_list_available_packages;
 
@@ -51,7 +51,7 @@ struct _ApkdHelperIface
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation) handle_list_upgradable_packages;
 
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation,
-                        const(char*)* arg_packages) handle_search_for_packages;
+                        const(char*)* arg_packages) handle_search_package_names;
 
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation,
                         const(char*) arg_path) handle_search_file_owner;
@@ -61,7 +61,7 @@ struct _ApkdHelperIface
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation) handle_upgrade_all_packages;
 
         bool function(ApkdHelper* object, GDBusMethodInvocation* invocation,
-                        const(char*)* arg_packages) handle_upgrade_package;
+                        const(char*)* arg_packages) handle_upgrade_packages;
 
         bool function(ApkdHelper* object) get_allow_untrusted_repos;
 
@@ -83,14 +83,14 @@ uint apkd_helper_override_properties(GObjectClass* klass, uint property_id_begin
 /* D-Bus method call completion functions: */
 void apkd_helper_complete_update_repositories(ApkdHelper* object, GDBusMethodInvocation* invocation);
 
-void apkd_helper_complete_upgrade_package(ApkdHelper* object, GDBusMethodInvocation* invocation);
+void apkd_helper_complete_upgrade_packages(ApkdHelper* object, GDBusMethodInvocation* invocation);
 
 void apkd_helper_complete_upgrade_all_packages(ApkdHelper* object,
                 GDBusMethodInvocation* invocation);
 
-void apkd_helper_complete_delete_package(ApkdHelper* object, GDBusMethodInvocation* invocation);
+void apkd_helper_complete_delete_packages(ApkdHelper* object, GDBusMethodInvocation* invocation);
 
-void apkd_helper_complete_add_package(ApkdHelper* object, GDBusMethodInvocation* invocation);
+void apkd_helper_complete_add_packages(ApkdHelper* object, GDBusMethodInvocation* invocation);
 
 void apkd_helper_complete_list_available_packages(ApkdHelper* object,
                 GDBusMethodInvocation* invocation, GVariant* matchingPackages);
@@ -101,7 +101,7 @@ void apkd_helper_complete_list_installed_packages(ApkdHelper* object,
 void apkd_helper_complete_list_upgradable_packages(ApkdHelper* object,
                 GDBusMethodInvocation* invocation, GVariant* matchingPackages);
 
-void apkd_helper_complete_search_for_packages(ApkdHelper* object,
+void apkd_helper_complete_search_package_names(ApkdHelper* object,
                 GDBusMethodInvocation* invocation, GVariant* matchingPackages);
 
 void apkd_helper_complete_search_file_owner(ApkdHelper* object,
@@ -120,12 +120,12 @@ bool apkd_helper_call_update_repositories_finish(ApkdHelper* proxy,
 bool apkd_helper_call_update_repositories_sync(ApkdHelper* proxy,
                 GCancellable* cancellable, GError** error);
 
-void apkd_helper_call_upgrade_package(ApkdHelper* proxy, const(char*)* arg_packages,
+void apkd_helper_call_upgrade_packages(ApkdHelper* proxy, const(char*)* arg_packages,
                 GCancellable* cancellable, GAsyncReadyCallback callback, void* user_data);
 
-bool apkd_helper_call_upgrade_package_finish(ApkdHelper* proxy, GAsyncResult* res, GError** error);
+bool apkd_helper_call_upgrade_packages_finish(ApkdHelper* proxy, GAsyncResult* res, GError** error);
 
-bool apkd_helper_call_upgrade_package_sync(ApkdHelper* proxy,
+bool apkd_helper_call_upgrade_packages_sync(ApkdHelper* proxy,
                 const(char*)* arg_packages, GCancellable* cancellable, GError** error);
 
 void apkd_helper_call_upgrade_all_packages(ApkdHelper* proxy,
@@ -137,20 +137,20 @@ bool apkd_helper_call_upgrade_all_packages_finish(ApkdHelper* proxy,
 bool apkd_helper_call_upgrade_all_packages_sync(ApkdHelper* proxy,
                 GCancellable* cancellable, GError** error);
 
-void apkd_helper_call_delete_package(ApkdHelper* proxy, const(char*)* arg_packages,
+void apkd_helper_call_delete_packages(ApkdHelper* proxy, const(char*)* arg_packages,
                 GCancellable* cancellable, GAsyncReadyCallback callback, void* user_data);
 
-bool apkd_helper_call_delete_package_finish(ApkdHelper* proxy, GAsyncResult* res, GError** error);
+bool apkd_helper_call_delete_packages_finish(ApkdHelper* proxy, GAsyncResult* res, GError** error);
 
-bool apkd_helper_call_delete_package_sync(ApkdHelper* proxy,
+bool apkd_helper_call_delete_packages_sync(ApkdHelper* proxy,
                 const(char*)* arg_packages, GCancellable* cancellable, GError** error);
 
-void apkd_helper_call_add_package(ApkdHelper* proxy, const(char*)* arg_packages,
+void apkd_helper_call_add_packages(ApkdHelper* proxy, const(char*)* arg_packages,
                 GCancellable* cancellable, GAsyncReadyCallback callback, void* user_data);
 
-bool apkd_helper_call_add_package_finish(ApkdHelper* proxy, GAsyncResult* res, GError** error);
+bool apkd_helper_call_add_packages_finish(ApkdHelper* proxy, GAsyncResult* res, GError** error);
 
-bool apkd_helper_call_add_package_sync(ApkdHelper* proxy,
+bool apkd_helper_call_add_packages_sync(ApkdHelper* proxy,
                 const(char*)* arg_packages, GCancellable* cancellable, GError** error);
 
 void apkd_helper_call_list_available_packages(ApkdHelper* proxy,
@@ -180,13 +180,13 @@ bool apkd_helper_call_list_upgradable_packages_finish(ApkdHelper* proxy,
 bool apkd_helper_call_list_upgradable_packages_sync(ApkdHelper* proxy,
                 GVariant** out_matchingPackages, GCancellable* cancellable, GError** error);
 
-void apkd_helper_call_search_for_packages(ApkdHelper* proxy, const(char*)* arg_packages,
+void apkd_helper_call_search_package_names(ApkdHelper* proxy, const(char*)* arg_packages,
                 GCancellable* cancellable, GAsyncReadyCallback callback, void* user_data);
 
-bool apkd_helper_call_search_for_packages_finish(ApkdHelper* proxy,
+bool apkd_helper_call_search_package_names_finish(ApkdHelper* proxy,
                 GVariant** out_matchingPackages, GAsyncResult* res, GError** error);
 
-bool apkd_helper_call_search_for_packages_sync(ApkdHelper* proxy, const(char*)* arg_packages,
+bool apkd_helper_call_search_package_names_sync(ApkdHelper* proxy, const(char*)* arg_packages,
                 GVariant** out_matchingPackages, GCancellable* cancellable, GError** error);
 
 void apkd_helper_call_search_file_owner(ApkdHelper* proxy, const(char*) arg_path,

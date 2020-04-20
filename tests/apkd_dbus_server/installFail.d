@@ -40,7 +40,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
             "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
     apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz());
     auto pkgs = ["doesNotExist".toStringz(), null];
-    enforce(!apkd_helper_call_add_package_sync(apkdHelper, pkgs.ptr, null, null));
+    enforce(!apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null, null));
     exit(0);
 }
 
@@ -57,7 +57,7 @@ int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerInstall");
     setupDbusServer(args[5], [
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.addPackage).toPolkitAction()
+            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.addPackages).toPolkitAction()
             ], &onNameAppeared, &nameVanishedCallback, &testHelper);
     return 0;
 }

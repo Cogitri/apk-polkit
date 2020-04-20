@@ -31,16 +31,16 @@ class ApkDataBaseOperations : CommonOperations
     */
     enum Enum
     {
-        addPackage,
-        deletePackage,
+        addPackages,
+        deletePackages,
         listInstalledPackages,
         listAvailablePackages,
         listUpgradablePackages,
         searchFileOwner,
-        searchForPackages,
+        searchPackageNames,
         updateRepositories,
         upgradeAllPackages,
-        upgradePackage,
+        upgradePackages,
     }
 
     this(Enum val) nothrow
@@ -65,41 +65,7 @@ class ApkDataBaseOperations : CommonOperations
     {
         immutable auto prefix = "dev.Cogitri.apkPolkit.Helper";
 
-        string action;
-
-        final switch (this.val) with (Enum)
-        {
-        case addPackage:
-            action = "install";
-            break;
-        case deletePackage:
-            action = "delete";
-            break;
-        case listInstalledPackages:
-            action = "listInstalled";
-            break;
-        case listAvailablePackages:
-            action = "listAvailable";
-            break;
-        case listUpgradablePackages:
-            action = "listUpgradable";
-            break;
-        case searchForPackages:
-            action = "searchForPackages";
-            break;
-        case searchFileOwner:
-            action = "searchFileOwner";
-            break;
-        case updateRepositories:
-            action = "update";
-            break;
-        case upgradeAllPackages:
-        case upgradePackage:
-            action = "upgrade";
-            break;
-        }
-
-        return prefix ~ "." ~ action;
+        return prefix ~ "." ~ this.toString();
     }
 
     @property Enum val() const

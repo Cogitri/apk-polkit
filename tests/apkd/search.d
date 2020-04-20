@@ -43,11 +43,11 @@ int _main(string[] args)
     auto testHelper = TestHelper(args, "search");
 
     auto database = new ApkDataBase(testHelper.apkRootDir, testHelper.repoDir);
-    auto pkgList = database.searchPackages(["test"]);
+    auto pkgList = database.searchPackageNames(["test"]);
     enforce(pkgList.length == 5);
-    pkgList = database.searchPackages(["test-a"]);
+    pkgList = database.searchPackageNames(["test-a"]);
     enforce(pkgList.length == 1);
-    pkgList = database.searchPackages(["test-a", "test-b"]);
+    pkgList = database.searchPackageNames(["test-a", "test-b"]);
     enforce(pkgList.length == 2);
     return 0;
 }

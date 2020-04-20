@@ -53,7 +53,7 @@ int _main(string[] args)
     // correctly if run as non-root. See https://gitlab.alpinelinux.org/alpine/apk-tools/merge_requests/5
     try
     {
-        database.addPackage(["test-a"]);
+        database.addPackages(["test-a"]);
     }
     catch (ApkDatabaseCommitException)
     {
@@ -67,7 +67,7 @@ int _main(string[] args)
     // FIXME: See above
     try
     {
-        database.addPackage(["test-e"]);
+        database.addPackages(["test-e"]);
     }
     catch (ApkDatabaseCommitException)
     {

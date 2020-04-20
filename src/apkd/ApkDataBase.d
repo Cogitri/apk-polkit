@@ -178,7 +178,7 @@ struct ApkDataBase
     *   the upgrade, e.g. due to conflicts.
     *   Throws an ApkBrokenWorldException if the db's world is broken.
     */
-    ApkPackage[] getUpgradablePackages()
+    ApkPackage[] listUpgradablePackages()
     {
         ApkPackage[] packages;
 
@@ -236,7 +236,7 @@ struct ApkDataBase
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
-    void upgradePackage(string[] pkgnames, ushort solverFlags = APK_SOLVERF_IGNORE_UPGRADE)
+    void upgradePackages(string[] pkgnames, ushort solverFlags = APK_SOLVERF_IGNORE_UPGRADE)
     {
         apk_dependency_array* worldCopy = null;
         scope (exit)
@@ -271,7 +271,7 @@ struct ApkDataBase
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
-    void addPackage(string[] pkgnames, ushort solverFlags = 0)
+    void addPackages(string[] pkgnames, ushort solverFlags = 0)
     {
         apk_dependency_array* worldCopy = null;
         scope (exit)
@@ -309,7 +309,7 @@ struct ApkDataBase
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions.
     */
-    void deletePackage(string[] pkgnames, ushort solverFlags = 0)
+    void deletePackages(string[] pkgnames, ushort solverFlags = 0)
     {
         apk_dependency_array* worldCopy = null;
         apk_changeset changeset;
@@ -343,7 +343,7 @@ struct ApkDataBase
     *
     * Returns: An array of all installed packages.
     */
-    ApkPackage[] getInstalledPackages()
+    ApkPackage[] listInstalledPackages()
     {
         import apkd.functions : container_of;
 
@@ -369,7 +369,7 @@ struct ApkDataBase
     * Returns: An array of all installed packages.
     * Throws: An ApkListException if something went wrong in iterating over packages
     */
-    ApkPackage[] getAvailablePackages()
+    ApkPackage[] listAvailablePackages()
     {
         ApkPackage[] apkPackages;
         auto apkHashRes = apk_hash_foreach(&this.db.available.packages,
@@ -387,7 +387,7 @@ struct ApkDataBase
     * Returns: An array of all matching packages.
     * Throws: An ApkListException if something went wrong in iterating over packages
     */
-    ApkPackage[] searchPackages(string[] specs)
+    ApkPackage[] searchPackageNames(string[] specs)
     {
         ApkPackage[] apkPackages;
         auto context = apkd.functions.SearchContext(specs, &apkPackages, &this.db);

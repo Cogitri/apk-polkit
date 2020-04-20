@@ -43,7 +43,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
     apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz());
     apkd_helper_set_allow_untrusted_repos(apkdHelper, true);
     auto pkgs = ["test-a".toStringz(), null];
-    apkd_helper_call_add_package_sync(apkdHelper, pkgs.ptr, null, null);
+    apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null, null);
     auto path = "/usr/bin/test-a";
     GVariant* dbusRes;
     enforce(apkd_helper_call_search_file_owner_sync(apkdHelper,
@@ -90,7 +90,7 @@ int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerSearchFileOwner");
     setupDbusServer(args[5], [
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.addPackage).toPolkitAction(),
+            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.addPackages).toPolkitAction(),
             new ApkDataBaseOperations(ApkDataBaseOperations.Enum.searchFileOwner)
             .toPolkitAction(),
             ], &onNameAppeared, &nameVanishedCallback, &testHelper);

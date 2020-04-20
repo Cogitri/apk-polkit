@@ -32,7 +32,7 @@
   <vendor_url>https://github.com/Cogitri/apk-polkit</vendor_url>
   <icon_name>package-x-generic</icon_name>
 
-  <action id="dev.Cogitri.apkPolkit.Helper.install">
+  <action id="dev.Cogitri.apkPolkit.Helper.addPackages">
     <!-- SECURITY:
           - Normal users need admin authentication to install packages
           - Users in the "wheel" group can install packages without authentication
@@ -45,10 +45,10 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.update dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.Helper.update">
+  <action id="dev.Cogitri.apkPolkit.Helper.updateRepositories">
     <!-- SECURITY:
           - Normal users need admin authentication to update the package database
           - Users in the "wheel" group can update the package database without authentication
@@ -63,7 +63,7 @@
     </defaults>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.Helper.upgrade">
+  <action id="dev.Cogitri.apkPolkit.Helper.upgradePackages">
     <!-- SECURITY:
           - Normal users need admin authentication to upgrade packages
           - Users in the "wheel" group can upgrade packages without authentication
@@ -76,10 +76,26 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.Helper.delete">
+  <action id="dev.Cogitri.apkPolkit.Helper.upgradeAllPackages">
+    <!-- SECURITY:
+          - Normal users need admin authentication to upgrade packages
+          - Users in the "wheel" group can upgrade packages without authentication
+     -->
+    <description>Upgrade all package(s)</description>
+    <message>Authentication is required to upgrade all package(s)</message>
+    <icon_name>package-x-generic</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
+  </action>
+
+  <action id="dev.Cogitri.apkPolkit.Helper.deletePackages">
     <!-- SECURITY:
           - Normal users need admin authentication to delete packages
           - Users in the "wheel" group can delete packages without authentication
@@ -92,10 +108,10 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.Helper.listAvailable">
+  <action id="dev.Cogitri.apkPolkit.Helper.listAvailablePackages">
     <!-- SECURITY:
           - Everyone is allowed to list available packages in the database by default. This
             rule is only here so you can restrict this if you so desire.
@@ -110,7 +126,7 @@
     </defaults>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.Helper.listInstalled">
+  <action id="dev.Cogitri.apkPolkit.Helper.listInstalledPackages">
     <!-- SECURITY:
           - Everyone is allowed to list installed packages in the database by default. This
             rule is only here so you can restrict this if you so desire.
@@ -125,7 +141,7 @@
     </defaults>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.Helper.listUpgradable">
+  <action id="dev.Cogitri.apkPolkit.Helper.listUpgradablePackages">
     <!-- SECURITY:
           - Everyone is allowed to list upgradable packages in the database by default. This
             rule is only here so you can restrict this if you so desire.
@@ -213,7 +229,7 @@
     <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.Helper.searchForPackages">
+  <action id="dev.Cogitri.apkPolkit.Helper.searchPackageNames">
     <!-- SECURITY:
           - Everyone is allowed to search for packages in the database by default. This
             rule is only here so you can restrict this if you so desire.
