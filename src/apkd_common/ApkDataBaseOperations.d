@@ -36,6 +36,7 @@ class ApkDataBaseOperations : CommonOperations
         listInstalledPackages,
         listAvailablePackages,
         listUpgradablePackages,
+        searchFileOwner,
         searchForPackages,
         updateRepositories,
         upgradeAllPackages,
@@ -85,6 +86,9 @@ class ApkDataBaseOperations : CommonOperations
             break;
         case searchForPackages:
             action = "searchForPackages";
+            break;
+        case searchFileOwner:
+            action = "searchFileOwner";
             break;
         case updateRepositories:
             action = "update";

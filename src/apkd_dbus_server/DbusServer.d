@@ -73,6 +73,7 @@ enum ApkdDbusServerErrorQuarkEnum
     UpgradePackageError,
     UpgradeAllPackagesError,
     SearchForPackagesError,
+    SearchFileOwnerError,
 }
 
 /**
@@ -263,6 +264,21 @@ class DBusServer
                         return;
                     }
                     break;
+                case searchFileOwner:
+                    size_t len;
+                    auto path = variant.getChildValue(0).getString(len);
+                    try
+                    {
+                        ret ~= apkPackageToVariant(interfacer.searchFileOwner(path));
+                    }
+                    catch (Exception e)
+                    {
+                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                ApkdDbusServerErrorQuarkEnum.SearchFileOwnerError,
+                                format("Couldn't search for owner of file due to error %s", e));
+                        return;
+                    }
+                    break;
                 case searchForPackages:
                     auto pkgnames = variant.getChildValue(0).getStrv();
                     try
@@ -447,6 +463,25 @@ class DBusServer
     }
 
 private:
+    static Variant apkPackageToVariant(ApkPackage pkg)
+    {
+        auto pkgBuilder = new VariantBuilder(new VariantType("(sssssssssssttxb)"));
+        static foreach (member; [
+                "name", "newVersion", "oldVersion", "arch", "license", "origin",
+                "maintainer", "url", "description", "commit", "filename"
+            ])
+        {
+            pkgBuilder.addValue(new Variant(__traits(getMember, pkg, member)
+                    ? __traits(getMember, pkg, member) : ""));
+        }
+        static foreach (member; ["installedSize", "size"])
+        {
+            pkgBuilder.addValue(new Variant(__traits(getMember, pkg, member)));
+        }
+        pkgBuilder.addValue(new Variant(pkg.buildTime.toUnixTime!long()));
+        pkgBuilder.addValue(new Variant(pkg.isInstalled));
+        return pkgBuilder.end();
+    }
 
     /// Helper method to convert a ApkPackage array to a Variant for sending it over DBus
     static Variant apkPackageArrayToVariant(ApkPackage[] pkgArr)
@@ -455,23 +490,7 @@ private:
 
         foreach (pkg; pkgArr)
         {
-            arrBuilder.open(new VariantType("(sssssssssssttxb)"));
-            static foreach (member; [
-                    "name", "newVersion", "oldVersion", "arch", "license",
-                    "origin", "maintainer", "url", "description", "commit",
-                    "filename"
-                ])
-            {
-                arrBuilder.addValue(new Variant(__traits(getMember, pkg,
-                        member) ? __traits(getMember, pkg, member) : ""));
-            }
-            static foreach (member; ["installedSize", "size"])
-            {
-                arrBuilder.addValue(new Variant(__traits(getMember, pkg, member)));
-            }
-            arrBuilder.addValue(new Variant(pkg.buildTime.toUnixTime!long()));
-            arrBuilder.addValue(new Variant(pkg.isInstalled));
-            arrBuilder.close();
+            arrBuilder.addValue(apkPackageToVariant(pkg));
         }
 
         return arrBuilder.end();
@@ -690,6 +709,25 @@ struct ApkInterfacer
         auto packages = database.searchPackages(pkgnames);
         tracef("Successfully searched for packages. %s hits.", packages.length);
         return packages;
+    }
+
+    /**
+    * Get an array of all packages that match one of the pkgnames given. Uses substring searching.
+    *
+    * Params:
+    *   pkgnames = pkgnames to search for
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   An ApkListException if something went wrong in iterating over packages
+    */
+    ApkPackage searchFileOwner(string path)
+    {
+        tracef("Trying to search owner of path %s", path);
+        auto database = ApkDataBase(this.root);
+        auto matchedPackage = database.searchFileOwner(path);
+        trace("Successfully searched for package");
+        return matchedPackage;
     }
 
 private:

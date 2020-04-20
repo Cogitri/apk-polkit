@@ -85,6 +85,14 @@ class ApkListException : ApkException
     }
 }
 
+/// Thrown if something goes wrong while finding the owner of a file
+class ApkFindFileOwnerException : ApkException
+{
+    this(string msg, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(msg, file, line);
+    }
+}
 /// Superclass for user caused errors
 class UserErrorException : Exception
 {

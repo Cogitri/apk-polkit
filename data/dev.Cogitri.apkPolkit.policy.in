@@ -213,13 +213,29 @@
     <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
   </action>
 
-    <action id="dev.Cogitri.apkPolkit.Helper.searchForPackages">
+  <action id="dev.Cogitri.apkPolkit.Helper.searchForPackages">
     <!-- SECURITY:
           - Everyone is allowed to search for packages in the database by default. This
             rule is only here so you can restrict this if you so desire.
      -->
     <description>Search for packages</description>
     <message>Authentication is required to search for packages</message>
+    <icon_name>package-x-generic</icon_name>
+    <defaults>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+
+  <action id="dev.Cogitri.apkPolkit.Helper.searchFileOwner">
+    <!-- SECURITY:
+          - Everyone is allowed to search for hte owner of a file by default. This
+            rule is only here so you can restrict this if you so desire.
+     -->
+    <description>Query the owner of a file</description>
+    <message>Authentication is query the owner of a file</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>yes</allow_any>

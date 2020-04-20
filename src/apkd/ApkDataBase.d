@@ -35,6 +35,7 @@ import std.algorithm : canFind;
 import std.conv : to;
 import std.exception : enforce;
 import std.experimental.logger;
+import std.file : readLink;
 import std.format : format;
 import std.process : pipe, Pipe;
 import std.stdio : File, write;
@@ -407,6 +408,22 @@ struct ApkDataBase
     @property File progressFd()
     {
         return this.m_progressFd.readEnd();
+    }
+
+    ApkPackage searchFileOwner(string path)
+    {
+        auto pathBlob = apk_blob_t(path.length, path.toUTFz!(char*));
+        auto pkg = apk_db_get_file_owner(&this.db, pathBlob);
+        if (pkg is null)
+        {
+            auto absolutePath = readLink(path);
+            auto absolutePathBlob = apk_blob_t(absolutePath.length, absolutePath.toUTFz!(char*));
+            pkg = apk_db_get_file_owner(&this.db, absolutePathBlob);
+        }
+
+        enforce!ApkFindFileOwnerException(pkg !is null, "Couldn't find owner of file %s", path);
+
+        return ApkPackage(*pkg, true);
     }
 
 private:
