@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apk-polkit\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-12 13:28+0200\n"
-"PO-Revision-Date: 2020-04-12 08:30-0300\n"
+"POT-Creation-Date: 2020-04-20 22:40+0200\n"
+"PO-Revision-Date: 2020-04-20 18:19-0300\n"
 "Last-Translator: Leo <thinkabit.ukim@gmail.com>\n"
 "Language-Team: \n"
 "Language: pt_BR\n"
@@ -166,3 +166,14 @@ msgstr "Pesquisar pacotes"
 #: data/dev.Cogitri.apkPolkit.policy.in:222
 msgid "Authentication is required to search for packages"
 msgstr "Autenticação é necessária para pesquisar pacotes"
+
+#. SECURITY:
+#. - Everyone is allowed to search for hte owner of a file by default. This
+#. rule is only here so you can restrict this if you so desire.
+#: data/dev.Cogitri.apkPolkit.policy.in:237
+msgid "Query the owner of a file"
+msgstr "Inquirir pelo dono de um arquivo"
+
+#: data/dev.Cogitri.apkPolkit.policy.in:238
+msgid "Authentication is query the owner of a file"
+msgstr "Autenticação é necessária para inquirir pelo dono de um arquivo"
