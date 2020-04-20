@@ -251,7 +251,7 @@
             rule is only here so you can restrict this if you so desire.
      -->
     <description>Query the owner of a file</description>
-    <message>Authentication is query the owner of a file</message>
+    <message>Authentication is required to query the owner of a file</message>
     <icon_name>package-x-generic</icon_name>
     <defaults>
       <allow_any>yes</allow_any>
