@@ -77,7 +77,7 @@ mixin template apkArrayFuncs(string name)
     {
         auto size = 1 + (*a).num;
         mixin(name ~ "_array_resize(a, size);");
-        return &(*a).m_item[size - 1];
+        return &(*a).item[size - 1];
     }
 
     mixin("alias " ~ name ~ "_array_free = _func_free;");
