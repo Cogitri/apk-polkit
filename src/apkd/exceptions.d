@@ -93,6 +93,16 @@ class ApkFindFileOwnerException : ApkException
         super(msg, file, line);
     }
 }
+
+/// Thrown if a package can't be deleted because other things still depend on it.
+class ApkCantDeletedRequiredPackage : ApkException
+{
+    this(string msg, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(msg, file, line);
+    }
+}
+
 /// Superclass for user caused errors
 class UserErrorException : Exception
 {

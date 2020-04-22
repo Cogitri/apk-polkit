@@ -19,7 +19,7 @@ data_dir = join_paths(prefix, get_option('datadir'))
 gio_unix_dep = dependency('gio-unix-2.0')
 glibd_dep = dependency('glibd-2.0')
 polkit_gobjectd_dep = dependency('polkit-gobjectd-1')
-apk_toolsd_dep = dependency('apk-toolsd')
+apk_toolsd_dep = dependency('apk-toolsd', version: '>=2.10.5.6')
 dbus_dep = dependency('dbus-1')
 # Required to translate (and install!) polkit policy
 find_program('xgettext')

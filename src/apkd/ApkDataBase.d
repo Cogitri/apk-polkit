@@ -33,7 +33,7 @@ import deimos.apk_toolsd.apk_solver;
 import deimos.apk_toolsd.apk_version;
 import std.algorithm : canFind;
 import std.conv : to;
-import std.exception : enforce;
+import std.exception : enforce, assumeWontThrow;
 import std.experimental.logger;
 import std.file : readLink;
 import std.format : format;
@@ -309,7 +309,7 @@ struct ApkDataBase
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions.
     */
-    void deletePackages(string[] pkgnames, ushort solverFlags = 0)
+    void deletePackages(string[] pkgnames, bool recursiveDelete = false, ushort solverFlags = 0)
     {
         apk_dependency_array* worldCopy = null;
         apk_changeset changeset;
@@ -321,7 +321,7 @@ struct ApkDataBase
 
         apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
 
-        auto deleteContext = apkd.functions.DeleteContext(true, worldCopy, 0);
+        auto deleteContext = apkd.functions.DeleteContext(recursiveDelete, worldCopy, 0);
 
         this.executeForMatching(pkgnames, apk_foreach_genid(), &deleteName, &deleteContext);
 
@@ -332,6 +332,32 @@ struct ApkDataBase
         enforce!ApkSolverException(solverSolveRes == 0,
                 format("Failed to calculate dependency graph due to error '%s'!",
                     apk_error_str(solverSolveRes).to!string));
+
+        foreach (change; changeset.changes.item)
+        {
+            if (change.new_pkg !is null)
+            {
+                change.new_pkg.marked = 1;
+            }
+        }
+
+        apk_string_array* pkgnameArr;
+        apkd.functions.apk_string_array_init(&pkgnameArr);
+        foreach (pkgname; pkgnames)
+        {
+            *apkd.functions.apk_string_array_add(&pkgnameArr) = pkgname.toUTFz!(char*);
+        }
+
+        string dependants;
+        apk_name_foreach_matching(&this.db, pkgnameArr,
+                apk_foreach_genid() | APK_FOREACH_MARKED | APK_DEP_SATISFIES,
+                &getNotDeletedPackageReason, &dependants);
+        if (dependants != "")
+        {
+            throw new ApkCantDeletedRequiredPackage(format(
+                    "package still required by the following packages: %s", dependants));
+        }
+
         const auto solverCommitRes = apk_solver_commit_changeset(&this.db, &changeset, worldCopy);
         enforce!ApkDatabaseCommitException(solverCommitRes == 0,
                 format("Failed to commit changes to the database due to error '%s'!",
@@ -547,6 +573,91 @@ private:
         else
         {
             apkd.functions.recursiveDeletePackage(apkPackage, null, null, ctx);
+        }
+    }
+
+    struct NotDeletedReasonContext
+    {
+        apk_name* name;
+        string* notRemovedDue;
+        uint matches;
+    }
+
+    extern (C) static void addNotDeletedPackage(apk_package* pkg,
+            apk_dependency*, apk_package*, void* ctx) nothrow
+    in
+    {
+        assert(cast(NotDeletedReasonContext*) ctx);
+    }
+    do
+    {
+        auto notDeletedReasonContext = cast(NotDeletedReasonContext*) ctx;
+        if (pkg.name.name.to!string != notDeletedReasonContext.name.name.to!string)
+        {
+            *notDeletedReasonContext.notRemovedDue ~= pkg.name.name.to!string ~ " ";
+        }
+
+        foreachReverseDependency(pkg, true, true, false, &addNotDeletedPackage, ctx);
+        foreach (dep; pkg.install_if.item)
+        {
+            foreach (provider; dep.name.providers.item)
+            {
+                if (provider.pkg.marked && !apk_pkg_match_genid(provider.pkg,
+                        notDeletedReasonContext.matches))
+                {
+                    addNotDeletedPackage(provider.pkg, null, null, ctx);
+                }
+            }
+        }
+    }
+
+    /**
+    * Get the dependants that depend on a package and stop it from being deleted.
+    * Params:
+    *   apk_database = unused
+    *   match        = The name of the package that we try to delete. Unused.
+    *   name         = The apk_name we try to delete.
+    *   ctx          = A void ptr to a DeleteContext. Used to keep track of errors etc.
+    */
+    extern (C) static void getNotDeletedPackageReason(apk_database*,
+            const char*, apk_name* name, void* ctx) nothrow
+    in
+    {
+        assert(cast(string*) ctx);
+    }
+    do
+    {
+        auto notRemovedDue = cast(string*) ctx;
+        auto notDeletedReasonContext = NotDeletedReasonContext(name, notRemovedDue,
+                apk_foreach_genid() | APK_FOREACH_MARKED | APK_DEP_SATISFIES);
+        foreach (provider; name.providers.item)
+        {
+            if (provider.pkg.marked)
+            {
+                addNotDeletedPackage(provider.pkg, null, null, &notDeletedReasonContext);
+            }
+        }
+    }
+
+    alias reverseDepFunc = extern (C) void function(apk_package* pkg,
+            apk_dependency* dep, apk_package* pkg, void* ctx) nothrow;
+
+    static foreachReverseDependency(apk_package* pkg, bool marked,
+            bool installed, bool one_dep_only, reverseDepFunc cb, void* ctx) nothrow
+    {
+        foreach (reverseDep; pkg.name.rdepends.item)
+        {
+            foreach (depPkg; reverseDep.providers.item)
+            {
+                assumeWontThrow(error("Pkg:", depPkg.pkg.name.name.to!string,
+                        " marked: ", depPkg.pkg.marked));
+                if ((installed && depPkg.pkg.ipkg is null) || (marked && !depPkg.pkg.marked))
+                {
+                    continue;
+                }
+                assumeWontThrow(error("Pkg done:", depPkg.pkg.name.name.to!string));
+                cb(depPkg.pkg, null, null, ctx);
+            }
         }
     }
 
