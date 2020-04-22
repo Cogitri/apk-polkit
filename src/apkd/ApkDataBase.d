@@ -313,17 +313,26 @@ struct ApkDataBase
     {
         apk_dependency_array* worldCopy = null;
         apk_changeset changeset;
+        apk_string_array* pkgnameArr;
         scope (exit)
         {
             apkd.functions.apk_change_array_free(&changeset.changes);
             apkd.functions.apk_dependency_array_free(&worldCopy);
+            apkd.functions.apk_string_array_free(&pkgnameArr);
         }
 
         apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
 
+        apkd.functions.apk_string_array_init(&pkgnameArr);
+        foreach (pkgname; pkgnames)
+        {
+            *apkd.functions.apk_string_array_add(&pkgnameArr) = pkgname.toUTFz!(char*);
+        }
+
         auto deleteContext = apkd.functions.DeleteContext(recursiveDelete, worldCopy, 0);
 
-        this.executeForMatching(pkgnames, apk_foreach_genid(), &deleteName, &deleteContext);
+        apk_name_foreach_matching(&this.db, pkgnameArr, apk_foreach_genid(),
+                &deleteName, &deleteContext);
 
         enforce!ApkException(deleteContext.errors == 0,
                 "Something went wrong while deleting packages, see above...");
@@ -339,13 +348,6 @@ struct ApkDataBase
             {
                 change.new_pkg.marked = 1;
             }
-        }
-
-        apk_string_array* pkgnameArr;
-        apkd.functions.apk_string_array_init(&pkgnameArr);
-        foreach (pkgname; pkgnames)
-        {
-            *apkd.functions.apk_string_array_add(&pkgnameArr) = pkgname.toUTFz!(char*);
         }
 
         string dependants;
@@ -554,12 +556,12 @@ private:
     *   name         = The apk_name we try to delete.
     *   ctx          = A void ptr to a DeleteContext. Used to keep track of errors etc.
     */
-    static void deleteName(apk_database*, string match, apk_name* name, void* ctx)
+    extern (C) static void deleteName(apk_database*, const char* match, apk_name* name, void* ctx) nothrow
     {
         auto deleteContext = cast(apkd.functions.DeleteContext*) ctx;
         if (name is null)
         {
-            errorf("No such package: %s", match);
+            assumeWontThrow(errorf("No such package: %s", match.to!string));
             deleteContext.errors = deleteContext.errors + 1;
             return;
         }
@@ -659,58 +661,6 @@ private:
                 cb(depPkg.pkg, null, null, ctx);
             }
         }
-    }
-
-    /**
-    * Execute the function cb for every package which matches
-    *
-    * Params:
-    *   filter = An array of package names we filter through
-    *   cb     = Called for each matching package
-    *   ctx    = A DeleteContext used for keeping track of errors etc.
-    */
-    void executeForMatching(string[] filter, uint match, void function(apk_database* db,
-            string match, apk_name* name, void* ctx) cb, void* ctx)
-    {
-        import std.algorithm : canFind;
-        import std.utf : toUTFz;
-
-        const uint genid = match & APK_FOREACH_GENID_MASK;
-        if (filter is null || filter.length == 0)
-        {
-            if (!(match & APK_FOREACH_NULL_MATCHES_ALL))
-            {
-                return;
-            }
-
-        }
-
-        foreach (pmatch; filter)
-        {
-            if (pmatch.canFind('*'))
-            {
-                return;
-            }
-        }
-
-        foreach (pmatch; filter)
-        {
-            auto matchBlob = apk_blob_t(pmatch.length, toUTFz!(char*)(pmatch));
-            auto hash = this.db.available.names.ops.hash_key(matchBlob);
-            auto name = cast(apk_name*) apk_hash_get_hashed(&this.db.available.names,
-                    matchBlob, hash);
-            if (genid && name)
-            {
-                if (name.foreach_genid >= genid)
-                {
-                    continue;
-                }
-                name.foreach_genid = genid;
-            }
-            cb(&this.db, pmatch, name, ctx);
-        }
-
-        return;
     }
 
     /**
