@@ -164,7 +164,7 @@ class DBusServer
         }
         catch (ConvException e)
         {
-            errorf("Unkown method name %s: %s!", methodName.to!string, e);
+            errorf("Unkown method name %s: %s!", methodName.to!string, e.msg);
             return;
         }
 
@@ -177,10 +177,11 @@ class DBusServer
         }
         catch (GException e)
         {
-            errorf("Authorization for operation %s for has failed due to error '%s'!", operation, e);
+            errorf("Authorization for operation %s for has failed due to error '%s'!",
+                    operation, e.msg);
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.AUTH_FAILED,
                     format("Authorization for operation %s for has failed due to error '%s'!",
-                        operation, e));
+                        operation, e.msg));
             return;
         }
 
@@ -205,7 +206,7 @@ class DBusServer
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.AddError,
                                 format("Couldn't add package%s %s due to error %s",
-                                    pkgnames.length == 0 ? "" : "s", pkgnames, e));
+                                    pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
                         return;
                     }
                     break;
@@ -220,7 +221,7 @@ class DBusServer
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.DeleteError,
                                 format("Couldn't delete package%s %s due to error %s",
-                                    pkgnames.length == 0 ? "" : "s", pkgnames, e));
+                                    pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
                         return;
                     }
                     break;
@@ -233,7 +234,7 @@ class DBusServer
                     {
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.ListAvailableError,
-                                format("Couldn't list available packages due to error %s", e));
+                                format("Couldn't list available packages due to error %s", e.msg));
                         return;
                     }
                     break;
@@ -246,7 +247,7 @@ class DBusServer
                     {
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.ListInstalledError,
-                                format("Couldn't list installed packages due to error %s", e));
+                                format("Couldn't list installed packages due to error %s", e.msg));
                         return;
                     }
                     break;
@@ -260,7 +261,7 @@ class DBusServer
                     {
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.ListUpgradableError,
-                                format("Couldn't list upgradable packages due to error %s", e));
+                                format("Couldn't list upgradable packages due to error %s", e.msg));
                         return;
                     }
                     break;
@@ -275,7 +276,7 @@ class DBusServer
                     {
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.SearchFileOwnerError,
-                                format("Couldn't search for owner of file due to error %s", e));
+                                format("Couldn't search for owner of file due to error %s", e.msg));
                         return;
                     }
                     break;
@@ -289,7 +290,7 @@ class DBusServer
                     {
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.SearchPackageNamesError,
-                                format("Couldn't search for packages due to error %s", e));
+                                format("Couldn't search for packages due to error %s", e.msg));
                         return;
                     }
                     break;
@@ -302,7 +303,7 @@ class DBusServer
                     {
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.UpdateRepositoriesError,
-                                format("Couldn't update repositories due to error %s", e));
+                                format("Couldn't update repositories due to error %s", e.msg));
                         return;
                     }
                     break;
@@ -316,7 +317,7 @@ class DBusServer
                     {
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.UpgradeAllPackagesError,
-                                format("Couldn't upgrade all packages due to error %s", e));
+                                format("Couldn't upgrade all packages due to error %s", e.msg));
                         return;
                     }
                     break;
@@ -331,7 +332,7 @@ class DBusServer
                         dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                                 ApkdDbusServerErrorQuarkEnum.DeleteError,
                                 format("Couldn't upgrade package%s %s due to error %s",
-                                    pkgnames.length == 0 ? "" : "s", pkgnames, e));
+                                    pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
                         return;
                     }
                     break;
