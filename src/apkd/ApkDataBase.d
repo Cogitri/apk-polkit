@@ -692,9 +692,11 @@ private:
         enforce!ApkDatabaseOpenException(res == 0,
                 format("Failed to open apk database due to error '%s'",
                     apk_error_str(res).to!string));
+
         version (testing)
         {
             this.db.extract_flags = APK_EXTRACTF_NO_CHOWN;
+            apk_flags = APK_ALLOW_UNTRUSTED;
         }
     }
 

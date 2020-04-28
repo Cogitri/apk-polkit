@@ -28,7 +28,10 @@ import gio.c.types : GDBusConnection, BusType, GDBusProxyFlags;
 import glib.GException;
 import glib.Variant;
 import std.exception;
-import std.string : toStringz;
+import std.format : format;
+import std.path : buildPath;
+import std.process : execute;
+import std.string : strip, toStringz;
 
 extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
         const(char)* nameOwner, void* userData)
@@ -43,9 +46,15 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
     auto apkdHelper = apkd_helper_proxy_new_for_bus_sync(BusType.SYSTEM, GDBusProxyFlags.NONE,
             "dev.Cogitri.apkPolkit.Helper".toStringz(),
             "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
+    apkd_helper_set_allow_untrusted_repos(apkdHelper, true);
     apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz());
     auto pkgs = ["test-a".toStringz(), null];
-    enforce(!apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null, null));
+    enforce(apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null, null));
+
+    auto testA = execute(buildPath(testHelper.apkRootDir, "usr", "bin", "test-a"));
+
+    enforce(testA[1].strip() == "hello from test-a-1.0",
+            format("Expected 'hello from test-a-1.0', got '%s'", testA[1].strip()));
     testHelper.cleanup();
     exit(0);
 }
