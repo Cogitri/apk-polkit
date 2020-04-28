@@ -12,7 +12,7 @@ foreach src: test_src_files
     apkd_test_exe = executable(
         'test_apkd_dbus_server_' + test_name + '_exe',
         src,
-        dependencies: [apkd_dep, libapkd_test_common_dep],
+        dependencies: [apkd_test_dep, libapkd_test_common_dep],
         d_unittest: true,
         include_directories: include_directories('../../')
     )

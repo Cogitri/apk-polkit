@@ -23,6 +23,7 @@ import apkd.ApkPackage;
 import apkd.exceptions;
 static import apkd.functions;
 import core.stdc.errno : EALREADY;
+import deimos.apk_toolsd.apk_archive;
 import deimos.apk_toolsd.apk_blob;
 import deimos.apk_toolsd.apk_database;
 import deimos.apk_toolsd.apk_defines;
@@ -683,7 +684,6 @@ private:
         {
             this.dbOptions.open_flags = APK_OPENF_READ | APK_OPENF_WRITE
                 | APK_OPENF_NO_AUTOUPDATE | APK_OPENF_CACHE_WRITE | APK_OPENF_CREATE;
-
         }
         this.dbOptions.lock_wait = TRUE;
         apk_atom_init();
@@ -692,6 +692,10 @@ private:
         enforce!ApkDatabaseOpenException(res == 0,
                 format("Failed to open apk database due to error '%s'",
                     apk_error_str(res).to!string));
+        version (testing)
+        {
+            this.db.extract_flags = APK_EXTRACTF_NO_CHOWN;
+        }
     }
 
     apk_database db;

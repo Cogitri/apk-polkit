@@ -49,29 +49,14 @@ int _main(string[] args)
         return 1;
     }
 
-    // FIXME: This is ugly, but right now apk fails to chown files
-    // correctly if run as non-root. See https://gitlab.alpinelinux.org/alpine/apk-tools/merge_requests/5
-    try
-    {
-        database.addPackages(["test-a"]);
-    }
-    catch (ApkDatabaseCommitException)
-    {
-    }
+    database.addPackages(["test-a"]);
 
     auto testA = execute(buildPath(testHelper.apkRootDir, "usr", "bin", "test-a"));
 
     enforce(testA[1].strip() == "hello from test-a-1.0",
             format("Expected 'hello from test-a-1.0', got '%s'", testA[1].strip()));
 
-    // FIXME: See above
-    try
-    {
-        database.addPackages(["test-e"]);
-    }
-    catch (ApkDatabaseCommitException)
-    {
-    }
+    database.addPackages(["test-e"]);
 
     auto testB = execute(buildPath(testHelper.apkRootDir, "usr", "bin", "test-b"));
 

@@ -43,14 +43,7 @@ int _main(string[] args)
     enforce(upgradeablePkgsEmptyInstall.length == expectedUpgradeablePkgsEmptyInstall,
             format("Expected %s upgradable packages, got %s",
                 expectedUpgradeablePkgsEmptyInstall, upgradeablePkgsEmptyInstall.length));
-    // FIXME: see install.d
-    try
-    {
-        database.addPackages(["test-a", "test-b", "test-e"]);
-    }
-    catch (ApkDatabaseCommitException)
-    {
-    }
+    database.addPackages(["test-a", "test-b", "test-e"]);
     auto upgradeablePkgs = database.listUpgradablePackages();
     return 0;
 }

@@ -17,7 +17,7 @@
     along with apk-polkit.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-module tests.apkd_dbus_server.installFail;
+module tests.apkd_dbus_server.install;
 
 import apkd_common.ApkDataBaseOperations;
 import apkd_common.DBusPropertyOperations;
@@ -39,7 +39,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
             "dev.Cogitri.apkPolkit.Helper".toStringz(),
             "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
     apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz());
-    auto pkgs = ["doesNotExist".toStringz(), null];
+    auto pkgs = ["test-a".toStringz(), null];
     enforce(!apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null, null));
     exit(0);
 }
@@ -55,7 +55,7 @@ extern (C) int main(int argc, char** argv)
 
 int _main(string[] args)
 {
-    auto testHelper = TestHelper(args, "dbusServerInstallFail");
+    auto testHelper = TestHelper(args, "dbusServerInstall");
     setupDbusServer(args[5], [
             new ApkDataBaseOperations(ApkDataBaseOperations.Enum.addPackages).toPolkitAction()
             ], &onNameAppeared, &nameVanishedCallback, &testHelper);

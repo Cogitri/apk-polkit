@@ -15,8 +15,23 @@ apkd_lib = library(
     version: meson.project_version(),
 )
 
+apkd_test_lib = library(
+    'apkd_test',
+    [lib_src],
+    d_module_versions: 'testing',
+    include_directories: src_inc,
+    dependencies: [apk_toolsd_dep, libapkd_common_dep, apk_tools_dep],
+    version: meson.project_version(),
+)
+
 apkd_dep = declare_dependency(
     link_with: apkd_lib,
+    include_directories: src_inc,
+    dependencies: apk_toolsd_dep.partial_dependency(compile_args: true),
+)
+
+apkd_test_dep = declare_dependency(
+    link_with: apkd_test_lib,
     include_directories: src_inc,
     dependencies: apk_toolsd_dep.partial_dependency(compile_args: true),
 )
