@@ -536,6 +536,12 @@ private:
     apk_changeset getAllUpgradeChangeset(ushort solverFlags = 0)
     {
         apk_changeset changeset;
+
+        scope (exit)
+        {
+            apkd.functions.apk_change_array_free(&changeset.changes);
+        }
+
         enforce!ApkBrokenWorldException(apk_db_check_world(&this.db,
                 this.db.world) == 0, "Missing repository tags; can't continue the upgrade!");
 
