@@ -36,6 +36,11 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
 {
     auto testHelper = cast(TestHelper*) userData;
 
+    scope (exit)
+    {
+        testHelper.cleanup();
+    }
+
     auto apkdHelper = apkd_helper_proxy_new_for_bus_sync(BusType.SYSTEM, GDBusProxyFlags.NONE,
             "dev.Cogitri.apkPolkit.Helper".toStringz(),
             "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
@@ -77,6 +82,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
         pkgArr ~= pkg;
     }
     assert(pkgArr.length == 5);
+    testHelper.cleanup();
     exit(0);
 }
 
@@ -92,7 +98,7 @@ extern (C) int main(int argc, char** argv)
 int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerSearch");
-    setupDbusServer(args[5], [
+    setupDbusServer(args[3], [
             new ApkDataBaseOperations(ApkDataBaseOperations.Enum.searchPackageNames).toPolkitAction(),
             new ApkDataBaseOperations(ApkDataBaseOperations.Enum.updateRepositories)
             .toPolkitAction()

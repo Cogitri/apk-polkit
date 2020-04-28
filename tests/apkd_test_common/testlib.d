@@ -31,9 +31,10 @@ import glib.Variant;
 import std.conv : to;
 import std.datetime : dur;
 import std.exception;
-import std.format;
-import std.path : buildPath;
-import std.process;
+import std.file : rmdirRecurse, tempDir;
+import std.format : format;
+import std.path : buildPath, dirName;
+import std.process : environment, execute, kill, spawnProcess;
 import std.stdio : stderr, writefln;
 
 struct TestHelper
@@ -42,8 +43,10 @@ struct TestHelper
 
     this(string[] args, string testAppletName, bool allowUntrusted = true)
     {
-        this.apkRootDir = format("%s-%s", args[1], testAppletName);
-        auto abuildBuildDir = format("%s-%s", args[2], testAppletName);
+        this.apkRootDir = format("%s-%s", buildPath(tempDir(),
+                "apk-polkit-tests", "apkRoot"), testAppletName);
+        auto abuildBuildDir = format("%s-%s", buildPath(tempDir(),
+                "apk-polkit-tests", "abuildRoot"), testAppletName);
         this.repoDir = buildPath(abuildBuildDir, "abuilds");
         if (allowUntrusted)
         {
@@ -51,16 +54,21 @@ struct TestHelper
         }
         apk_verbosity = 2;
 
-        auto runScript = execute([args[3], this.apkRootDir, abuildBuildDir], [
-                "APK": args[4]
+        auto runScript = execute([args[1], this.apkRootDir, abuildBuildDir], [
+                "APK": args[2]
                 ]);
         enforce(runScript[0] == 0, format("Abuild error: '%s'", runScript[1]));
     }
 
     ~this()
     {
-        execute(["rm", "-rf", this.apkRootDir]);
-        execute(["rm", "-rf", this.repoDir]);
+        this.cleanup();
+    }
+
+    void cleanup()
+    {
+        rmdirRecurse(this.apkRootDir);
+        rmdirRecurse(dirName(this.repoDir));
     }
 
     string apkRootDir;

@@ -19,6 +19,6 @@ foreach src: test_src_files
     test(
         'test_apkd_dbus_server_' + test_name,
         apkd_test_exe,
-        args: [meson.build_root() / 'apk', meson.build_root() / 'abuildRepo', test_preparer, apk, apkd_dbus_test_exe.full_path()]
+        args: [test_preparer, apk, apkd_dbus_test_exe.full_path()]
         )
 endforeach

@@ -36,34 +36,40 @@ import std.stdio : File;
 import std.string : strip, toStringz;
 
 extern (C) void signalCallback(GDBusProxy*, const(char*), const(char*),
-                GVariant* parameters, void* userData)
+        GVariant* parameters, void* userData)
 {
-        auto writeEnd = cast(File*) userData;
-        auto variant = new Variant(parameters);
-        writeEnd.write(format("%d\n", variant.getChildValue(0).getUint32()));
-        writeEnd.flush();
+    auto writeEnd = cast(File*) userData;
+    auto variant = new Variant(parameters);
+    writeEnd.write(format("%d\n", variant.getChildValue(0).getUint32()));
+    writeEnd.flush();
 }
 
 extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
-                const(char)* nameOwner, void* userData)
+        const(char)* nameOwner, void* userData)
 {
-        auto testHelper = cast(TestHelper*) userData;
+    auto testHelper = cast(TestHelper*) userData;
 
-        auto apkdHelper = apkd_helper_proxy_new_for_bus_sync(BusType.SYSTEM, GDBusProxyFlags.NONE,
-                        "dev.Cogitri.apkPolkit.Helper".toStringz(),
-                        "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
-        auto pipe = pipe();
-        auto writeEnd = pipe.writeEnd();
-        auto object = new ObjectG(cast(GObject*) apkdHelper);
-        Signals.connect(object, "g-signal", cast(GCallback)&signalCallback, &writeEnd);
-        apkd_helper_set_allow_untrusted_repos(apkdHelper, true);
-        apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz);
-        enforce(apkd_helper_call_update_repositories_sync(apkdHelper, null, null));
-        auto percentage = pipe.readEnd().readln().strip();
-        assert(percentage == "0");
-        percentage = pipe.readEnd().readln().strip();
-        assert(percentage == "100");
-        exit(0);
+    scope (exit)
+    {
+        testHelper.cleanup();
+    }
+
+    auto apkdHelper = apkd_helper_proxy_new_for_bus_sync(BusType.SYSTEM, GDBusProxyFlags.NONE,
+            "dev.Cogitri.apkPolkit.Helper".toStringz(),
+            "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
+    auto pipe = pipe();
+    auto writeEnd = pipe.writeEnd();
+    auto object = new ObjectG(cast(GObject*) apkdHelper);
+    Signals.connect(object, "g-signal", cast(GCallback)&signalCallback, &writeEnd);
+    apkd_helper_set_allow_untrusted_repos(apkdHelper, true);
+    apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz);
+    enforce(apkd_helper_call_update_repositories_sync(apkdHelper, null, null));
+    auto percentage = pipe.readEnd().readln().strip();
+    assert(percentage == "0");
+    percentage = pipe.readEnd().readln().strip();
+    assert(percentage == "100");
+    testHelper.cleanup();
+    exit(0);
 }
 
 extern extern (C) __gshared bool rt_trapExceptions;
@@ -71,19 +77,19 @@ extern extern (C) int _d_run_main(int, char**, void*);
 
 extern (C) int main(int argc, char** argv)
 {
-        rt_trapExceptions = false;
-        return _d_run_main(argc, argv, &_main);
+    rt_trapExceptions = false;
+    return _d_run_main(argc, argv, &_main);
 }
 
 int _main(string[] args)
 {
-        // skip for now, for some reason the signal callback isn't called even though
-        // the signal can be seen via dbus-monitor
-        return 77;
-        auto testHelper = TestHelper(args, "dbusServerProgressNotification");
-        setupDbusServer(args[5], [
-                        new ApkDataBaseOperations(ApkDataBaseOperations.Enum.updateRepositories)
-                        .toPolkitAction()
-                        ], &onNameAppeared, &nameVanishedCallback, &testHelper);
-        return 0;
+    // skip for now, for some reason the signal callback isn't called even though
+    // the signal can be seen via dbus-monitor
+    return 77;
+    auto testHelper = TestHelper(args, "dbusServerProgressNotification");
+    setupDbusServer(args[3], [
+            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.updateRepositories)
+            .toPolkitAction()
+            ], &onNameAppeared, &nameVanishedCallback, &testHelper);
+    return 0;
 }
