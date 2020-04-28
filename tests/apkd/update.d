@@ -20,6 +20,7 @@
 module tests.apkd.update;
 
 import apkd.ApkDataBase;
+import deimos.apk_toolsd.apk_defines;
 import std.exception;
 import tests.apkd_test_common.testlib;
 
@@ -36,6 +37,7 @@ int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "update", false);
     auto database = new ApkDataBase(testHelper.apkRootDir, testHelper.repoDir);
+    apk_flags = 0;
     auto updateSuccesful = database.updateRepositories(true);
     enforce(updateSuccesful,
             "Updating the repositories wasn't successful when we expected it to be!");
