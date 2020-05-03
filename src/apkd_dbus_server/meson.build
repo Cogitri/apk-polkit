@@ -42,7 +42,7 @@ apkd_dbus_server_lib_dep = declare_dependency(
 apkd_dbus_server_test_lib = library(
     'apkd-dbus-server-test',
     apkd_dbus_server_lib_src,
-    install: true,
+    install: false,
     d_module_versions: d_mod_version,
     include_directories: src_inc,
     dependencies: [
@@ -78,7 +78,7 @@ apkd_dbus_exe = executable(
 apkd_dbus_test_exe = executable(
     'apkd-dbus-server-test',
     [apkd_dbus_server_exe_src],
-    install: true,
+    install: false,
     install_dir: libexec_dir,
     d_module_versions: d_mod_version,
     include_directories: src_inc,
