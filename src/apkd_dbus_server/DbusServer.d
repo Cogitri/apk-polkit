@@ -188,7 +188,7 @@ class DBusServer
         if (authorized)
         {
             info("Authorization succeeded!");
-            Variant[] ret;
+            Variant[] ret = [];
             auto interfacer = ApkInterfacer(new DBusConnection(dbusConnection), userData.root);
             auto databaseOperation = cast(ApkDataBaseOperations) operation;
             if (databaseOperation)
