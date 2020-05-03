@@ -180,7 +180,15 @@ body
 {
     auto apkPackages = cast(ApkPackage[]*) ctx;
     auto newPackage = cast(apk_package*) item;
-    assumeWontThrow(*apkPackages ~= ApkPackage(*newPackage));
+    try
+    {
+        *apkPackages ~= ApkPackage(*newPackage);
+    }
+    catch (Exception e)
+    {
+        assumeWontThrow(errorf("Couldn't append package '%s' to list of available packages due to error '%s'!",
+                newPackage.name.name.to!string, e.msg));
+    }
     return 0;
 }
 
