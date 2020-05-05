@@ -51,17 +51,26 @@ struct ApkPackage
     this(apk_package apk_package, bool isInstalled = false)
     in
     {
-        assert(apk_package.name.name);
-        assert(apk_package.version_.ptr);
-        assert(apk_package.arch.ptr);
-        assert(apk_package.license.ptr);
+        assert(apk_package.name.name,
+                "apk_package.name is null when we didn't expect it to! This is a bug.");
+        assert(apk_package.version_.ptr,
+                "apk_package.version is null when we didn't expect it to! This is a bug.");
+        assert(apk_package.arch.ptr,
+                "apk_package.arch is null when we didn't expect it to! This is a bug.");
+        assert(apk_package.license.ptr,
+                "apk_package.license is null when we didn't expect it to! This is a bug.");
         apk_package.origin ? assert(apk_package.origin.ptr) : true;
         apk_package.maintainer ? assert(apk_package.maintainer.ptr) : true;
-        assert(apk_package.url);
-        assert(apk_package.description);
-        assert(apk_package.commit);
-        assert(apk_package.size);
-        assert(apk_package.build_time);
+        assert(apk_package.url,
+                "apk_package.url is null when we didn't expect it to! This is a bug.");
+        assert(apk_package.description,
+                "apk_package.description is null when we didn't expect it to! This is a bug.");
+        assert(apk_package.commit,
+                "apk_package.commit is null when we didn't expect it to! This is a bug.");
+        assert(apk_package.size,
+                "apk_package.size is null when we didn't expect it to! This is a bug.");
+        assert(apk_package.build_time,
+                "apk_package.build_time is null when we didn't expect it to! This is a bug.");
     }
     do
     {
@@ -88,7 +97,8 @@ struct ApkPackage
     this(apk_package old_package, apk_package new_package)
     in
     {
-        assert(old_package.version_.ptr);
+        assert(old_package.version_.ptr,
+                "old_package.version is null when we didn't expect it to! This is a bug.");
     }
     do
     {

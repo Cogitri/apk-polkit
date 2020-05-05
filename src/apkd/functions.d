@@ -172,8 +172,10 @@ extern (C) void recursiveDeletePackage(apk_package* apkPackage,
 extern (C) int appendApkPackageToArray(apk_hash_item item, void* ctx) nothrow
 in
 {
-    assert(cast(ApkPackage[]*) ctx);
-    assert(cast(apk_package*) item);
+    assert(cast(ApkPackage[]*) ctx,
+            "Casting to the expected type of our context failed! This is a bug.");
+    assert(cast(apk_package*) item,
+            "Casting to the expected type of our context failed! This is a bug.");
 
 }
 body
@@ -210,8 +212,10 @@ struct SearchContext
 extern (C) int appendMatchingApkPackageArray(apk_hash_item item, void* ctx) nothrow
 in
 {
-    assert(cast(SearchContext*) ctx);
-    assert(cast(apk_package*) item);
+    assert(cast(SearchContext*) ctx,
+            "Casting to the expected type of our context failed! This is a bug.");
+    assert(cast(apk_package*) item,
+            "Casting to the expected type of our context failed! This is a bug.");
 }
 do
 {

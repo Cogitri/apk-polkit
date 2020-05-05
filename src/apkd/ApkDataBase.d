@@ -596,7 +596,8 @@ private:
             apk_dependency*, apk_package*, void* ctx) nothrow
     in
     {
-        assert(cast(NotDeletedReasonContext*) ctx);
+        assert(cast(NotDeletedReasonContext*) ctx,
+                "Casting to the expected type of our context failed! This is a bug.");
     }
     do
     {
@@ -632,7 +633,8 @@ private:
             const char*, apk_name* name, void* ctx) nothrow
     in
     {
-        assert(cast(string*) ctx);
+        assert(cast(string*) ctx,
+                "Casting to the expected type of our context failed! This is a bug.");
     }
     do
     {
