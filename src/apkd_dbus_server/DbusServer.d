@@ -154,7 +154,9 @@ class DBusServer
                     operation = new DBusPropertyOperations("getAll");
                     break;
                 default:
-                    assert(0);
+                    errorf("Unexpected method %s called on interface org.freedesktop.DBus.Properties!",
+                            methodName);
+                    return;
                 }
             }
             else
