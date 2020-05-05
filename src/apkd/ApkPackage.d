@@ -55,7 +55,7 @@ struct ApkPackage
         assert(apk_package.version_.ptr);
         assert(apk_package.arch.ptr);
         assert(apk_package.license.ptr);
-        assert(apk_package.origin.ptr);
+        apk_package.origin ? assert(apk_package.origin.ptr) : true;
         apk_package.maintainer ? assert(apk_package.maintainer.ptr) : true;
         assert(apk_package.url);
         assert(apk_package.description);
@@ -72,7 +72,7 @@ struct ApkPackage
             null,
             apk_package.arch.ptr[0 .. apk_package.arch.len].to!string,
             apk_package.license.ptr[0 .. apk_package.license.len].to!string,
-            apk_package.origin.ptr[0 .. apk_package.origin.len].to!string,
+            apk_package.origin ? apk_package.origin.ptr[0 .. apk_package.origin.len].to!string : null,
             apk_package.maintainer ? apk_package.maintainer.ptr[0 .. apk_package.maintainer.len].to!string: null,
             to!string(apk_package.url),
             to!string(apk_package.description),
