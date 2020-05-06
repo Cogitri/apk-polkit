@@ -20,8 +20,6 @@
 module tests.apkd_dbus_client.search;
 
 import apkd.ApkPackage;
-import apkd_common.ApkDataBaseOperations;
-import apkd_common.DBusPropertyOperations;
 import core.stdc.stdlib : exit;
 import tests.apkd_test_common.testlib;
 import tests.apkd_test_common.apkd_dbus_client;
@@ -99,9 +97,8 @@ int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerSearch");
     setupDbusServer(args[3], [
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.searchPackageNames).toPolkitAction(),
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.updateRepositories)
-            .toPolkitAction()
+            "dev.Cogitri.apkPolkit.Helper.searchPackageNames",
+            "dev.Cogitri.apkPolkit.Helper.updateRepositories",
             ], &onNameAppeared, &nameVanishedCallback, &testHelper);
     return 0;
 }

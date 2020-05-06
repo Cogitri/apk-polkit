@@ -19,8 +19,6 @@
 
 module tests.apkd_dbus_server.progressNotification;
 
-import apkd_common.ApkDataBaseOperations;
-import apkd_common.DBusPropertyOperations;
 import core.stdc.stdlib : exit;
 import tests.apkd_test_common.testlib;
 import tests.apkd_test_common.apkd_dbus_client;
@@ -87,9 +85,7 @@ int _main(string[] args)
     // the signal can be seen via dbus-monitor
     return 77;
     auto testHelper = TestHelper(args, "dbusServerProgressNotification");
-    setupDbusServer(args[3], [
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.updateRepositories)
-            .toPolkitAction()
-            ], &onNameAppeared, &nameVanishedCallback, &testHelper);
+    setupDbusServer(args[3], ["dev.Cogitri.apkPolkit.Helper.updateRepositories"],
+            &onNameAppeared, &nameVanishedCallback, &testHelper);
     return 0;
 }

@@ -19,8 +19,6 @@
 
 module tests.apkd_dbus_server.install;
 
-import apkd_common.ApkDataBaseOperations;
-import apkd_common.DBusPropertyOperations;
 import core.stdc.stdlib : exit;
 import tests.apkd_test_common.testlib;
 import tests.apkd_test_common.apkd_dbus_client;
@@ -71,8 +69,7 @@ extern (C) int main(int argc, char** argv)
 int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerInstall");
-    setupDbusServer(args[3], [
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.addPackages).toPolkitAction()
-            ], &onNameAppeared, &nameVanishedCallback, &testHelper);
+    setupDbusServer(args[3], ["dev.Cogitri.apkPolkit.Helper.addPackages"],
+            &onNameAppeared, &nameVanishedCallback, &testHelper);
     return 0;
 }

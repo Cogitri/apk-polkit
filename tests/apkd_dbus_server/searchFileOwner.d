@@ -20,8 +20,6 @@
 module tests.apkd_dbus_server.searchFileOwner;
 
 import apkd.ApkPackage;
-import apkd_common.ApkDataBaseOperations;
-import apkd_common.DBusPropertyOperations;
 import core.stdc.stdlib : exit;
 import tests.apkd_test_common.testlib;
 import tests.apkd_test_common.apkd_dbus_client;
@@ -96,9 +94,8 @@ int _main(string[] args)
 {
     auto testHelper = TestHelper(args, "dbusServerSearchFileOwner");
     setupDbusServer(args[3], [
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.addPackages).toPolkitAction(),
-            new ApkDataBaseOperations(ApkDataBaseOperations.Enum.searchFileOwner)
-            .toPolkitAction(),
+            "dev.Cogitri.apkPolkit.Helper.addPackages",
+            "dev.Cogitri.apkPolkit.Helper.searchFileOwner",
             ], &onNameAppeared, &nameVanishedCallback, &testHelper);
     return 0;
 }

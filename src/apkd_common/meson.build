@@ -5,9 +5,6 @@ globals_d = configure_file(
 )
 
 common_src = [
-    'ApkDataBaseOperations.d',
-    'CommonOperations.d',
-    'DBusPropertyOperations.d',
     'SysLogger.d',
     globals_d,
 ]
