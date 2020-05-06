@@ -610,7 +610,10 @@ class DBusServer
             }
 
         default:
-            assert(0, format("Unkown method name %s", methodName));
+            errorf("Unkown method name %s", methodName);
+            dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(),
+                    DBusError.NOT_SUPPORTED, format("Unkown method name %s", methodName));
+            return;
         }
 
         auto retVariant = new Variant(ret);
