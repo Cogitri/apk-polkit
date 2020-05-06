@@ -28,6 +28,7 @@ import apkd_common.ApkDataBaseOperations;
 import apkd_common.DBusPropertyOperations;
 static import apkd_common.globals;
 import apkd_dbus_server.Polkit;
+import apkd_dbus_server.Util;
 import gio.Cancellable;
 import gio.DBusConnection;
 import gio.DBusNames;
@@ -48,14 +49,17 @@ import glib.Variant;
 import glib.VariantBuilder;
 import glib.VariantType;
 import std.array : split;
+import std.ascii : toLower, toUpper;
 import std.conv : to, ConvException;
 import std.concurrency : receive;
 import std.datetime : SysTime;
 import std.exception;
 import std.experimental.logger;
 import std.format : format;
+import std.meta : AliasSeq;
 import std.stdio : readln;
 import std.string : chomp;
+import std.traits : hasUDA, Parameters, ReturnType;
 
 /**
 * Different errors that might occur during operations. This is only
@@ -87,12 +91,6 @@ extern (C) GQuark ApkdDbusServerErrorQuark() nothrow
 /// The DBus interface this dbus application exposes as XML
 auto immutable dbusIntrospectionXML = import("dev.Cogitri.apkPolkit.interface");
 
-struct UserData
-{
-    bool allowUntrustedRepositories;
-    string root;
-}
-
 /// DBusServer class, that is used to setup the dbus connection and handle method calls
 class DBusServer
 {
@@ -105,15 +103,449 @@ class DBusServer
     this(in string root = null)
     {
         tracef("Trying to acquire DBus name %s.", apkd_common.globals.dbusBusName);
-        this.userData = UserData(false, null);
+        this.allowUntrustedRepositories = false;
+        this.root = null;
+        this.userData = UserData(null, null);
         auto dbusFlags = BusNameOwnerFlags.NONE;
         this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName,
-                dbusFlags, &onBusAcquired, &onNameAcquired, &onNameLost, &this.userData, null);
+                dbusFlags, &onBusAcquired, &onNameAcquired, &onNameLost,
+                cast(void*) this, null);
     }
 
     ~this()
     {
         DBusNames.unownName(this.ownerId);
+    }
+
+    /**
+    * Add (install) packages and send progress notifications via DBus.
+    *
+    * Params:
+    *   pkgnames = Packages to add.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
+    *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
+    *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
+    *   due to missing permissions, a conflict, etc.
+    */
+    @("DBusMethod")
+    void addPackages(DBusMethodInvocation dbusInvocation, Variant parameters)
+    {
+        auto pkgnames = parameters.getChildValue(0).getStrv();
+        try
+        {
+            tracef("Trying to add package%s: %s", pkgnames.length > 1 ? "s" : "", pkgnames);
+            auto database = ApkDataBase(this.root);
+            auto idleSource = this.connectProgressSignal(&database);
+            scope (exit)
+            {
+                idleSource.destroy();
+            }
+            database.addPackages(pkgnames);
+            tracef("Successfully added package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
+        }
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(), ApkdDbusServerErrorQuarkEnum.AddError,
+                    format("Couldn't add package%s %s due to error %s",
+                        pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
+        }
+    }
+
+    /**
+    * Delete (uninstall) packages and send progress notifications via DBus.
+    *
+    * Params:
+    *   pkgnames = Packages to delete.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws an ApkException if something went wrong while trying to delete packages, e.g.
+    *   due to being unable to find the requested package name.
+    *   Throws an ApkSolverException if the solver can't figure out a way to solve
+    *   the deletion, e.g. due to conflicts.
+    *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
+    *   due to missing permissions.
+    */
+    @("DBusMethod")
+    void deletePackages(DBusMethodInvocation dbusInvocation, Variant parameters)
+    {
+        auto pkgnames = parameters.getChildValue(0).getStrv();
+        try
+        {
+            tracef("Trying to delete package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
+            auto database = ApkDataBase(this.root);
+            auto idleSource = this.connectProgressSignal(&database);
+            scope (exit)
+            {
+                idleSource.destroy();
+            }
+            database.deletePackages(pkgnames);
+            tracef("Successfully deleted package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
+        }
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(), ApkdDbusServerErrorQuarkEnum.DeleteError,
+                    format("Couldn't delete package%s %s due to error %s",
+                        pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
+        }
+    }
+
+    @("DBusMethod")
+    Variant getAll()
+    {
+        auto builder = new VariantBuilder(new VariantType("a{sv}"));
+
+        builder.open(new VariantType("{sv}"));
+        builder.addValue(new Variant("allowUntrustedRepos"));
+        builder.addValue(new Variant(new Variant(this.allowUntrustedRepositories)));
+        builder.close();
+
+        builder.open(new VariantType("{sv}"));
+        builder.addValue(new Variant("root"));
+        builder.addValue(new Variant(new Variant(this.root ? this.root : "")));
+        builder.close();
+
+        return builder.end();
+    }
+
+    @("DBusMethod")
+    Variant getAllowUntrustedRepos()
+    {
+        return new Variant(new Variant(this.allowUntrustedRepositories));
+    }
+
+    @("DBusMethod")
+    Variant getRoot()
+    {
+        return new Variant(new Variant(this.root));
+    }
+
+    /**
+    * Get an array of all available packages. This also includes already installed packages.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   An ApkListException if something went wrong in iterating over packages
+    */
+    @("DBusMethod") Variant listAvailablePackages(DBusMethodInvocation dbusInvocation)
+    {
+        try
+        {
+            trace("Trying to list all available packages");
+            auto database = ApkDataBase(this.root);
+            auto packages = database.listAvailablePackages();
+            trace("Successfully listed all available packages");
+            return apkPackageArrayToVariant(packages);
+        }
+
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                    ApkdDbusServerErrorQuarkEnum.ListAvailableError,
+                    format("Couldn't list available packages due to error %s", e.msg));
+            return null;
+        }
+    }
+
+    /**
+    * Get an array of all packages that are installed on the machine.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    */
+    @("DBusMethod")
+    Variant listInstalledPackages(DBusMethodInvocation dbusInvocation)
+    {
+        try
+        {
+            trace("Trying to list all installed packages");
+            auto database = ApkDataBase(this.root);
+            auto packages = database.listInstalledPackages();
+            trace("Successfully listed all installed packages");
+            return apkPackageArrayToVariant(packages);
+        }
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                    ApkdDbusServerErrorQuarkEnum.ListInstalledError,
+                    format("Couldn't list installable packages due to error %s", e.msg));
+            return null;
+        }
+    }
+
+    /**
+    * Get an array of all packages that can be upgraded on the machine.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   An ApkListException if something went wrong in iterating over packages
+    */
+    @("DBusMethod")
+    Variant listUpgradablePackages(DBusMethodInvocation dbusInvocation)
+    {
+        try
+        {
+            trace("Trying to list upgradable packages");
+            auto database = ApkDataBase(this.root);
+            auto packages = database.listUpgradablePackages();
+            trace("Successfully listed all upgradable packages");
+            return apkPackageArrayToVariant(packages);
+        }
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                    ApkdDbusServerErrorQuarkEnum.ListUpgradableError,
+                    format("Couldn't list upgradable packages due to error %s", e.msg));
+            return null;
+        }
+    }
+
+    /**
+    * Update all repositories available and send progress notifications via DBus.
+    *
+    * Params:
+    *   allowUntrustedRepositories = True if repos without a trusted key should be used
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
+    *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
+    *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
+    *   due to missing permissions, a conflict, etc.
+    *
+    */
+    @("DBusMethod")
+    void updateRepositories(DBusMethodInvocation dbusInvocation)
+    {
+        try
+        {
+            trace("Trying to update repositories.");
+            auto database = ApkDataBase(this.root);
+            auto idleSource = this.connectProgressSignal(&database);
+            scope (exit)
+            {
+                idleSource.destroy();
+            }
+            database.updateRepositories(this.allowUntrustedRepositories);
+            trace("Successfully updated repositories.");
+        }
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                    ApkdDbusServerErrorQuarkEnum.UpdateRepositoriesError,
+                    format("Couldn't update repositories due to error %s", e.msg));
+            return;
+        }
+    }
+
+    /**
+    * Upgrade all packages
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws an ApkSolverException if the solver can't figure out a way to solve
+    *   the upgrade, e.g. due to conflicts.
+    */
+    @("DBusMethod")
+    void upgradeAllPackages(DBusMethodInvocation dbusInvocation)
+    {
+        try
+        {
+            trace("Trying upgrade all packages.");
+            auto database = ApkDataBase(this.root);
+            auto idleSource = this.connectProgressSignal(&database);
+            scope (exit)
+            {
+                idleSource.destroy();
+            }
+            database.upgradeAllPackages();
+            trace("Successfully upgraded all packages.");
+        }
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                    ApkdDbusServerErrorQuarkEnum.UpgradeAllPackagesError,
+                    format("Couldn't upgrade all packages due to error %s", e.msg));
+            return;
+        }
+    }
+
+    /**
+    * Upgrade packages and send progress notifications via DBus.
+    *
+    * Params:
+    *   pkgnames = Packages to upgrade. Keep in mind that apk will also upgrade dependencies of that package.
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
+    *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
+    *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
+    *   due to missing permissions, a conflict, etc.
+    */
+    @("DBusMethod")
+    void upgradePackages(DBusMethodInvocation dbusInvocation, Variant parameters)
+    {
+        auto pkgnames = parameters.getChildValue(0).getStrv();
+        try
+        {
+            tracef("Trying to upgrade package '%s'.", pkgnames);
+            auto database = ApkDataBase(this.root);
+            auto idleSource = this.connectProgressSignal(&database);
+            scope (exit)
+            {
+                idleSource.destroy();
+            }
+            database.upgradePackages(pkgnames);
+            tracef("Successfully upgraded package%s '%s'.", pkgnames.length > 1 ? "s" : "",
+                    pkgnames);
+        }
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                    ApkdDbusServerErrorQuarkEnum.UpgradePackageError,
+                    format("Couldn't upgrade package%s %s due to error %s",
+                        pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
+            return;
+        }
+    }
+
+    /**
+    * Get an array of all packages that match one of the pkgnames given. Uses substring searching.
+    *
+    * Params:
+    *   pkgnames = pkgnames to search for
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   An ApkListException if something went wrong in iterating over packages
+    */
+    @("DBusMethod")
+    Variant searchFileOwner(DBusMethodInvocation dbusInvocation, Variant parameters)
+    {
+        try
+        {
+            size_t len;
+            auto path = parameters.getChildValue(0).getString(len);
+            tracef("Trying to search owner of path %s", path);
+            auto database = ApkDataBase(this.root);
+            auto matchedPackage = database.searchFileOwner(path);
+            trace("Successfully searched for package");
+            return apkPackageToVariant(matchedPackage);
+        }
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                    ApkdDbusServerErrorQuarkEnum.SearchFileOwnerError,
+                    format("Couldn't search for owner of file due to error %s", e.msg));
+            return null;
+        }
+    }
+
+    /**
+    * Get an array of all packages that match one of the pkgnames given. Uses substring searching.
+    *
+    * Params:
+    *   pkgnames = pkgnames to search for
+    *
+    * Throws:
+    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
+    *   An ApkListException if something went wrong in iterating over packages
+    */
+    @("DBusMethod")
+    Variant searchPackageNames(DBusMethodInvocation dbusInvocation, Variant parameters)
+    {
+        auto pkgnames = parameters.getChildValue(0).getStrv();
+        try
+        {
+            tracef("Trying to search for packages %s", pkgnames);
+            auto database = ApkDataBase(this.root);
+            auto packages = database.searchPackageNames(pkgnames);
+            tracef("Successfully searched for packages. %s hits.", packages.length);
+            return apkPackageArrayToVariant(packages);
+        }
+        catch (Exception e)
+        {
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                    ApkdDbusServerErrorQuarkEnum.SearchPackageNamesError,
+                    format("Couldn't search for packages due to error %s", e.msg));
+            return null;
+        }
+    }
+
+    @("DBusMethod")
+    void setAllowUntrustedRepos(Variant value)
+    {
+        this.allowUntrustedRepositories = value.getChildValue(2).getVariant().getBoolean();
+
+        if (this.allowUntrustedRepositories)
+        {
+            apkd.functions.allowUntrusted();
+        }
+        else
+        {
+            apkd.functions.disallowUntrusted();
+        }
+
+        auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
+        dictBuilder.open(new VariantType("{sv}"));
+        dictBuilder.addValue(new Variant("allowUntrustedRepos"));
+        dictBuilder.addValue(new Variant(new Variant(this.allowUntrustedRepositories)));
+        dictBuilder.close();
+
+        auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
+        valBuilder.addValue(new Variant("org.freedesktop.DBus.Properties"));
+        valBuilder.addValue(dictBuilder.end());
+        valBuilder.open(new VariantType("as"));
+        valBuilder.addValue(new Variant(""));
+        valBuilder.close();
+
+        this.userData.dbusConnection.emitSignal(null, "/dev/Cogitri/apkPolkit/Helper",
+                "org.freedesktop.DBus.Properties", "PropertiesChanged", valBuilder.end());
+    }
+
+    @("DBusMethod")
+    void setRoot(Variant value)
+    {
+        size_t len;
+        this.root = value.getChildValue(2).getVariant().getString(len);
+
+        auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
+        dictBuilder.open(new VariantType("{sv}"));
+        dictBuilder.addValue(new Variant("root"));
+        dictBuilder.addValue(new Variant(new Variant(this.root)));
+        dictBuilder.close();
+
+        auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
+        valBuilder.addValue(new Variant("org.freedesktop.DBus.Properties"));
+        valBuilder.addValue(dictBuilder.end());
+        valBuilder.open(new VariantType("as"));
+        valBuilder.addValue(new Variant(""));
+        valBuilder.close();
+
+        this.userData.dbusConnection.emitSignal(null, "/dev/Cogitri/apkPolkit/Helper",
+                "org.freedesktop.DBus.Properties", "PropertiesChanged", valBuilder.end());
+    }
+
+    static bool checkAuth(string operation, string sender, DBusMethodInvocation dbusInvocation)
+    {
+        info("Tying to authorized user...");
+        try
+        {
+            return queryPolkitAuth(operation, sender.to!string);
+        }
+        catch (GException e)
+        {
+            errorf("Authorization for operation %s for has failed due to error '%s'!",
+                    operation, e.msg);
+            dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.AUTH_FAILED,
+                    format("Authorization for operation %s for has failed due to error '%s'!",
+                        operation, e.msg));
+            return false;
+        }
     }
 
     /**
@@ -123,309 +555,69 @@ class DBusServer
     */
     extern (C) static void methodHandler(GDBusConnection* dbusConnection,
             const char* sender, const char* objectPath, const char* interfaceName,
-            const char* methodName, GVariant* parameters,
+            const char* rawMethodName, GVariant* parameters,
             GDBusMethodInvocation* invocation, void* userDataPtr)
+    in
     {
-        tracef("Handling method %s from sender %s", methodName.to!string, sender.to!string);
+        assert(cast(DBusServer*) userDataPtr);
+    }
+    do
+    {
+        tracef("Handling method %s from sender %s", rawMethodName.to!string, sender.to!string);
         auto dbusInvocation = new DBusMethodInvocation(invocation);
-        auto variant = new Variant(parameters);
-        auto userData = cast(UserData*) userDataPtr;
+        auto dbusServer = cast(DBusServer) userDataPtr;
+        dbusServer.userData.dbusConnection = new DBusConnection(dbusConnection);
+        Variant[] ret = [];
+        auto parametersVariant = new Variant(parameters);
+        auto methodName = rawMethodName.to!string;
 
-        CommonOperations operation;
-        try
+        string propertyName = "";
+        if (interfaceName.to!string == "org.freedesktop.DBus.Properties")
         {
-            if (interfaceName.to!string == "org.freedesktop.DBus.Properties")
+            if (parametersVariant.nChildren() > 1)
             {
-                switch (methodName.to!string)
-                {
-                case "Get":
-                    size_t len;
-                    auto propertyName = variant.getChildValue(1).getString(len);
-                    operation = new DBusPropertyOperations(propertyName.to!(DBusPropertyOperations.Enum),
-                            DBusPropertyOperations.DirectionEnum.get);
-                    break;
-                case "Set":
-                    size_t len;
-                    auto propertyName = variant.getChildValue(1).getString(len);
-                    operation = new DBusPropertyOperations(propertyName.to!(DBusPropertyOperations.Enum),
-                            DBusPropertyOperations.DirectionEnum.set);
-                    break;
-                case "GetAll":
-                    operation = new DBusPropertyOperations("getAll");
-                    break;
-                default:
-                    errorf("Unexpected method %s called on interface org.freedesktop.DBus.Properties!",
-                            methodName);
-                    return;
-                }
-            }
-            else
-            {
-                operation = new ApkDataBaseOperations(methodName.to!string);
+                size_t len;
+                propertyName = parametersVariant.getChildValue(1).getString(len);
+                propertyName = propertyName[0].toUpper() ~ propertyName[1 .. $];
             }
         }
-        catch (ConvException e)
-        {
-            errorf("Unkown method name %s: %s!", methodName.to!string, e.msg);
-            return;
-        }
 
-        auto authorized = false;
-
-        info("Tying to authorized user...");
-        try
+    methsw:
+        switch (methodName[0].toLower() ~ methodName[1 .. $] ~ propertyName)
         {
-            authorized = queryPolkitAuth(operation.toPolkitAction(), sender.to!string);
-        }
-        catch (GException e)
-        {
-            errorf("Authorization for operation %s for has failed due to error '%s'!",
-                    operation, e.msg);
-            dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.AUTH_FAILED,
-                    format("Authorization for operation %s for has failed due to error '%s'!",
-                        operation, e.msg));
-            return;
-        }
-
-        if (authorized)
-        {
-            info("Authorization succeeded!");
-            Variant[] ret = [];
-            auto interfacer = ApkInterfacer(new DBusConnection(dbusConnection), userData.root);
-            auto databaseOperation = cast(ApkDataBaseOperations) operation;
-            if (databaseOperation)
+            static foreach (memberName; __traits(allMembers, DBusServer))
             {
-                final switch (databaseOperation.val) with (ApkDataBaseOperations.Enum)
+                static if (mixin("hasUDA!(DBusServer." ~ memberName ~ ", \"DBusMethod\")"))
                 {
-                case addPackages:
-                    auto pkgnames = variant.getChildValue(0).getStrv();
-                    try
+        case memberName:
+                    if (checkAuth("dev.Cogitri.apkPolkit.Helper." ~ memberName,
+                            sender.to!string, dbusInvocation))
                     {
-                        interfacer.addPackages(pkgnames);
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.AddError,
-                                format("Couldn't add package%s %s due to error %s",
-                                    pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
-                        return;
-                    }
-                    break;
-                case deletePackages:
-                    auto pkgnames = variant.getChildValue(0).getStrv();
-                    try
-                    {
-                        interfacer.deletePackages(pkgnames);
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.DeleteError,
-                                format("Couldn't delete package%s %s due to error %s",
-                                    pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
-                        return;
-                    }
-                    break;
-                case listAvailablePackages:
-                    try
-                    {
-                        ret ~= apkPackageArrayToVariant(interfacer.listAvailablePackages());
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.ListAvailableError,
-                                format("Couldn't list available packages due to error %s", e.msg));
-                        return;
-                    }
-                    break;
-                case listInstalledPackages:
-                    try
-                    {
-                        ret ~= apkPackageArrayToVariant(interfacer.listInstalledPackages());
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.ListInstalledError,
-                                format("Couldn't list installed packages due to error %s", e.msg));
-                        return;
-                    }
-                    break;
-                case listUpgradablePackages:
-                    try
-                    {
-                        ret ~= apkPackageArrayToVariant(interfacer.listUpgradablePackages());
-
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.ListUpgradableError,
-                                format("Couldn't list upgradable packages due to error %s", e.msg));
-                        return;
-                    }
-                    break;
-                case searchFileOwner:
-                    size_t len;
-                    auto path = variant.getChildValue(0).getString(len);
-                    try
-                    {
-                        ret ~= apkPackageToVariant(interfacer.searchFileOwner(path));
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.SearchFileOwnerError,
-                                format("Couldn't search for owner of file due to error %s", e.msg));
-                        return;
-                    }
-                    break;
-                case searchPackageNames:
-                    auto pkgnames = variant.getChildValue(0).getStrv();
-                    try
-                    {
-                        ret ~= apkPackageArrayToVariant(interfacer.searchPackageNames(pkgnames));
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.SearchPackageNamesError,
-                                format("Couldn't search for packages due to error %s", e.msg));
-                        return;
-                    }
-                    break;
-                case updateRepositories:
-                    try
-                    {
-                        interfacer.updateRepositories(userData.allowUntrustedRepositories);
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.UpdateRepositoriesError,
-                                format("Couldn't update repositories due to error %s", e.msg));
-                        return;
-                    }
-                    break;
-                case upgradeAllPackages:
-                    try
-                    {
-                        interfacer.upgradeAllPackages();
-
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.UpgradeAllPackagesError,
-                                format("Couldn't upgrade all packages due to error %s", e.msg));
-                        return;
-                    }
-                    break;
-                case upgradePackages:
-                    auto pkgnames = variant.getChildValue(0).getStrv();
-                    try
-                    {
-                        interfacer.upgradePackages(pkgnames);
-                    }
-                    catch (Exception e)
-                    {
-                        dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                ApkdDbusServerErrorQuarkEnum.DeleteError,
-                                format("Couldn't upgrade package%s %s due to error %s",
-                                    pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
-                        return;
-                    }
-                    break;
-                }
-            }
-            else
-            {
-                auto dbusOperation = cast(DBusPropertyOperations) operation;
-                final switch (dbusOperation.val) with (DBusPropertyOperations.Enum)
-                {
-                case getAll:
-                    auto builder = new VariantBuilder(new VariantType("a{sv}"));
-                    builder.open(new VariantType("{sv}"));
-                    builder.addValue(new Variant("allowUntrustedRepos"));
-                    builder.addValue(new Variant(new Variant(userData.allowUntrustedRepositories)));
-                    builder.close();
-                    ret ~= builder.end();
-                    break;
-                case allowUntrustedRepos:
-                    if (dbusOperation.direction == DBusPropertyOperations.DirectionEnum.get)
-                    {
-                        ret ~= new Variant(new Variant(userData.allowUntrustedRepositories));
-                    }
-                    else
-                    {
-                        auto connection = new DBusConnection(dbusConnection);
-                        userData.allowUntrustedRepositories = variant.getChildValue(2)
-                            .getVariant().getBoolean();
-                        if (userData.allowUntrustedRepositories)
+                        static if (!is(ReturnType!((__traits(getMember,
+                                DBusServer, memberName))) == void))
                         {
-                            apkd.functions.allowUntrusted();
+                            immutable retString = "ret ~=";
                         }
                         else
                         {
-                            apkd.functions.disallowUntrusted();
+                            immutable retString = "";
                         }
-                        auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
-                        dictBuilder.open(new VariantType("{sv}"));
-                        dictBuilder.addValue(new Variant("allowUntrustedRepos"));
-                        dictBuilder.addValue(new Variant(
-                                new Variant(userData.allowUntrustedRepositories)));
-                        dictBuilder.close();
-                        auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
-                        valBuilder.addValue(new Variant(interfaceName.to!string));
-                        valBuilder.addValue(dictBuilder.end());
-                        valBuilder.open(new VariantType("as"));
-                        valBuilder.addValue(new Variant(""));
-                        valBuilder.close();
-                        connection.emitSignal(null, objectPath.to!string,
-                                "org.freedesktop.DBus.Properties",
-                                "PropertiesChanged", valBuilder.end());
-                    }
-                    break;
-                case root:
-                    if (dbusOperation.direction == DBusPropertyOperations.DirectionEnum.get)
-                    {
-                        ret ~= new Variant(new Variant(userData.root));
+                        mixin(retString ~ " dbusServer." ~ Call!(mixin("dbusServer." ~ memberName)));
                     }
                     else
                     {
-                        auto connection = new DBusConnection(dbusConnection);
-                        size_t len;
-                        userData.root = variant.getChildValue(2).getVariant().getString(len);
-                        auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
-                        dictBuilder.open(new VariantType("{sv}"));
-                        dictBuilder.addValue(new Variant("root"));
-                        dictBuilder.addValue(new Variant(new Variant(userData.root)));
-                        dictBuilder.close();
-                        auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
-                        valBuilder.addValue(new Variant(interfaceName.to!string));
-                        valBuilder.addValue(dictBuilder.end());
-                        valBuilder.open(new VariantType("as"));
-                        valBuilder.addValue(new Variant(""));
-                        valBuilder.close();
-                        connection.emitSignal(null, objectPath.to!string,
-                                "org.freedesktop.DBus.Properties",
-                                "PropertiesChanged", valBuilder.end());
+                        return;
                     }
-                    break;
+                    break methsw;
                 }
             }
 
-            auto retVariant = new Variant(ret);
-            dbusInvocation.returnValue(retVariant);
+        default:
+            assert(0, format("Unkown method name %s", methodName));
         }
-        else
-        {
-            error("Autorization failed!");
-            dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.ACCESS_DENIED,
-                    format("Authorization for operation %s for has failed for user!", operation));
-        }
+
+        auto retVariant = new Variant(ret);
+        dbusInvocation.returnValue(retVariant);
     }
 
     /**
@@ -438,7 +630,6 @@ class DBusServer
         trace("Acquired the DBus connection");
         auto interfaceVTable = GDBusInterfaceVTable(&methodHandler, null, null, null);
         auto dbusConnection = new DBusConnection(gdbusConnection);
-
         auto dbusIntrospectionData = new DBusNodeInfo(dbusIntrospectionXML);
         enforce(dbusIntrospectionData !is null);
 
@@ -490,7 +681,6 @@ private:
     static Variant apkPackageArrayToVariant(ApkPackage[] pkgArr)
     {
         auto arrBuilder = new VariantBuilder(new VariantType("a(sssssssssssttxb)"));
-
         foreach (pkg; pkgArr)
         {
             arrBuilder.addValue(apkPackageToVariant(pkg));
@@ -499,241 +689,6 @@ private:
         return arrBuilder.end();
     }
 
-    uint ownerId;
-    UserData userData;
-}
-
-/**
-* Helper class that is used in DBusServer.handleMethod to call the right functions on
-* apkd.ApkDatabase, handle logging etc.
-*/
-struct ApkInterfacer
-{
-    /**
-    * Params:
-    *   connection = The DBusConnection to send progressNotification signals on
-    *   root       = If not null, the install location of packages
-    */
-    this(DBusConnection connection, string root = null)
-    {
-        this.userData = InterfacerUserData(null, connection);
-        this.root = root;
-    }
-
-    /**
-    * Update all repositories available and send progress notifications via DBus.
-    *
-    * Params:
-    *   allowUntrustedRepositories = True if repos without a trusted key should be used
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
-    *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
-    *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
-    *   due to missing permissions, a conflict, etc.
-    *
-    */
-    void updateRepositories(in bool allowUntrustedRepositories)
-    {
-        trace("Trying to update repositories.");
-        auto database = ApkDataBase(this.root);
-        auto idleSource = this.connectProgressSignal(&database);
-        scope (exit)
-        {
-            idleSource.destroy();
-        }
-        database.updateRepositories(allowUntrustedRepositories);
-        trace("Successfully updated repositories.");
-    }
-
-    /**
-    * Upgrade packages and send progress notifications via DBus.
-    *
-    * Params:
-    *   pkgnames = Packages to upgrade. Keep in mind that apk will also upgrade dependencies of that package.
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
-    *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
-    *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
-    *   due to missing permissions, a conflict, etc.
-    */
-    void upgradePackages(string[] pkgnames)
-    {
-        tracef("Trying to upgrade package '%s'.", pkgnames);
-        auto database = ApkDataBase(this.root);
-        auto idleSource = this.connectProgressSignal(&database);
-        scope (exit)
-        {
-            idleSource.destroy();
-        }
-        database.upgradePackages(pkgnames);
-        tracef("Successfully upgraded package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
-    }
-
-    /**
-    * Upgrade all packages
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    *   Throws an ApkSolverException if the solver can't figure out a way to solve
-    *   the upgrade, e.g. due to conflicts.
-    */
-    void upgradeAllPackages()
-    {
-        trace("Trying upgrade all packages.");
-        auto database = ApkDataBase(this.root);
-        auto idleSource = this.connectProgressSignal(&database);
-        scope (exit)
-        {
-            idleSource.destroy();
-        }
-        database.upgradeAllPackages();
-        trace("Successfully upgraded all packages.");
-    }
-
-    /**
-    * Delete (uninstall) packages and send progress notifications via DBus.
-    *
-    * Params:
-    *   pkgnames = Packages to delete.
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    *   Throws an ApkException if something went wrong while trying to delete packages, e.g.
-    *   due to being unable to find the requested package name.
-    *   Throws an ApkSolverException if the solver can't figure out a way to solve
-    *   the deletion, e.g. due to conflicts.
-    *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
-    *   due to missing permissions.
-    */
-    void deletePackages(string[] pkgnames)
-    {
-        tracef("Trying to delete package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
-        auto database = ApkDataBase(this.root);
-        auto idleSource = this.connectProgressSignal(&database);
-        scope (exit)
-        {
-            idleSource.destroy();
-        }
-        database.deletePackages(pkgnames);
-        tracef("Successfully deleted package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
-    }
-
-    /**
-    * Add (install) packages and send progress notifications via DBus.
-    *
-    * Params:
-    *   pkgnames = Packages to add.
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    *   Throws a BadDependencyFormatException if the format for the package name isn't valid.
-    *   Throws a NoSuchpackageFoundException if the package name specified can't be found.
-    *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
-    *   due to missing permissions, a conflict, etc.
-    */
-    void addPackages(string[] pkgnames)
-    {
-        tracef("Trying to add package%s: %s", pkgnames.length > 1 ? "s" : "", pkgnames);
-        auto database = ApkDataBase(this.root);
-        auto idleSource = this.connectProgressSignal(&database);
-        scope (exit)
-        {
-            idleSource.destroy();
-        }
-        database.addPackages(pkgnames);
-        tracef("Successfully added package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
-    }
-
-    /**
-    * Get an array of all available packages. This also includes already installed packages.
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    *   An ApkListException if something went wrong in iterating over packages
-    */
-    ApkPackage[] listAvailablePackages()
-    {
-        trace("Trying to list all available packages");
-        auto database = ApkDataBase(this.root);
-        auto packages = database.listAvailablePackages();
-        trace("Successfully listed all available packages");
-        return packages;
-    }
-
-    /**
-    * Get an array of all packages that are installed on the machine.
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    */
-    ApkPackage[] listInstalledPackages()
-    {
-        trace("Trying to list all installed packages");
-        auto database = ApkDataBase(this.root);
-        auto packages = database.listInstalledPackages();
-        trace("Successfully listed all installed packages");
-        return packages;
-    }
-
-    /**
-    * Get an array of all packages that can be upgraded on the machine.
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    *   An ApkListException if something went wrong in iterating over packages
-    */
-    ApkPackage[] listUpgradablePackages()
-    {
-        trace("Trying to list upgradable packages");
-        auto database = ApkDataBase(this.root);
-        auto packages = database.listUpgradablePackages();
-        trace("Successfully listed all upgradable packages");
-        return packages;
-    }
-
-    /**
-    * Get an array of all packages that match one of the pkgnames given. Uses substring searching.
-    *
-    * Params:
-    *   pkgnames = pkgnames to search for
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    *   An ApkListException if something went wrong in iterating over packages
-    */
-    ApkPackage[] searchPackageNames(string[] pkgnames)
-    {
-        tracef("Trying to search for packages %s", pkgnames);
-        auto database = ApkDataBase(this.root);
-        auto packages = database.searchPackageNames(pkgnames);
-        tracef("Successfully searched for packages. %s hits.", packages.length);
-        return packages;
-    }
-
-    /**
-    * Get an array of all packages that match one of the pkgnames given. Uses substring searching.
-    *
-    * Params:
-    *   pkgnames = pkgnames to search for
-    *
-    * Throws:
-    *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
-    *   An ApkListException if something went wrong in iterating over packages
-    */
-    ApkPackage searchFileOwner(string path)
-    {
-        tracef("Trying to search owner of path %s", path);
-        auto database = ApkDataBase(this.root);
-        auto matchedPackage = database.searchFileOwner(path);
-        trace("Successfully searched for package");
-        return matchedPackage;
-    }
-
-private:
     /// Passed to  progressSenderFn as userData
     struct InterfacerUserData
     {
@@ -802,7 +757,14 @@ private:
         return idleSource;
     }
 
-    /// Installation root
+    struct UserData
+    {
+        ApkDataBase* db;
+        DBusConnection dbusConnection;
+    }
+
+    bool allowUntrustedRepositories;
     string root;
-    InterfacerUserData userData;
+    uint ownerId;
+    UserData userData;
 }

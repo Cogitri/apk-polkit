@@ -88,6 +88,7 @@ void setupDbusServer(string dbusServerPath, string[] polkitActions, GBusNameAppe
     tester.up();
     // TestDBus only sets DBUS_SESSION_BUS_ADDRESS
     environment["DBUS_SYSTEM_BUS_ADDRESS"] = tester.getBusAddress();
+    environment["G_DEBUG"] = "fatal_warnings";
 
     auto dbusMockPid = spawnProcess([
             "python3", "-m", "dbusmock", "--template", "polkitd"
@@ -115,7 +116,7 @@ void setupDbusServer(string dbusServerPath, string[] polkitActions, GBusNameAppe
     proxy.callSync("org.freedesktop.DBus.Mock.SetAllowed",
             new Variant([
                     new Variant([
-                        new Variant("dev.Cogitri.apkPolkit.Helper.getAllProperties"),
+                        new Variant("dev.Cogitri.apkPolkit.Helper.getAll"),
                         new Variant("dev.Cogitri.apkPolkit.Helper.setAllowUntrustedRepos"),
                         new Variant("dev.Cogitri.apkPolkit.Helper.setRoot"),
                         new Variant("dev.Cogitri.apkPolkit.Helper.setAllowUntrustedRepos"),

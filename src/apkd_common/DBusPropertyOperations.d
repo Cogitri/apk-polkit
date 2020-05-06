@@ -75,7 +75,7 @@ class DBusPropertyOperations : CommonOperations
         final switch (this.val) with (Enum)
         {
         case getAll:
-            action = "getAllProperties";
+            action = "getAll";
             break;
         case allowUntrustedRepos:
             action = this.direction.to!string ~ "AllowUntrustedRepos";

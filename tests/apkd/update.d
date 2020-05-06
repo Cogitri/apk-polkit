@@ -42,8 +42,8 @@ int _main(string[] args)
     enforce(updateSuccesful,
             "Updating the repositories wasn't successful when we expected it to be!");
     // We don't sign the APKINDEX in our tests, so this should fail
-    auto updateSucessfulTrusted = database.updateRepositories(false);
-    enforce(!updateSucessfulTrusted,
+    auto updateSucessfulUntrusted = database.updateRepositories(false);
+    enforce(!updateSucessfulUntrusted,
             "Updating the repositories was successful when we expected it to fail due to an invalid APKINDEX signature!");
     return 0;
 }

@@ -156,7 +156,7 @@
     </defaults>
   </action>
 
-  <action id="dev.Cogitri.apkPolkit.Helper.getAllProperties">
+  <action id="dev.Cogitri.apkPolkit.Helper.getAll">
     <!-- SECURITY:
           - Everyone is allowed to get all properties. This
             rule is only here so you can restrict this if you so desire.
