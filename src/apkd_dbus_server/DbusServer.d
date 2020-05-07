@@ -530,15 +530,18 @@ class DBusServer
                         }
                         catch (Exception e)
                         {
+                            immutable errorMsg = format(dbusServer.errorMessages[memberName], e.msg);
+                            error(errorMsg);
                             dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                    ApkdDbusServerErrorQuarkEnum.Failed,
-                                    format(dbusServer.errorMessages[memberName], e.msg));
+                                    ApkdDbusServerErrorQuarkEnum.Failed, errorMsg);
                         }
                         break;
                     case Denied:
-                        dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.ACCESS_DENIED,
-                                "Authorization for operation" ~ memberName
-                                ~ "for has failed for user!");
+                        immutable errorMsg = "Authorization for operation"
+                            ~ memberName ~ "for has failed for user!";
+                        error(errorMsg);
+                        dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(),
+                                DBusError.ACCESS_DENIED, errorMsg);
                         return;
                     case Failed:
                         // checkAuth already sends a DBus error if the auth fails
@@ -549,9 +552,10 @@ class DBusServer
             }
 
         default:
-            errorf("Unkown method name %s", methodName);
+            immutable errorMsg = format("Unkown method name %s", methodName);
+            error(errorMsg);
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(),
-                    DBusError.NOT_SUPPORTED, format("Unkown method name %s", methodName));
+                    DBusError.NOT_SUPPORTED, errorMsg);
             return;
         }
 
