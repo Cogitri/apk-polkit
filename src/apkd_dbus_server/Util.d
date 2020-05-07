@@ -11,8 +11,6 @@ template Call(alias symbol)
     {
         static if (is(T == Variant))
             enum GetVariableForType = "parametersVariant";
-        else static if (is(T == DBusMethodInvocation))
-            enum GetVariableForType = "dbusInvocation";
         else
             static assert(0, "Type " ~ T.stringof ~ " not supported!");
     }

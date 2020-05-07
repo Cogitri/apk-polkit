@@ -104,6 +104,19 @@ class DBusServer
         this.root = null;
         this.userData = UserData(null, null);
         auto dbusFlags = BusNameOwnerFlags.NONE;
+        this.errorMessages["addPackages"] = "Couldn't add package(s) due to error %s";
+        this.errorMessages["deletePackages"] = "Couldn't delete package(s) due to error %s";
+        this.errorMessages["listAvailablePackages"]
+            = "Couldn't list available packages due to error %s";
+        this.errorMessages["listInstalledPackages"]
+            = "Couldn't list installable packages due to error";
+        this.errorMessages["listUpgradablePackages"]
+            = "Couldn't list upgradable packages due to error %s";
+        this.errorMessages["updateRepositories"] = "Couldn't update repositories due to error %s";
+        this.errorMessages["upgradeAllPackages"] = "Couldn't upgrade all packages due to error %s";
+        this.errorMessages["upgradePackages"] = "Couldn't upgrade package(s) due to error %s";
+        this.errorMessages["searchFileOwner"] = "Couldn't search for owner of file due to error %s";
+        this.errorMessages["searchPackagenames"] = "Couldn't search for packages due to error %s";
         this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName,
                 dbusFlags, &onBusAcquired, &onNameAcquired, &onNameLost,
                 cast(void*) this, null);
@@ -128,27 +141,18 @@ class DBusServer
     *   due to missing permissions, a conflict, etc.
     */
     @("DBusMethod")
-    void addPackages(DBusMethodInvocation dbusInvocation, Variant parameters)
+    void addPackages(Variant parameters)
     {
         auto pkgnames = parameters.getChildValue(0).getStrv();
-        try
+        tracef("Trying to add package%s: %s", pkgnames.length > 1 ? "s" : "", pkgnames);
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
+        scope (exit)
         {
-            tracef("Trying to add package%s: %s", pkgnames.length > 1 ? "s" : "", pkgnames);
-            auto database = ApkDataBase(this.root);
-            auto idleSource = this.connectProgressSignal(&database);
-            scope (exit)
-            {
-                idleSource.destroy();
-            }
-            database.addPackages(pkgnames);
-            tracef("Successfully added package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
+            idleSource.destroy();
         }
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(), ApkdDbusServerErrorQuarkEnum.AddError,
-                    format("Couldn't add package%s %s due to error %s",
-                        pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
-        }
+        database.addPackages(pkgnames);
+        tracef("Successfully added package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
     /**
@@ -167,27 +171,18 @@ class DBusServer
     *   due to missing permissions.
     */
     @("DBusMethod")
-    void deletePackages(DBusMethodInvocation dbusInvocation, Variant parameters)
+    void deletePackages(Variant parameters)
     {
         auto pkgnames = parameters.getChildValue(0).getStrv();
-        try
+        tracef("Trying to delete package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
+        scope (exit)
         {
-            tracef("Trying to delete package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
-            auto database = ApkDataBase(this.root);
-            auto idleSource = this.connectProgressSignal(&database);
-            scope (exit)
-            {
-                idleSource.destroy();
-            }
-            database.deletePackages(pkgnames);
-            tracef("Successfully deleted package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
+            idleSource.destroy();
         }
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(), ApkdDbusServerErrorQuarkEnum.DeleteError,
-                    format("Couldn't delete package%s %s due to error %s",
-                        pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
-        }
+        database.deletePackages(pkgnames);
+        tracef("Successfully deleted package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
     @("DBusMethod")
@@ -228,24 +223,13 @@ class DBusServer
     *   An ApkListException if something went wrong in iterating over packages
     */
     @("DBusMethod")
-    Variant listAvailablePackages(DBusMethodInvocation dbusInvocation)
+    Variant listAvailablePackages()
     {
-        try
-        {
-            trace("Trying to list all available packages");
-            auto database = ApkDataBase(this.root);
-            auto packages = database.listAvailablePackages();
-            trace("Successfully listed all available packages");
-            return apkPackageArrayToVariant(packages);
-        }
-
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                    ApkdDbusServerErrorQuarkEnum.ListAvailableError,
-                    format("Couldn't list available packages due to error %s", e.msg));
-            return null;
-        }
+        trace("Trying to list all available packages");
+        auto database = ApkDataBase(this.root);
+        auto packages = database.listAvailablePackages();
+        trace("Successfully listed all available packages");
+        return apkPackageArrayToVariant(packages);
     }
 
     /**
@@ -255,23 +239,13 @@ class DBusServer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     */
     @("DBusMethod")
-    Variant listInstalledPackages(DBusMethodInvocation dbusInvocation)
+    Variant listInstalledPackages()
     {
-        try
-        {
-            trace("Trying to list all installed packages");
-            auto database = ApkDataBase(this.root);
-            auto packages = database.listInstalledPackages();
-            trace("Successfully listed all installed packages");
-            return apkPackageArrayToVariant(packages);
-        }
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                    ApkdDbusServerErrorQuarkEnum.ListInstalledError,
-                    format("Couldn't list installable packages due to error %s", e.msg));
-            return null;
-        }
+        trace("Trying to list all installed packages");
+        auto database = ApkDataBase(this.root);
+        auto packages = database.listInstalledPackages();
+        trace("Successfully listed all installed packages");
+        return apkPackageArrayToVariant(packages);
     }
 
     /**
@@ -282,23 +256,13 @@ class DBusServer
     *   An ApkListException if something went wrong in iterating over packages
     */
     @("DBusMethod")
-    Variant listUpgradablePackages(DBusMethodInvocation dbusInvocation)
+    Variant listUpgradablePackages()
     {
-        try
-        {
-            trace("Trying to list upgradable packages");
-            auto database = ApkDataBase(this.root);
-            auto packages = database.listUpgradablePackages();
-            trace("Successfully listed all upgradable packages");
-            return apkPackageArrayToVariant(packages);
-        }
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                    ApkdDbusServerErrorQuarkEnum.ListUpgradableError,
-                    format("Couldn't list upgradable packages due to error %s", e.msg));
-            return null;
-        }
+        trace("Trying to list upgradable packages");
+        auto database = ApkDataBase(this.root);
+        auto packages = database.listUpgradablePackages();
+        trace("Successfully listed all upgradable packages");
+        return apkPackageArrayToVariant(packages);
     }
 
     /**
@@ -316,27 +280,17 @@ class DBusServer
     *
     */
     @("DBusMethod")
-    void updateRepositories(DBusMethodInvocation dbusInvocation)
+    void updateRepositories()
     {
-        try
+        trace("Trying to update repositories.");
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
+        scope (exit)
         {
-            trace("Trying to update repositories.");
-            auto database = ApkDataBase(this.root);
-            auto idleSource = this.connectProgressSignal(&database);
-            scope (exit)
-            {
-                idleSource.destroy();
-            }
-            database.updateRepositories(this.allowUntrustedRepositories);
-            trace("Successfully updated repositories.");
+            idleSource.destroy();
         }
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                    ApkdDbusServerErrorQuarkEnum.UpdateRepositoriesError,
-                    format("Couldn't update repositories due to error %s", e.msg));
-            return;
-        }
+        database.updateRepositories(this.allowUntrustedRepositories);
+        trace("Successfully updated repositories.");
     }
 
     /**
@@ -348,27 +302,17 @@ class DBusServer
     *   the upgrade, e.g. due to conflicts.
     */
     @("DBusMethod")
-    void upgradeAllPackages(DBusMethodInvocation dbusInvocation)
+    void upgradeAllPackages()
     {
-        try
+        trace("Trying upgrade all packages.");
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
+        scope (exit)
         {
-            trace("Trying upgrade all packages.");
-            auto database = ApkDataBase(this.root);
-            auto idleSource = this.connectProgressSignal(&database);
-            scope (exit)
-            {
-                idleSource.destroy();
-            }
-            database.upgradeAllPackages();
-            trace("Successfully upgraded all packages.");
+            idleSource.destroy();
         }
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                    ApkdDbusServerErrorQuarkEnum.UpgradeAllPackagesError,
-                    format("Couldn't upgrade all packages due to error %s", e.msg));
-            return;
-        }
+        database.upgradeAllPackages();
+        trace("Successfully upgraded all packages.");
     }
 
     /**
@@ -385,30 +329,18 @@ class DBusServer
     *   due to missing permissions, a conflict, etc.
     */
     @("DBusMethod")
-    void upgradePackages(DBusMethodInvocation dbusInvocation, Variant parameters)
+    void upgradePackages(Variant parameters)
     {
         auto pkgnames = parameters.getChildValue(0).getStrv();
-        try
+        tracef("Trying to upgrade package '%s'.", pkgnames);
+        auto database = ApkDataBase(this.root);
+        auto idleSource = this.connectProgressSignal(&database);
+        scope (exit)
         {
-            tracef("Trying to upgrade package '%s'.", pkgnames);
-            auto database = ApkDataBase(this.root);
-            auto idleSource = this.connectProgressSignal(&database);
-            scope (exit)
-            {
-                idleSource.destroy();
-            }
-            database.upgradePackages(pkgnames);
-            tracef("Successfully upgraded package%s '%s'.", pkgnames.length > 1 ? "s" : "",
-                    pkgnames);
+            idleSource.destroy();
         }
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                    ApkdDbusServerErrorQuarkEnum.UpgradePackageError,
-                    format("Couldn't upgrade package%s %s due to error %s",
-                        pkgnames.length == 0 ? "" : "s", pkgnames, e.msg));
-            return;
-        }
+        database.upgradePackages(pkgnames);
+        tracef("Successfully upgraded package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
     /**
@@ -422,25 +354,15 @@ class DBusServer
     *   An ApkListException if something went wrong in iterating over packages
     */
     @("DBusMethod")
-    Variant searchFileOwner(DBusMethodInvocation dbusInvocation, Variant parameters)
+    Variant searchFileOwner(Variant parameters)
     {
-        try
-        {
-            size_t len;
-            auto path = parameters.getChildValue(0).getString(len);
-            tracef("Trying to search owner of path %s", path);
-            auto database = ApkDataBase(this.root);
-            auto matchedPackage = database.searchFileOwner(path);
-            trace("Successfully searched for package");
-            return apkPackageToVariant(matchedPackage);
-        }
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                    ApkdDbusServerErrorQuarkEnum.SearchFileOwnerError,
-                    format("Couldn't search for owner of file due to error %s", e.msg));
-            return null;
-        }
+        size_t len;
+        auto path = parameters.getChildValue(0).getString(len);
+        tracef("Trying to search owner of path %s", path);
+        auto database = ApkDataBase(this.root);
+        auto matchedPackage = database.searchFileOwner(path);
+        trace("Successfully searched for package");
+        return apkPackageToVariant(matchedPackage);
     }
 
     /**
@@ -454,24 +376,14 @@ class DBusServer
     *   An ApkListException if something went wrong in iterating over packages
     */
     @("DBusMethod")
-    Variant searchPackageNames(DBusMethodInvocation dbusInvocation, Variant parameters)
+    Variant searchPackageNames(Variant parameters)
     {
         auto pkgnames = parameters.getChildValue(0).getStrv();
-        try
-        {
-            tracef("Trying to search for packages %s", pkgnames);
-            auto database = ApkDataBase(this.root);
-            auto packages = database.searchPackageNames(pkgnames);
-            tracef("Successfully searched for packages. %s hits.", packages.length);
-            return apkPackageArrayToVariant(packages);
-        }
-        catch (Exception e)
-        {
-            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                    ApkdDbusServerErrorQuarkEnum.SearchPackageNamesError,
-                    format("Couldn't search for packages due to error %s", e.msg));
-            return null;
-        }
+        tracef("Trying to search for packages %s", pkgnames);
+        auto database = ApkDataBase(this.root);
+        auto packages = database.searchPackageNames(pkgnames);
+        tracef("Successfully searched for packages. %s hits.", packages.length);
+        return apkPackageArrayToVariant(packages);
     }
 
     @("DBusMethod")
@@ -600,7 +512,17 @@ class DBusServer
                         {
                             immutable retString = "";
                         }
-                        mixin(retString ~ " dbusServer." ~ Call!(mixin("dbusServer." ~ memberName)));
+                        try
+                        {
+                            mixin(retString ~ " dbusServer." ~ Call!(
+                                    mixin("dbusServer." ~ memberName)));
+                        }
+                        catch (Exception e)
+                        {
+                            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                                    ApkdDbusServerErrorQuarkEnum.Failed,
+                                    format(dbusServer.errorMessages[memberName], e.msg));
+                        }
                     }
                     else
                     {
@@ -660,6 +582,8 @@ class DBusServer
         fatalf("Lost DBus connection %s!", name.to!string);
     }
 
+    // Mapping between error messages to return for each dbus method
+    string[string] errorMessages;
 private:
     static Variant apkPackageToVariant(ApkPackage pkg)
     {
