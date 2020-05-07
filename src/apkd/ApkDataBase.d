@@ -32,13 +32,14 @@ import deimos.apk_toolsd.apk_package;
 import deimos.apk_toolsd.apk_print;
 import deimos.apk_toolsd.apk_solver;
 import deimos.apk_toolsd.apk_version;
-import std.algorithm : canFind;
+import std.algorithm : canFind, sort, uniq;
 import std.conv : to;
 import std.exception : enforce, assumeWontThrow;
 import std.experimental.logger;
 import std.file : readLink;
 import std.format : format;
 import std.process : pipe, Pipe;
+import std.range : empty;
 import std.stdio : File, write;
 import std.string : toStringz;
 import std.utf : toUTFz;
@@ -344,14 +345,22 @@ struct ApkDataBase
             }
         }
 
-        string dependants;
+        string[] dependants;
         apk_name_foreach_matching(&this.db, pkgnameArr,
                 apk_foreach_genid() | APK_FOREACH_MARKED | APK_DEP_SATISFIES,
                 &getNotDeletedPackageReason, &dependants);
-        if (dependants != "")
+        if (!dependants.empty())
         {
+            string[] uniqDependants;
+            foreach (dependant; dependants)
+            {
+                if (!uniqDependants.canFind(dependant))
+                {
+                    uniqDependants ~= dependant;
+                }
+            }
             throw new ApkCantDeletedRequiredPackage(format(
-                    "package still required by the following packages: %s", dependants));
+                    "package still required by the following packages: %s", uniqDependants));
         }
 
         const auto solverCommitRes = apk_solver_commit_changeset(&this.db, &changeset, worldCopy);
@@ -554,7 +563,7 @@ private:
     struct NotDeletedReasonContext
     {
         apk_name* name;
-        string* notRemovedDue;
+        string[]* notRemovedDue;
         uint matches;
     }
 
@@ -570,7 +579,7 @@ private:
         auto notDeletedReasonContext = cast(NotDeletedReasonContext*) ctx;
         if (pkg.name.name.to!string != notDeletedReasonContext.name.name.to!string)
         {
-            *notDeletedReasonContext.notRemovedDue ~= pkg.name.name.to!string ~ " ";
+            *notDeletedReasonContext.notRemovedDue ~= pkg.name.name.to!string;
         }
 
         foreachReverseDependency(pkg, true, true, false, &addNotDeletedPackage, ctx);
@@ -599,12 +608,12 @@ private:
             const char*, apk_name* name, void* ctx) nothrow
     in
     {
-        assert(cast(string*) ctx,
+        assert(cast(string[]*) ctx,
                 "Casting to the expected type of our context failed! This is a bug.");
     }
     do
     {
-        auto notRemovedDue = cast(string*) ctx;
+        auto notRemovedDue = cast(string[]*) ctx;
         auto notDeletedReasonContext = NotDeletedReasonContext(name, notRemovedDue,
                 apk_foreach_genid() | APK_FOREACH_MARKED | APK_DEP_SATISFIES);
         foreach (provider; name.providers.item)
