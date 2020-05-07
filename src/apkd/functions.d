@@ -117,57 +117,6 @@ bool packageIsInstalled(apk_database* db, string pkgname) nothrow
     return false;
 }
 
-/// User data passed into recursiveDeletePackages as void pointer
-struct DeleteContext
-{
-public:
-    @property bool recursiveDelete() const nothrow
-    {
-        return m_recursiveDelete;
-    }
-
-    @property ref apk_dependency_array* world() nothrow
-    {
-        return m_world;
-    }
-
-    @property uint errors() nothrow
-    {
-        return m_errors;
-    }
-
-    @property void errors(uint count) nothrow
-    {
-        this.m_errors = count;
-    }
-
-private:
-    bool m_recursiveDelete;
-    apk_dependency_array* m_world;
-    uint m_errors;
-}
-
-/**
-* Recursively delete a pacakge and all of its dependants.
-*
-* Params:
-*   apkPackage = Package which should be deleted
-*   ctx        = A DeleteContext which is used to pipe user
-*                data into the function.
-*/
-extern (C) void recursiveDeletePackage(apk_package* apkPackage,
-        apk_dependency*, apk_package*, void* ctx) nothrow
-{
-    auto deleteContext = cast(DeleteContext*) ctx;
-    auto world = deleteContext.world;
-    apk_deps_del(&world, apkPackage.name);
-    if (deleteContext.recursiveDelete)
-    {
-        apk_pkg_foreach_reverse_dependency(apkPackage,
-                APK_FOREACH_INSTALLED | APK_DEP_SATISFIES, &recursiveDeletePackage, ctx);
-    }
-}
-
 /// Append an apk_package* to an ApkPackage array.
 extern (C) int appendApkPackageToArray(apk_hash_item item, void* ctx) nothrow
 in

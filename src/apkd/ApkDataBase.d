@@ -328,17 +328,11 @@ struct ApkDataBase
         foreach (pkgname; pkgnames)
         {
             *apkd.functions.apk_string_array_add(&pkgnameArr) = pkgname.toUTFz!(char*);
+            apk_deps_del(&worldCopy, packageNameToApkDependency(pkgname).name);
         }
 
-        auto deleteContext = apkd.functions.DeleteContext(recursiveDelete, worldCopy, 0);
-
-        apk_name_foreach_matching(&this.db, pkgnameArr, apk_foreach_genid(),
-                &deleteName, &deleteContext);
-
-        enforce!ApkException(deleteContext.errors == 0,
-                "Something went wrong while deleting packages, see above...");
         const auto solverSolveRes = apk_solver_solve(&this.db, solverFlags,
-                deleteContext.world, &changeset);
+                worldCopy, &changeset);
         enforce!ApkSolverException(solverSolveRes == 0,
                 format("Failed to calculate dependency graph due to error '%s'!",
                     apk_error_str(solverSolveRes).to!string));
@@ -494,7 +488,7 @@ private:
     */
     apk_dependency packageNameToApkDependency(string pkgname)
     {
-        apk_dependency apk_dependency;
+        auto apk_dependency = new apk_dependency;
         // If we're trying to add a package via a local apk package archive.
         if (pkgname.canFind(".apk"))
         {
@@ -508,18 +502,22 @@ private:
             auto pkgRes = apk_pkg_read(&this.db, pkgname.toStringz, &ctx, &apkPackage);
             enforce!NoSuchPackageFoundException(pkgRes == 0, format("%s: %s",
                     pkgname, apk_error_str(pkgRes).to!string));
-            apk_dep_from_pkg(&apk_dependency, &this.db, apkPackage);
-            return apk_dependency;
+            apk_dep_from_pkg(apk_dependency, &this.db, apkPackage);
+            enforce!NoSuchPackageFoundException(apk_dependency !is null,
+                    format("Couldn't find package %s", pkgname));
+            return *apk_dependency;
         }
         else
         {
             apk_blob_t blob = apk_blob_t(pkgname.length, toUTFz!(char*)(pkgname));
-            apk_blob_pull_dep(&blob, &this.db, &apk_dependency);
+            apk_blob_pull_dep(&blob, &this.db, apk_dependency);
             enforce!BadDependencyFormatException(!(blob.ptr is null || blob.len > 0), format(
-                    "'%s' is not a correctly formated world dependency, the format should be: name(@tag)([<>~=]version)"));
+                    "'%s' is not a correctly formated world dependency, the format should be: name(@tag)([<>~=]version)",
+                    pkgname));
+            enforce!NoSuchPackageFoundException(apk_dependency !is null,
+                    format("Couldn't find package %s", pkgname));
+            return *apk_dependency;
         }
-
-        return apk_dependency;
     }
 
     /**
@@ -552,37 +550,6 @@ private:
                     apk_error_str(solverSolveRes).to!string));
 
         return changeset;
-    }
-
-    /**
-    * Delete the apk_name specified. Used in apk.ApkDatabase.executeForMatching
-    *
-    * Params:
-    *   apk_database = unused
-    *   match        = The name of the package that we try to delete
-    *   name         = The apk_name we try to delete.
-    *   ctx          = A void ptr to a DeleteContext. Used to keep track of errors etc.
-    */
-    extern (C) static void deleteName(apk_database*, const char* match, apk_name* name, void* ctx) nothrow
-    {
-        auto deleteContext = cast(apkd.functions.DeleteContext*) ctx;
-        if (name is null)
-        {
-            assumeWontThrow(errorf("No such package: %s", match.to!string));
-            deleteContext.errors = deleteContext.errors + 1;
-            return;
-        }
-
-        auto apkPackage = cast(apk_package*) apk_pkg_get_installed(name);
-        if (apkPackage is null)
-        {
-            auto world = deleteContext.world;
-            apk_deps_del(&world, name);
-        }
-        else
-        {
-            apkd.functions.recursiveDeletePackage(apkPackage, null, null, ctx);
-        }
     }
 
     struct NotDeletedReasonContext
