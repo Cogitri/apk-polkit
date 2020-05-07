@@ -65,6 +65,11 @@ endif
 
 compiler_id = meson.get_compiler('d').get_id()
 
+# Prints why an assert failed
+if compiler_id != 'gcc'
+    add_project_arguments('-checkaction=context', language: 'd')
+endif
+
 i18n = import('i18n')
 
 conf = configuration_data()
