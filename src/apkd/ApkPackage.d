@@ -65,8 +65,6 @@ struct ApkPackage
                 "apk_package.url is null when we didn't expect it to! This is a bug.");
         assert(apk_package.description,
                 "apk_package.description is null when we didn't expect it to! This is a bug.");
-        assert(apk_package.commit,
-                "apk_package.commit is null when we didn't expect it to! This is a bug.");
         assert(apk_package.size,
                 "apk_package.size is null when we didn't expect it to! This is a bug.");
         assert(apk_package.build_time,
@@ -85,7 +83,7 @@ struct ApkPackage
             apk_package.maintainer ? apk_package.maintainer.ptr[0 .. apk_package.maintainer.len].to!string: null,
             to!string(apk_package.url),
             to!string(apk_package.description),
-            to!string(apk_package.commit),
+            apk_package.commit ? to!string(apk_package.commit) : null,
             apk_package.filename ? apk_package.filename.to!string() : null, apk_package.installed_size,
             apk_package.size,
             SysTime(unixTimeToStdTime(apk_package.build_time)),
