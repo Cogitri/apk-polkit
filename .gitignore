@@ -18,3 +18,6 @@ po/apk-polkit.pot
 # Should never be commited, it is generated while translating, the .po files should
 # be commited
 po/*.mo
+
+# subprojects
+subprojects/apk-tools
