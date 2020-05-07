@@ -1,4 +1,5 @@
 test_src_files = [
+    'addAndDelete.d',
     'install.d',
     'installFail.d',
     'progressNotification.d',
