@@ -604,6 +604,9 @@ class DBusServer
                     }
                     else
                     {
+                        dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.ACCESS_DENIED,
+                                "Authorization for operation" ~ memberName
+                                ~ "for has failed for user!");
                         return;
                     }
                     break methsw;
