@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2020 Rasmus Thomsen <oss@cogitri.dev>
 
-    This file is part of apk-polkit (see https://github.com/Cogitri/apk-polkit).
+    This file is part of apk-polkit (see https://gitlab.alpinelinux.org/Cogitri/apk-polkit).
 
     apk-polkit is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
