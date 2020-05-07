@@ -627,13 +627,10 @@ private:
         {
             foreach (depPkg; reverseDep.providers.item)
             {
-                assumeWontThrow(error("Pkg:", depPkg.pkg.name.name.to!string,
-                        " marked: ", depPkg.pkg.marked));
                 if ((installed && depPkg.pkg.ipkg is null) || (marked && !depPkg.pkg.marked))
                 {
                     continue;
                 }
-                assumeWontThrow(error("Pkg done:", depPkg.pkg.name.name.to!string));
                 cb(depPkg.pkg, null, null, ctx);
             }
         }
