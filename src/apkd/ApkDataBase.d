@@ -310,7 +310,7 @@ struct ApkDataBase
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions.
     */
-    void deletePackages(string[] pkgnames, bool recursiveDelete = false, ushort solverFlags = 0)
+    void deletePackages(string[] pkgnames, ushort solverFlags = 0)
     {
         apk_dependency_array* worldCopy = null;
         apk_changeset changeset;
@@ -360,13 +360,14 @@ struct ApkDataBase
                 }
             }
             throw new ApkCantDeletedRequiredPackage(format(
-                    "package still required by the following packages: %s", uniqDependants));
+                    "package(s) %s still required by the following packages: %s",
+                    pkgnames, uniqDependants));
         }
 
         const auto solverCommitRes = apk_solver_commit_changeset(&this.db, &changeset, worldCopy);
         enforce!ApkDatabaseCommitException(solverCommitRes == 0,
-                format("Failed to commit changes to the database due to error '%s'!",
-                    apk_error_str(solverCommitRes).to!string));
+                format("Failed to commit changes for deletion of %s to the database due to error '%s'!",
+                    pkgnames, apk_error_str(solverCommitRes).to!string));
     }
 
     /**
@@ -554,7 +555,7 @@ private:
         const auto solverSolveRes = apk_solver_solve(&this.db,
                 APK_SOLVERF_UPGRADE | solverFlags, this.db.world, &changeset);
         enforce!ApkSolverException(solverSolveRes == 0,
-                format("Failed to calculate dependency graph due to error '%s'!",
+                format("Failed to calculate dependency graph for upgrade due to error '%s'!",
                     apk_error_str(solverSolveRes).to!string));
 
         return changeset;
