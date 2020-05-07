@@ -1,12 +1,12 @@
 stages:
   - build
 
-.build:
+.build-ubuntu:
   image: ubuntu:focal
   stage: build
   script:
     - apt update
-    - DEBIAN_FRONTEND=noninteractive apt-get -y install libpolkit-gobject-1-dev policykit-1 libglibd-2.0-dev libssl-dev ldc git build-essential gir-to-d libgirepository1.0-dev libdbus-1-dev dbus-x11 python3-dbusmock gettext python3-pip
+    - DEBIAN_FRONTEND=noninteractive apt-get -y install libpolkit-gobject-1-dev policykit-1 libglibd-2.0-dev libssl-dev ldc git build-essential gir-to-d libgirepository1.0-dev libdbus-1-dev dbus-x11 python3-dbusmock gettext python3-pip lua5.3 lua-zlib
     - pip3 install meson ninja
     - git clone https://gitlab.alpinelinux.org/alpine/abuild
     - git clone https://gitlab.alpinelinux.org/Cogitri/apk-toolsd
@@ -18,12 +18,25 @@ stages:
     - cd ../polkit-d && meson build && ninja -C build install
     - cd ../ && meson build && env LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu ninja -C build test
 
-build-ldc:
-  extends: .build
+.build-alpine:
+  image: alpine:edge
+  stage: build
+  script:
+    - apk add meson polkit-d-dev openssl-d-dev apk-tools-d-dev>=2.10.5.7 glibd-dev bash py3-dbusmock dbus dbus-x11 lua5.3 lua5.3-lzlib alpine-sdk
+    - meson build && ninja -C build test
 
+build-ldc-alpine:
+  extends: .build-alpine
+  before_script:
+    - apk add ldc ldc-runtime lld
+  variables:
+    DFLAGS: "--linker=lld"
 
-build-ldc-sanitizer:
-  extends: .build
+build-ldc-ubuntu:
+  extends: .build-ubuntu
+
+build-ldc-ubuntu-sanitizer:
+  extends: .build-ubuntu
   variables:
      DFLAGS: "-fsanitize=address -g -disable-fp-elim"
      ASAN_OPTIONS: "detect_leaks=0" # disable for now
