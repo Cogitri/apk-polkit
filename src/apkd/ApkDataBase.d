@@ -141,7 +141,6 @@ struct ApkDataBase
     bool updateRepositories(in bool allowUntustedRepos = false)
     {
         bool res = true;
-        const auto apkVerify = allowUntustedRepos ? APK_SIGN_NONE : APK_SIGN_VERIFY;
 
         for (auto i = APK_REPOSITORY_FIRST_CONFIGURED; i < this.db.num_repos; i++)
         {
