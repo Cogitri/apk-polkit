@@ -1,4 +1,5 @@
 test_src_files = [
+    'authFail.d',
     'addAndDelete.d',
     'deleteRequiredPackage.d',
     'install.d',
