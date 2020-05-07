@@ -227,7 +227,8 @@ class DBusServer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   An ApkListException if something went wrong in iterating over packages
     */
-    @("DBusMethod") Variant listAvailablePackages(DBusMethodInvocation dbusInvocation)
+    @("DBusMethod")
+    Variant listAvailablePackages(DBusMethodInvocation dbusInvocation)
     {
         try
         {
