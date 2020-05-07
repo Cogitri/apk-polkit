@@ -27,6 +27,19 @@ import polkit.SystemBusName;
 import std.experimental.logger;
 
 /**
+* The status of a polkit authentication
+*/
+enum AuthStatus
+{
+    /* Access granted */
+    Granted,
+    /* Access denied */
+    Denied,
+    /* Asking for access failed */
+    Failed,
+}
+
+/**
 * Query the polkit authority if a certain DBus sender is permitted to
 * execute a certain action.
 *

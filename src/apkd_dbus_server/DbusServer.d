@@ -440,12 +440,21 @@ class DBusServer
                 "org.freedesktop.DBus.Properties", "PropertiesChanged", valBuilder.end());
     }
 
-    static bool checkAuth(string operation, string sender, DBusMethodInvocation dbusInvocation)
+    static AuthStatus checkAuth(string operation, string sender,
+            DBusMethodInvocation dbusInvocation)
     {
         info("Tying to authorized user...");
         try
         {
-            return queryPolkitAuth(operation, sender.to!string);
+            const authenticated = queryPolkitAuth(operation, sender.to!string);
+            if (authenticated)
+            {
+                return AuthStatus.Granted;
+            }
+            else
+            {
+                return AuthStatus.Denied;
+            }
         }
         catch (GException e)
         {
@@ -454,7 +463,7 @@ class DBusServer
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.AUTH_FAILED,
                     format("Authorization for operation %s for has failed due to error '%s'!",
                         operation, e.msg));
-            return false;
+            return AuthStatus.Failed;
         }
     }
 
@@ -500,9 +509,11 @@ class DBusServer
                 static if (mixin("hasUDA!(DBusServer." ~ memberName ~ ", \"DBusMethod\")"))
                 {
         case memberName:
-                    if (checkAuth("dev.Cogitri.apkPolkit.Helper." ~ memberName,
-                            sender.to!string, dbusInvocation))
+                    const polkitResult = checkAuth("dev.Cogitri.apkPolkit.Helper." ~ memberName,
+                            sender.to!string, dbusInvocation);
+                    final switch (polkitResult) with (AuthStatus)
                     {
+                    case Granted:
                         static if (!is(ReturnType!((__traits(getMember,
                                 DBusServer, memberName))) == void))
                         {
@@ -523,12 +534,14 @@ class DBusServer
                                     ApkdDbusServerErrorQuarkEnum.Failed,
                                     format(dbusServer.errorMessages[memberName], e.msg));
                         }
-                    }
-                    else
-                    {
+                        break;
+                    case Denied:
                         dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(), DBusError.ACCESS_DENIED,
                                 "Authorization for operation" ~ memberName
                                 ~ "for has failed for user!");
+                        return;
+                    case Failed:
+                        // checkAuth already sends a DBus error if the auth fails
                         return;
                     }
                     break methsw;
