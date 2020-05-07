@@ -27,7 +27,6 @@ import glib.Variant;
 import gobject.c.types : GObject;
 import gobject.ObjectG;
 import gobject.Signals;
-import std.exception : enforce;
 import std.format : format;
 import std.process : pipe, Pipe;
 import std.stdio : File;
@@ -61,7 +60,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
     Signals.connect(object, "g-signal", cast(GCallback)&signalCallback, &writeEnd);
     apkd_helper_set_allow_untrusted_repos(apkdHelper, true);
     apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz);
-    enforce(apkd_helper_call_update_repositories_sync(apkdHelper, null, null));
+    assert(apkd_helper_call_update_repositories_sync(apkdHelper, null, null));
     auto percentage = pipe.readEnd().readln().strip();
     assert(percentage == "0");
     percentage = pipe.readEnd().readln().strip();

@@ -26,7 +26,6 @@ import tests.apkd_test_common.apkd_dbus_client;
 import gio.c.types : GDBusConnection, BusType, GDBusProxyFlags;
 import glib.Variant;
 import std.datetime : SysTime;
-import std.exception : enforce;
 import std.string : toStringz;
 
 extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
@@ -44,12 +43,12 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
             "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
     apkd_helper_set_allow_untrusted_repos(apkdHelper, true);
     apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz);
-    enforce(apkd_helper_call_update_repositories_sync(apkdHelper, null, null));
+    assert(apkd_helper_call_update_repositories_sync(apkdHelper, null, null));
 
     auto packages = ["test".toStringz(), null];
     GVariant* dbusRes;
-    enforce(apkd_helper_call_search_package_names_sync(apkdHelper,
-            packages.ptr, &dbusRes, null, null));
+    assert(apkd_helper_call_search_package_names_sync(apkdHelper, packages.ptr,
+            &dbusRes, null, null));
     auto dbusRet = new Variant(dbusRes);
     ApkPackage[] pkgArr;
 

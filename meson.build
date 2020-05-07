@@ -70,6 +70,15 @@ if compiler_id != 'gcc'
     add_project_arguments('-checkaction=context', language: 'd')
 endif
 
+# Used to always enable asserts in some places (e.g. tests)
+if compiler_id == 'gcc'
+    enable_asserts_compile_arg = '-fassert'
+elif compiler_id == 'llvm'
+    enable_asserts_compile_arg = '--enable-asserts=true'
+else
+    enable_asserts_compile_arg = '-check=assert'
+endif
+
 i18n = import('i18n')
 
 conf = configuration_data()

@@ -27,7 +27,6 @@ import glib.c.types : GError;
 import glib.GException;
 import glib.Variant;
 import std.array : split;
-import std.exception;
 import std.conv : to;
 import std.file : exists;
 import std.format : format;
@@ -53,24 +52,24 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
     apkd_helper_set_allow_untrusted_repos(apkdHelper, true);
     apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz());
     auto pkgs = ["test-a".toStringz(), "test-e".toStringz(), null];
-    enforce(apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null,
+    assert(apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null,
             &error), error.message.to!string);
 
     auto testA = execute(buildPath(testHelper.apkRootDir, "usr", "bin", "test-a"));
 
-    enforce(testA[1].strip() == "hello from test-a-1.0",
+    assert(testA[1].strip() == "hello from test-a-1.0",
             format("Expected 'hello from test-a-1.0', got '%s'", testA[1].strip()));
 
     pkgs = ["test-a".toStringz(), null];
 
-    enforce(!apkd_helper_call_delete_packages_sync(apkdHelper, pkgs.ptr, null, &error));
+    assert(!apkd_helper_call_delete_packages_sync(apkdHelper, pkgs.ptr, null, &error));
 
     const errorMessage = error.message.to!string.split(
             ":")[2] ~ ":" ~ error.message.to!string.split(":")[3];
 
-    enforce(errorMessage.strip() == "Couldn't delete packages [\"test-a\"] due to error package still required by the following packages: [\"test-b\", \"test-e\"]");
+    assert(errorMessage.strip() == "Couldn't delete packages [\"test-a\"] due to error package still required by the following packages: [\"test-b\", \"test-e\"]");
 
-    enforce(buildPath(testHelper.apkRootDir, "usr", "bin", "test-e").exists());
+    assert(buildPath(testHelper.apkRootDir, "usr", "bin", "test-e").exists());
 
     testHelper.cleanup();
     exit(0);

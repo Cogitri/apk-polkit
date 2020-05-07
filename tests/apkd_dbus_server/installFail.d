@@ -43,7 +43,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
             "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
     apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz());
     auto pkgs = ["doesNotExist".toStringz(), null];
-    enforce(!apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null, null));
+    assert(!apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null, null));
     testHelper.cleanup();
     exit(0);
 }

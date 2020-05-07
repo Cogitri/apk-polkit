@@ -26,7 +26,6 @@ import tests.apkd_test_common.apkd_dbus_client;
 import gio.c.types : GDBusConnection, BusType, GDBusProxyFlags;
 import glib.GException;
 import glib.Variant;
-import std.exception;
 import std.datetime : SysTime;
 import std.string : toStringz;
 
@@ -49,7 +48,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
     apkd_helper_call_add_packages_sync(apkdHelper, pkgs.ptr, null, null);
     auto path = "/usr/bin/test-a";
     GVariant* dbusRes;
-    enforce(apkd_helper_call_search_file_owner_sync(apkdHelper,
+    assert(apkd_helper_call_search_file_owner_sync(apkdHelper,
             path.toStringz(), &dbusRes, null, null));
     auto valueTuple = new Variant(dbusRes);
 

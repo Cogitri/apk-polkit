@@ -23,7 +23,6 @@ import core.stdc.stdlib : exit;
 import tests.apkd_test_common.testlib;
 import tests.apkd_test_common.apkd_dbus_client;
 import gio.c.types : GDBusConnection, BusType, GDBusProxyFlags;
-import std.exception : enforce;
 import std.string : toStringz;
 
 extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
@@ -41,7 +40,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
             "/dev/Cogitri/apkPolkit/Helper".toStringz(), null, null);
     apkd_helper_set_allow_untrusted_repos(apkdHelper, true);
     apkd_helper_set_root(apkdHelper, testHelper.apkRootDir.toStringz);
-    enforce(apkd_helper_call_update_repositories_sync(apkdHelper, null, null));
+    assert(apkd_helper_call_update_repositories_sync(apkdHelper, null, null));
 
     testHelper.cleanup();
     exit(0);
