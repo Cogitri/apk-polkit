@@ -65,18 +65,13 @@ endif
 
 compiler_id = meson.get_compiler('d').get_id()
 
-# Prints why an assert failed
-if compiler_id != 'gcc'
-    add_project_arguments('-checkaction=context', language: 'd')
-endif
-
 # Used to always enable asserts in some places (e.g. tests)
 if compiler_id == 'gcc'
     enable_asserts_compile_arg = '-fassert'
 elif compiler_id == 'llvm'
-    enable_asserts_compile_arg = '--enable-asserts=true'
+    enable_asserts_compile_arg = ['--enable-asserts=true', '-checkaction=context']
 else
-    enable_asserts_compile_arg = '-check=assert'
+    enable_asserts_compile_arg = ['-check=assert', '-checkaction=context']
 endif
 
 i18n = import('i18n')
