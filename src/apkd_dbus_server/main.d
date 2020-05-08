@@ -19,6 +19,7 @@
 
 module apkd_dbus_server.main;
 
+import apkd_common.gettext;
 static import apkd_common.globals;
 import apkd_common.SysLogger;
 import apkd_dbus_server.DbusServer;
@@ -72,6 +73,9 @@ int _main(string[] args)
                 options.debugLevel));
     }
     setupLogging(logLevel);
+
+    bindtextdomain("apk-polkit", apkd_common.globals.localeDir);
+    textdomain("apk-polkit");
 
     auto mainContext = MainContext.default_();
     mainContext.pushThreadDefault();

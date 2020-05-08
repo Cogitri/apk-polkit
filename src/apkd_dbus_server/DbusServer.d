@@ -23,6 +23,7 @@ import apkd.ApkDataBase;
 import apkd.ApkPackage;
 import apkd.exceptions;
 static import apkd.functions;
+import apkd_common.gettext : gettext;
 static import apkd_common.globals;
 import apkd_dbus_server.Polkit;
 import apkd_dbus_server.Util;
@@ -104,19 +105,24 @@ class DBusServer
         this.root = null;
         this.userData = UserData(null, null);
         auto dbusFlags = BusNameOwnerFlags.NONE;
-        this.errorMessages["addPackages"] = "Couldn't add package(s) due to error %s";
-        this.errorMessages["deletePackages"] = "Couldn't delete package(s) due to error %s";
-        this.errorMessages["listAvailablePackages"]
-            = "Couldn't list available packages due to error %s";
-        this.errorMessages["listInstalledPackages"]
-            = "Couldn't list installable packages due to error";
-        this.errorMessages["listUpgradablePackages"]
-            = "Couldn't list upgradable packages due to error %s";
-        this.errorMessages["updateRepositories"] = "Couldn't update repositories due to error %s";
-        this.errorMessages["upgradeAllPackages"] = "Couldn't upgrade all packages due to error %s";
-        this.errorMessages["upgradePackages"] = "Couldn't upgrade package(s) due to error %s";
-        this.errorMessages["searchFileOwner"] = "Couldn't search for owner of file due to error %s";
-        this.errorMessages["searchPackagenames"] = "Couldn't search for packages due to error %s";
+        this.errorMessages["addPackages"] = gettext("Couldn't add package(s) due to error %s");
+        this.errorMessages["deletePackages"] = gettext("Couldn't delete package(s) due to error %s");
+        this.errorMessages["listAvailablePackages"] = gettext(
+                "Couldn't list available packages due to error %s");
+        this.errorMessages["listInstalledPackages"] = gettext(
+                "Couldn't list installable packages due to error");
+        this.errorMessages["listUpgradablePackages"] = gettext(
+                "Couldn't list upgradable packages due to error %s");
+        this.errorMessages["updateRepositories"] = gettext(
+                "Couldn't update repositories due to error %s");
+        this.errorMessages["upgradeAllPackages"] = gettext(
+                "Couldn't upgrade all packages due to error %s");
+        this.errorMessages["upgradePackages"] = gettext(
+                "Couldn't upgrade package(s) due to error %s");
+        this.errorMessages["searchFileOwner"] = gettext(
+                "Couldn't search for owner of file due to error %s");
+        this.errorMessages["searchPackagenames"] = gettext(
+                "Couldn't search for packages due to error %s");
         this.ownerId = DBusNames.ownName(BusType.SYSTEM, apkd_common.globals.dbusBusName,
                 dbusFlags, &onBusAcquired, &onNameAcquired, &onNameLost,
                 cast(void*) this, null);

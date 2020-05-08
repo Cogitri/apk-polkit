@@ -5,6 +5,7 @@ globals_d = configure_file(
 )
 
 common_src = [
+    'gettext.d',
     'SysLogger.d',
     globals_d,
 ]

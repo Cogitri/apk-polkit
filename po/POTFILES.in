@@ -1,2 +1,5 @@
-# asserts
+# Polkit policy
 data/dev.Cogitri.apkPolkit.policy.in
+
+# Source files
+src/apkd_dbus_server/DbusServer.d
