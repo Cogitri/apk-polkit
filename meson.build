@@ -51,8 +51,16 @@ dbus_config_dir = join_paths(data_dir, 'dbus-1', 'system.d')
 dbus_interface_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir')
 polkit_policy_dir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir')
 
+cc = meson.get_compiler('c')
+
+if cc.has_function('ngettext')
+  libintl = []
+else
+  libintl = cc.find_library('intl', required : true)
+endif
+
 apkd_dbus_client_deps = [gio_unix_dep]
-apkd_dbus_server_deps = [glibd_dep, polkit_gobjectd_dep]
+apkd_dbus_server_deps = [glibd_dep, polkit_gobjectd_dep, libintl]
 apkd_deps = [apk_toolsd_dep]
 
 src_inc = include_directories('src')
