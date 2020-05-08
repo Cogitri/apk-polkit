@@ -351,17 +351,9 @@ struct ApkDataBase
                 &getNotDeletedPackageReason, &dependants);
         if (!dependants.empty())
         {
-            string[] uniqDependants;
-            foreach (dependant; dependants)
-            {
-                if (!uniqDependants.canFind(dependant))
-                {
-                    uniqDependants ~= dependant;
-                }
-            }
             throw new ApkCantDeletedRequiredPackage(format(
                     "package(s) %s still required by the following packages: %s",
-                    pkgnames, uniqDependants));
+                    pkgnames, dependants));
         }
 
         const auto solverCommitRes = apk_solver_commit_changeset(&this.db, &changeset, worldCopy);
@@ -578,9 +570,12 @@ private:
     do
     {
         auto notDeletedReasonContext = cast(NotDeletedReasonContext*) ctx;
-        if (pkg.name.name.to!string != notDeletedReasonContext.name.name.to!string)
+        auto pkgname = pkg.name.name.to!string;
+        auto notRemovedDue = notDeletedReasonContext.notRemovedDue;
+        if (pkgname != notDeletedReasonContext.name.name.to!string
+                && !(*notRemovedDue).canFind(pkgname))
         {
-            *notDeletedReasonContext.notRemovedDue ~= pkg.name.name.to!string;
+            *notRemovedDue ~= pkgname;
         }
 
         foreachReverseDependency(pkg, true, true, false, &addNotDeletedPackage, ctx);
