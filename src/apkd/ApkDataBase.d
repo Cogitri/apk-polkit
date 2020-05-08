@@ -185,6 +185,11 @@ struct ApkDataBase
 
         auto upgradeChangeset = this.getAllUpgradeChangeset();
 
+        scope (exit)
+        {
+            apkd.functions.apk_change_array_free(&upgradeChangeset.changes);
+        }
+
         foreach (i; 0 .. upgradeChangeset.changes.num)
         {
             auto change = upgradeChangeset.changes.item()[i];
@@ -218,6 +223,10 @@ struct ApkDataBase
     void upgradeAllPackages(ushort solverFlags = 0)
     {
         auto changeset = this.getAllUpgradeChangeset();
+        scope (exit)
+        {
+            apkd.functions.apk_change_array_free(&changeset.changes);
+        }
         const auto solverRes = apk_solver_commit_changeset(&this.db, &changeset, this.db.world);
         enforce!ApkSolverException(solverRes == 0,
                 format("Couldn't upgrade packages due to error '%s%",
@@ -535,11 +544,6 @@ private:
     apk_changeset getAllUpgradeChangeset(ushort solverFlags = 0)
     {
         apk_changeset changeset;
-
-        scope (exit)
-        {
-            apkd.functions.apk_change_array_free(&changeset.changes);
-        }
 
         enforce!ApkBrokenWorldException(apk_db_check_world(&this.db,
                 this.db.world) == 0, "Missing repository tags; can't continue the upgrade!");
