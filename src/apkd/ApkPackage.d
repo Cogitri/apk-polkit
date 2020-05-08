@@ -57,36 +57,26 @@ struct ApkPackage
                 "apk_package.version is null when we didn't expect it to! This is a bug.");
         assert(apk_package.arch.ptr,
                 "apk_package.arch is null when we didn't expect it to! This is a bug.");
-        assert(apk_package.license.ptr,
-                "apk_package.license is null when we didn't expect it to! This is a bug.");
         apk_package.origin ? assert(apk_package.origin.ptr) : true;
         apk_package.maintainer ? assert(apk_package.maintainer.ptr) : true;
-        assert(apk_package.url,
-                "apk_package.url is null when we didn't expect it to! This is a bug.");
-        assert(apk_package.description,
-                "apk_package.description is null when we didn't expect it to! This is a bug.");
-        assert(apk_package.size,
-                "apk_package.size is null when we didn't expect it to! This is a bug.");
-        assert(apk_package.build_time,
-                "apk_package.build_time is null when we didn't expect it to! This is a bug.");
     }
     do
     {
         // dfmt off
         this(
-            to!string(apk_package.name.name),
+            apk_package.name.name.to!string(),
             apk_package.version_.ptr[0 .. apk_package.version_.len].to!string,
             null,
             apk_package.arch.ptr[0 .. apk_package.arch.len].to!string,
-            apk_package.license.ptr[0 .. apk_package.license.len].to!string,
+            apk_package.license ? apk_package.license.ptr[0 .. apk_package.license.len].to!string : null,
             apk_package.origin ? apk_package.origin.ptr[0 .. apk_package.origin.len].to!string : null,
             apk_package.maintainer ? apk_package.maintainer.ptr[0 .. apk_package.maintainer.len].to!string: null,
-            to!string(apk_package.url),
-            to!string(apk_package.description),
-            apk_package.commit ? to!string(apk_package.commit) : null,
-            apk_package.filename ? apk_package.filename.to!string() : null, apk_package.installed_size,
-            apk_package.size,
-            SysTime(unixTimeToStdTime(apk_package.build_time)),
+            apk_package.url ? apk_package.url.to!string : null,
+            apk_package.description ? apk_package.description.to!string() : null,
+            apk_package.commit ? apk_package.commit.to!string() : null,
+            apk_package.filename ? apk_package.filename.to!string() : null, apk_package.installed_size ? apk_package.installed_size  : 0,
+            apk_package.size ? apk_package.size : 0,
+            SysTime(unixTimeToStdTime(apk_package.build_time ? apk_package.build_time : 0)),
             isInstalled,
         );
         // dfmt on
@@ -114,7 +104,7 @@ struct ApkPackage
         return m_name;
     }
 
-    @property newVersion() const
+    @property string newVersion() const
     {
         return m_version;
     }
