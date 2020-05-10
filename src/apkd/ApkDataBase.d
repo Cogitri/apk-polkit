@@ -255,11 +255,41 @@ struct ApkDataBase
         }
         apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
 
+        // if a subpackage is scheduled to be upgraded, also upgrade the mainpackage.
+        apk_dependency[] toBeUpgraded;
+
         foreach (pkgname; pkgnames)
         {
-            auto apkDep = this.packageNameToApkDependency(pkgname);
-            apk_deps_add(&worldCopy, &apkDep);
-            apk_solver_set_name_flags(apkDep.name, APK_SOLVERF_UPGRADE, APK_SOLVERF_UPGRADE);
+            auto dep = packageNameToApkDependency(pkgname);
+            toBeUpgraded ~= dep;
+
+            const depPackage = apk_pkg_get_installed(dep.name);
+            if (depPackage.origin is null)
+            {
+                continue;
+            }
+
+            auto origin = depPackage.origin.ptr[0 .. depPackage.origin.len].to!string;
+            // If the main package of the subpackage is installed, upgrade it as well
+            if (origin != pkgname)
+            {
+                auto originNameBlob = apk_blob_t(origin.length, origin.toUTFz!(char*));
+                auto originPackageName = apk_db_query_name(&this.db, originNameBlob);
+                if (originPackageName !is null)
+                {
+                    if (apk_pkg_get_installed(originPackageName) !is null)
+                    {
+                        auto originDep = packageNameToApkDependency(origin);
+                        toBeUpgraded ~= originDep;
+                    }
+                }
+            }
+        }
+
+        foreach (dep; toBeUpgraded)
+        {
+            apk_deps_add(&worldCopy, &dep);
+            apk_solver_set_name_flags(dep.name, APK_SOLVERF_UPGRADE, APK_SOLVERF_UPGRADE);
         }
 
         const auto solverCommitRes = apk_solver_commit(&this.db, 0, worldCopy);
