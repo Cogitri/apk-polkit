@@ -529,35 +529,14 @@ private:
     apk_dependency packageNameToApkDependency(string pkgname)
     {
         auto apk_dependency = new apk_dependency;
-        // If we're trying to add a package via a local apk package archive.
-        if (pkgname.canFind(".apk"))
-        {
-            apk_package* apkPackage = null;
-            apk_sign_ctx ctx = void;
-            apk_sign_ctx_init(&ctx, APK_SIGN_VERIFY_AND_GENERATE, null, this.db.keys_fd);
-            scope (exit)
-            {
-                apk_sign_ctx_free(&ctx);
-            }
-            auto pkgRes = apk_pkg_read(&this.db, pkgname.toStringz, &ctx, &apkPackage);
-            enforce!NoSuchPackageFoundException(pkgRes == 0, format("%s: %s",
-                    pkgname, apk_error_str(pkgRes).to!string));
-            apk_dep_from_pkg(apk_dependency, &this.db, apkPackage);
-            enforce!NoSuchPackageFoundException(apk_dependency !is null,
-                    format("Couldn't find package %s", pkgname));
-            return *apk_dependency;
-        }
-        else
-        {
-            apk_blob_t blob = apk_blob_t(pkgname.length, toUTFz!(char*)(pkgname));
-            apk_blob_pull_dep(&blob, &this.db, apk_dependency);
-            enforce!BadDependencyFormatException(!(blob.ptr is null || blob.len > 0), format(
-                    "'%s' is not a correctly formated world dependency, the format should be: name(@tag)([<>~=]version)",
-                    pkgname));
-            enforce!NoSuchPackageFoundException(apk_dependency !is null,
-                    format("Couldn't find package %s", pkgname));
-            return *apk_dependency;
-        }
+        apk_blob_t blob = apk_blob_t(pkgname.length, toUTFz!(char*)(pkgname));
+        apk_blob_pull_dep(&blob, &this.db, apk_dependency);
+        enforce!BadDependencyFormatException(!(blob.ptr is null || blob.len > 0), format(
+                "'%s' is not a correctly formated world dependency, the format should be: name(@tag)([<>~=]version)",
+                pkgname));
+        enforce!NoSuchPackageFoundException(apk_dependency !is null,
+                format("Couldn't find package %s", pkgname));
+        return *apk_dependency;
     }
 
     /**
