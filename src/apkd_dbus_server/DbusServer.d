@@ -35,8 +35,7 @@ import gio.DBusNodeInfo;
 import gio.DBusMethodInvocation;
 import gio.c.types : BusNameOwnerFlags, BusType, GDBusInterfaceVTable,
     GDBusMethodInvocation, GVariant;
-import glib.c.functions : g_quark_from_static_string, g_set_error,
-    g_variant_new, g_variant_builder_add;
+import glib.c.functions;
 import glib.GException;
 import glib.Idle;
 import glib.MainContext;
@@ -194,19 +193,28 @@ class DBusServer
     @("DBusMethod")
     Variant getAll()
     {
-        auto builder = new VariantBuilder(new VariantType("a{sv}"));
+        GVariantBuilder builder;
+        g_variant_builder_init(&builder, new VariantType("a{sv}").getVariantTypeStruct(true));
+        scope (exit)
+        {
+            g_variant_builder_clear(&builder);
+        }
 
-        builder.open(new VariantType("{sv}"));
-        builder.addValue(new Variant("allowUntrustedRepos"));
-        builder.addValue(new Variant(new Variant(this.allowUntrustedRepositories)));
-        builder.close();
+        auto variantType = new VariantType("{sv}");
+        g_variant_builder_open(&builder, variantType.getVariantTypeStruct(false));
+        g_variant_builder_add_value(&builder,
+                new Variant("allowUntrustedRepos").getVariantStruct(true));
+        g_variant_builder_add_value(&builder,
+                new Variant(new Variant(this.allowUntrustedRepositories)).getVariantStruct(true));
+        g_variant_builder_close(&builder);
 
-        builder.open(new VariantType("{sv}"));
-        builder.addValue(new Variant("root"));
-        builder.addValue(new Variant(new Variant(this.root ? this.root : "")));
-        builder.close();
+        g_variant_builder_open(&builder, variantType.getVariantTypeStruct(true));
+        g_variant_builder_add_value(&builder, new Variant("root").getVariantStruct(true));
+        g_variant_builder_add_value(&builder, new Variant(new Variant(this.root
+                ? this.root : "")).getVariantStruct(true));
+        g_variant_builder_close(&builder);
 
-        return builder.end();
+        return new Variant(g_variant_builder_end(&builder));
     }
 
     @("DBusMethod")
@@ -395,6 +403,9 @@ class DBusServer
     @("DBusMethod")
     void setAllowUntrustedRepos(Variant value)
     {
+        GVariantBuilder dictBuilder;
+        GVariantBuilder valBuilder;
+
         this.allowUntrustedRepositories = value.getChildValue(2).getVariant().getBoolean();
 
         if (this.allowUntrustedRepositories)
@@ -406,44 +417,71 @@ class DBusServer
             apkd.functions.disallowUntrusted();
         }
 
-        auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
-        dictBuilder.open(new VariantType("{sv}"));
-        dictBuilder.addValue(new Variant("allowUntrustedRepos"));
-        dictBuilder.addValue(new Variant(new Variant(this.allowUntrustedRepositories)));
-        dictBuilder.close();
+        g_variant_builder_init(&dictBuilder, new VariantType("a{sv}").getVariantTypeStruct(true));
+        scope (exit)
+        {
+            g_variant_builder_clear(&dictBuilder);
+        }
+        g_variant_builder_open(&dictBuilder, new VariantType("{sv}").getVariantTypeStruct(true));
+        g_variant_builder_add_value(&dictBuilder,
+                new Variant("allowUntrustedRepos").getVariantStruct(true));
+        g_variant_builder_add_value(&dictBuilder,
+                new Variant(new Variant(this.allowUntrustedRepositories)).getVariantStruct(true));
+        g_variant_builder_close(&dictBuilder);
 
-        auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
-        valBuilder.addValue(new Variant("org.freedesktop.DBus.Properties"));
-        valBuilder.addValue(dictBuilder.end());
-        valBuilder.open(new VariantType("as"));
-        valBuilder.addValue(new Variant(""));
-        valBuilder.close();
+        g_variant_builder_init(&valBuilder, new VariantType("(sa{sv}as)")
+                .getVariantTypeStruct(true));
+        scope (exit)
+        {
+            g_variant_builder_clear(&valBuilder);
+        }
+        g_variant_builder_add_value(&valBuilder,
+                new Variant("org.freedesktop.DBus.Properties").getVariantStruct(true));
+        g_variant_builder_add_value(&valBuilder, g_variant_builder_end(&dictBuilder));
+        g_variant_builder_open(&valBuilder, new VariantType("as").getVariantTypeStruct(true));
+        g_variant_builder_add_value(&valBuilder, new Variant("").getVariantStruct(true));
+        g_variant_builder_close(&valBuilder);
 
-        this.userData.dbusConnection.emitSignal(null, "/dev/Cogitri/apkPolkit/Helper",
-                "org.freedesktop.DBus.Properties", "PropertiesChanged", valBuilder.end());
+        this.userData.dbusConnection.emitSignal(null,
+                "/dev/Cogitri/apkPolkit/Helper", "org.freedesktop.DBus.Properties",
+                "PropertiesChanged", new Variant(g_variant_builder_end(&valBuilder)));
     }
 
     @("DBusMethod")
     void setRoot(Variant value)
     {
+        GVariantBuilder dictBuilder;
+        GVariantBuilder valBuilder;
         size_t len;
         this.root = value.getChildValue(2).getVariant().getString(len);
 
-        auto dictBuilder = new VariantBuilder(new VariantType("a{sv}"));
-        dictBuilder.open(new VariantType("{sv}"));
-        dictBuilder.addValue(new Variant("root"));
-        dictBuilder.addValue(new Variant(new Variant(this.root)));
-        dictBuilder.close();
+        g_variant_builder_init(&dictBuilder, new VariantType("a{sv}").getVariantTypeStruct(true));
+        scope (exit)
+        {
+            g_variant_builder_clear(&dictBuilder);
+        }
+        g_variant_builder_open(&dictBuilder, new VariantType("{sv}").getVariantTypeStruct(true));
+        g_variant_builder_add_value(&dictBuilder, new Variant("root").getVariantStruct(true));
+        g_variant_builder_add_value(&dictBuilder,
+                new Variant(new Variant(this.root)).getVariantStruct(true));
+        g_variant_builder_close(&dictBuilder);
 
-        auto valBuilder = new VariantBuilder(new VariantType("(sa{sv}as)"));
-        valBuilder.addValue(new Variant("org.freedesktop.DBus.Properties"));
-        valBuilder.addValue(dictBuilder.end());
-        valBuilder.open(new VariantType("as"));
-        valBuilder.addValue(new Variant(""));
-        valBuilder.close();
+        g_variant_builder_init(&valBuilder, new VariantType("(sa{sv}as)")
+                .getVariantTypeStruct(true));
+        scope (exit)
+        {
+            g_variant_builder_clear(&valBuilder);
+        }
+        g_variant_builder_add_value(&valBuilder,
+                new Variant("org.freedesktop.DBus.Properties").getVariantStruct(true));
+        g_variant_builder_add_value(&valBuilder, g_variant_builder_end(&dictBuilder));
+        g_variant_builder_open(&valBuilder, new VariantType("as").getVariantTypeStruct(true));
+        g_variant_builder_add_value(&valBuilder, new Variant("").getVariantStruct(true));
+        g_variant_builder_close(&valBuilder);
 
-        this.userData.dbusConnection.emitSignal(null, "/dev/Cogitri/apkPolkit/Helper",
-                "org.freedesktop.DBus.Properties", "PropertiesChanged", valBuilder.end());
+        this.userData.dbusConnection.emitSignal(null,
+                "/dev/Cogitri/apkPolkit/Helper", "org.freedesktop.DBus.Properties",
+                "PropertiesChanged", new Variant(g_variant_builder_end(&valBuilder)));
     }
 
     static AuthStatus checkAuth(string operation, string sender,
@@ -610,34 +648,52 @@ class DBusServer
 private:
     static Variant apkPackageToVariant(ApkPackage pkg)
     {
-        auto pkgBuilder = new VariantBuilder(new VariantType("(sssssssssssttxb)"));
+        GVariantBuilder pkgBuilder;
+        g_variant_builder_init(&pkgBuilder,
+                new VariantType("(sssssssssssttxb)").getVariantTypeStruct(true));
+
+        scope (exit)
+        {
+            g_variant_builder_clear(&pkgBuilder);
+        }
+
         static foreach (member; [
                 "name", "newVersion", "oldVersion", "arch", "license", "origin",
                 "maintainer", "url", "description", "commit", "filename"
             ])
         {
-            pkgBuilder.addValue(new Variant(__traits(getMember, pkg, member)
-                    ? __traits(getMember, pkg, member) : ""));
+            g_variant_builder_add_value(&pkgBuilder, new Variant(__traits(getMember, pkg,
+                    member) ? __traits(getMember, pkg, member) : "").getVariantStruct(true));
         }
         static foreach (member; ["installedSize", "size"])
         {
-            pkgBuilder.addValue(new Variant(__traits(getMember, pkg, member)));
+            g_variant_builder_add_value(&pkgBuilder,
+                    new Variant(__traits(getMember, pkg, member)).getVariantStruct(true));
         }
-        pkgBuilder.addValue(new Variant(pkg.buildTime.toUnixTime!long()));
-        pkgBuilder.addValue(new Variant(pkg.isInstalled));
-        return pkgBuilder.end();
+        g_variant_builder_add_value(&pkgBuilder,
+                new Variant(pkg.buildTime.toUnixTime!long()).getVariantStruct(true));
+        g_variant_builder_add_value(&pkgBuilder, new Variant(pkg.isInstalled)
+                .getVariantStruct(true));
+        return new Variant(g_variant_builder_end(&pkgBuilder));
     }
 
     /// Helper method to convert a ApkPackage array to a Variant for sending it over DBus
     static Variant apkPackageArrayToVariant(ApkPackage[] pkgArr)
     {
-        auto arrBuilder = new VariantBuilder(new VariantType("a(sssssssssssttxb)"));
+        GVariantBuilder arrBuilder;
+        g_variant_builder_init(&arrBuilder,
+                new VariantType("a(sssssssssssttxb)").getVariantTypeStruct(true));
+        scope (exit)
+        {
+            g_variant_builder_clear(&arrBuilder);
+        }
         foreach (pkg; pkgArr)
         {
-            arrBuilder.addValue(apkPackageToVariant(pkg));
+            g_variant_builder_add_value(&arrBuilder, apkPackageToVariant(pkg)
+                    .getVariantStruct(true));
         }
 
-        return arrBuilder.end();
+        return new Variant(g_variant_builder_end(&arrBuilder));
     }
 
     /// Passed to  progressSenderFn as userData
