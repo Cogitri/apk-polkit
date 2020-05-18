@@ -222,7 +222,7 @@ struct ApkDataBase
                     change.old_pkg) & (APK_VERSION_GREATER | APK_VERSION_EQUAL))
                     && change.new_pkg != change.old_pkg)
             {
-                packages ~= ApkPackage(*change.old_pkg, *change.new_pkg);
+                packages ~= ApkPackage(change.old_pkg, change.new_pkg);
             }
         }
 
@@ -438,7 +438,7 @@ struct ApkDataBase
             &installedPackage.installed_pkgs_list != &this.db.installed.packages;
             installedPackage = installedPackage.installed_pkgs_list.next.container_of!(apk_installed_package, "installed_pkgs_list"))
         {
-            ret ~= ApkPackage(*installedPackage.pkg, true);
+            ret ~= ApkPackage(installedPackage.pkg, true);
         }
         // dfmt on
 
@@ -502,7 +502,7 @@ struct ApkDataBase
 
         enforce!ApkFindFileOwnerException(pkg !is null, "Couldn't find owner of file %s", path);
 
-        return ApkPackage(*pkg, true);
+        return ApkPackage(pkg, true);
     }
 
 private:

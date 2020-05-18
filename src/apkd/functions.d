@@ -133,7 +133,7 @@ body
     auto newPackage = cast(apk_package*) item;
     try
     {
-        *apkPackages ~= ApkPackage(*newPackage);
+        *apkPackages ~= ApkPackage(newPackage);
     }
     catch (Exception e)
     {
@@ -177,7 +177,7 @@ do
         if (pkgname.canFind(spec))
         {
             auto isInstalled = packageIsInstalled(searchContext.db, pkgname);
-            assumeWontThrow(*searchContext.packages ~= ApkPackage(*apkPackage, isInstalled));
+            assumeWontThrow(*searchContext.packages ~= ApkPackage(apkPackage, isInstalled));
         }
     }
     return 0;

@@ -53,28 +53,8 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
     auto valueTuple = new Variant(dbusRes);
 
     size_t len;
-
-    // dfmt off
-    auto pkg = ApkPackage(
-            valueTuple.getChildValue(0).getString(len),
-            valueTuple.getChildValue(1).getString(len),
-            valueTuple.getChildValue(2).getString(len),
-            valueTuple.getChildValue(3).getString(len),
-            valueTuple.getChildValue(4).getString(len),
-            valueTuple.getChildValue(5).getString(len),
-            valueTuple.getChildValue(6).getString(len),
-            valueTuple.getChildValue(7).getString(len),
-            valueTuple.getChildValue(8).getString(len),
-            valueTuple.getChildValue(9).getString(len),
-            valueTuple.getChildValue(10).getString(len),
-            valueTuple.getChildValue(11).getUint64(),
-            valueTuple.getChildValue(12).getUint64(),
-            SysTime.fromUnixTime(valueTuple.getChildValue(13).getInt64),
-            valueTuple.getChildValue(14).getBoolean(),
-        );
-    // dfmt on
-
-    assert(pkg.name == "test-a");
+    const pkgname = valueTuple.getChildValue(0).getString(len);
+    assert(pkgname == "test-a");
 
     testHelper.cleanup();
     exit(0);

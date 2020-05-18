@@ -27,86 +27,58 @@ import std.format : format;
 /// Struct containing all the information about a package
 struct ApkPackage
 {
-    this(string name, string packageVersion, string oldPackageVersion, string arch, string license,
-            string origin, string maintainer, string url, string description, string commit, string filename,
-            ulong installedSize, ulong size, SysTime buildTime, bool isInstalled)
+
+    /**
+    * Initialize a ApkPackage with a pointer to an apk_package. Keep in mind that the lifetime
+    * of the underlying apk_package usually only is for as long as the apk_database it stems from.
+    */
+    this(apk_package* apkPackage, bool isInstalled = false)
+    in
     {
-        this.m_name = name;
-        this.m_version = packageVersion;
-        this.m_oldVersion = oldPackageVersion;
-        this.m_arch = arch;
-        this.m_license = license;
-        this.m_origin = origin;
-        this.m_maintainer = maintainer;
-        this.m_url = url;
-        this.m_description = description;
-        this.m_commit = commit;
-        this.m_filename = filename;
-        this.m_installedSize = installedSize;
-        this.m_size = size;
-        this.m_buildTime = buildTime;
+        assert(apkPackage !is null, "apkPackage must not be null!");
+        assert(apkPackage.name.name,
+                "apkPackage.name is null when we didn't expect it to! This is a bug.");
+        assert(apkPackage.version_.ptr,
+                "apkPackage.version is null when we didn't expect it to! This is a bug.");
+    }
+    do
+    {
+        this.m_apkPackage = apkPackage;
         this.m_isInstalled = isInstalled;
     }
 
-    this(apk_package apk_package, bool isInstalled = false)
+    /**
+    * Initialize a ApkPackage with a pointer to an apk_package. Keep in mind that the lifetime
+    * of the underlying apk_package usually only is for as long as the apk_database it stems from.
+    */
+    this(apk_package* oldPackage, apk_package* newPackage)
     in
     {
-        assert(apk_package.name.name,
-                "apk_package.name is null when we didn't expect it to! This is a bug.");
-        assert(apk_package.version_.ptr,
-                "apk_package.version is null when we didn't expect it to! This is a bug.");
-        assert(apk_package.arch.ptr,
-                "apk_package.arch is null when we didn't expect it to! This is a bug.");
-        apk_package.origin ? assert(apk_package.origin.ptr) : true;
-        apk_package.maintainer ? assert(apk_package.maintainer.ptr) : true;
+        assert(oldPackage !is null, "oldPackage must not be null!");
+        assert(newPackage !is null, "newPackage must not be null!");
+        assert(oldPackage.version_.ptr !is null,
+                "oldPackage.version is null when we didn't expect it to! This is a bug.");
     }
     do
     {
-        // dfmt off
-        this(
-            apk_package.name.name.to!string(),
-            apk_package.version_.ptr[0 .. apk_package.version_.len].to!string,
-            null,
-            apk_package.arch.ptr[0 .. apk_package.arch.len].to!string,
-            apk_package.license ? apk_package.license.ptr[0 .. apk_package.license.len].to!string : null,
-            apk_package.origin ? apk_package.origin.ptr[0 .. apk_package.origin.len].to!string : null,
-            apk_package.maintainer ? apk_package.maintainer.ptr[0 .. apk_package.maintainer.len].to!string: null,
-            apk_package.url ? apk_package.url.to!string : null,
-            apk_package.description ? apk_package.description.to!string() : null,
-            apk_package.commit ? apk_package.commit.to!string() : null,
-            apk_package.filename ? apk_package.filename.to!string() : null, apk_package.installed_size ? apk_package.installed_size  : 0,
-            apk_package.size ? apk_package.size : 0,
-            SysTime(unixTimeToStdTime(apk_package.build_time ? apk_package.build_time : 0)),
-            isInstalled,
-        );
-        // dfmt on
-    }
-
-    this(apk_package old_package, apk_package new_package)
-    in
-    {
-        assert(old_package.version_.ptr,
-                "old_package.version is null when we didn't expect it to! This is a bug.");
-    }
-    do
-    {
-        this(new_package, true);
-        this.m_oldVersion = old_package.version_.ptr[0 .. old_package.version_.len].to!string;
+        this(newPackage, true);
+        this.m_oldVersion = oldPackage.version_.ptr[0 .. oldPackage.version_.len].to!string;
     }
 
     string toString() const
     {
-        return format("Packagename: %s\n Version %s\n", this.m_name, this.m_version);
+        return format("Packagename: %s\n Version %s\n", this.name, this.newVersion);
     }
 
     @property string name() const
     {
-        return m_name;
+        return this.m_apkPackage.name ? this.m_apkPackage.name.name.to!string : null;
     }
 
     @property string newVersion() const
     {
-        return m_version;
+        return this.m_apkPackage.version_
+            ? this.m_apkPackage.version_.ptr[0 .. this.m_apkPackage.version_.len].to!string : null;
     }
 
     @property string oldVersion() const
@@ -116,57 +88,62 @@ struct ApkPackage
 
     @property string arch() const
     {
-        return m_arch;
+        return this.m_apkPackage.arch
+            ? this.m_apkPackage.arch.ptr[0 .. this.m_apkPackage.arch.len].to!string : null;
     }
 
     @property string license() const
     {
-        return m_license;
+        return this.m_apkPackage.license
+            ? this.m_apkPackage.license.ptr[0 .. this.m_apkPackage.license.len].to!string : null;
     }
 
     @property string origin() const
     {
-        return m_origin;
+        return this.m_apkPackage.origin
+            ? this.m_apkPackage.origin.ptr[0 .. this.m_apkPackage.origin.len].to!string : null;
     }
 
     @property string maintainer() const
     {
-        return m_maintainer;
+        return this.m_apkPackage.maintainer
+            ? this.m_apkPackage.maintainer.ptr[0 .. this.m_apkPackage.maintainer.len].to!string
+            : null;
     }
 
     @property string url() const
     {
-        return m_url;
+        return this.m_apkPackage.url ? this.m_apkPackage.url.to!string : null;
     }
 
     @property string description() const
     {
-        return m_description;
+        return this.m_apkPackage.description ? this.m_apkPackage.description.to!string : null;
     }
 
     @property string commit() const
     {
-        return m_commit;
+        return this.m_apkPackage.commit ? this.m_apkPackage.commit.to!string : null;
     }
 
     @property string filename() const
     {
-        return m_filename;
+        return this.m_apkPackage.filename ? this.m_apkPackage.filename.to!string : null;
     }
 
     @property ulong installedSize() const
     {
-        return m_installedSize;
+        return this.m_apkPackage.installed_size;
     }
 
     @property ulong size() const
     {
-        return m_size;
+        return this.m_apkPackage.size;
     }
 
     @property SysTime buildTime() const
     {
-        return m_buildTime;
+        return SysTime(unixTimeToStdTime(this.m_apkPackage.build_time));
     }
 
     @property bool isInstalled() const
@@ -175,19 +152,7 @@ struct ApkPackage
     }
 
 private:
-    string m_name;
-    string m_version;
-    string m_oldVersion;
-    string m_arch;
-    string m_license;
-    string m_origin;
-    string m_maintainer;
-    string m_url;
-    string m_description;
-    string m_commit;
-    string m_filename;
-    ulong m_installedSize;
-    ulong m_size;
-    SysTime m_buildTime;
+    apk_package* m_apkPackage;
     bool m_isInstalled;
+    string m_oldVersion;
 }

@@ -52,33 +52,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
     auto dbusRet = new Variant(dbusRes);
     ApkPackage[] pkgArr;
 
-    for (uint i; i < dbusRet.nChildren(); i++)
-    {
-        auto valueTuple = dbusRet.getChildValue(i);
-        size_t len;
-
-        // dfmt off
-        auto pkg = ApkPackage(
-                valueTuple.getChildValue(0).getString(len),
-                valueTuple.getChildValue(1).getString(len),
-                valueTuple.getChildValue(2).getString(len),
-                valueTuple.getChildValue(3).getString(len),
-                valueTuple.getChildValue(4).getString(len),
-                valueTuple.getChildValue(5).getString(len),
-                valueTuple.getChildValue(6).getString(len),
-                valueTuple.getChildValue(7).getString(len),
-                valueTuple.getChildValue(8).getString(len),
-                valueTuple.getChildValue(9).getString(len),
-                valueTuple.getChildValue(10).getString(len),
-                valueTuple.getChildValue(11).getUint64(),
-                valueTuple.getChildValue(12).getUint64(),
-                SysTime.fromUnixTime(valueTuple.getChildValue(13).getInt64),
-                valueTuple.getChildValue(14).getBoolean(),
-            );
-                // dfmt on
-        pkgArr ~= pkg;
-    }
-    assert(pkgArr.length == 5);
+    assert(dbusRet.nChildren() == 5);
     testHelper.cleanup();
     exit(0);
 }
