@@ -44,6 +44,25 @@ import std.stdio : File, write;
 import std.string : toStringz;
 import std.utf : toUTFz;
 
+class AtomInit
+{
+    private this()
+    {
+        apk_atom_init();
+    }
+
+    static AtomInit get()
+    {
+        if (this.instance is null)
+        {
+            this.instance = new AtomInit();
+        }
+        return this.instance;
+    }
+
+    private static AtomInit instance;
+}
+
 /**
 * Struct for dealing with the functionality of the APK Database. It can remove/add
 * packages, upgrade them, update repositories, search for packages etc.
@@ -675,7 +694,7 @@ private:
                 | APK_OPENF_NO_AUTOUPDATE | APK_OPENF_CACHE_WRITE | APK_OPENF_CREATE;
         }
         this.dbOptions.lock_wait = TRUE;
-        apk_atom_init();
+        AtomInit.get();
         apk_db_init(&this.db);
         const auto res = apk_db_open(&this.db, &this.dbOptions);
         enforce!ApkDatabaseOpenException(res == 0,
