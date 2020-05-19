@@ -618,7 +618,6 @@ class DBusServer
         auto interfaceVTable = GDBusInterfaceVTable(&methodHandler, null, null, null);
         auto dbusConnection = new DBusConnection(gdbusConnection);
         auto dbusIntrospectionData = new DBusNodeInfo(dbusIntrospectionXML);
-        enforce(dbusIntrospectionData !is null);
 
         const auto regId = dbusConnection.registerObject(apkd_common.globals.dbusObjectPath,
                 dbusIntrospectionData.interfaces[0], &interfaceVTable, userData, null);
@@ -649,8 +648,8 @@ private:
     static Variant apkPackageToVariant(ApkPackage pkg)
     {
         GVariantBuilder pkgBuilder;
-        g_variant_builder_init(&pkgBuilder,
-                new VariantType("(sssssssssssttxb)").getVariantTypeStruct(true));
+        g_variant_builder_init(&pkgBuilder, new VariantType("(ssssssttb)")
+                .getVariantTypeStruct(true));
 
         scope (exit)
         {
@@ -658,8 +657,8 @@ private:
         }
 
         static foreach (member; [
-                "name", "newVersion", "oldVersion", "arch", "license", "origin",
-                "maintainer", "url", "description", "commit", "filename"
+                "name", "newVersion", "oldVersion", "license", "url",
+                "description"
             ])
         {
             g_variant_builder_add_value(&pkgBuilder, new Variant(__traits(getMember, pkg,
@@ -670,8 +669,6 @@ private:
             g_variant_builder_add_value(&pkgBuilder,
                     new Variant(__traits(getMember, pkg, member)).getVariantStruct(true));
         }
-        g_variant_builder_add_value(&pkgBuilder,
-                new Variant(pkg.buildTime.toUnixTime!long()).getVariantStruct(true));
         g_variant_builder_add_value(&pkgBuilder, new Variant(pkg.isInstalled)
                 .getVariantStruct(true));
         return new Variant(g_variant_builder_end(&pkgBuilder));
@@ -681,8 +678,8 @@ private:
     static Variant apkPackageArrayToVariant(ApkPackage[] pkgArr)
     {
         GVariantBuilder arrBuilder;
-        g_variant_builder_init(&arrBuilder,
-                new VariantType("a(sssssssssssttxb)").getVariantTypeStruct(true));
+        g_variant_builder_init(&arrBuilder, new VariantType("a(ssssssttb)")
+                .getVariantTypeStruct(true));
         scope (exit)
         {
             g_variant_builder_clear(&arrBuilder);
