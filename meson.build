@@ -35,6 +35,7 @@ if not apk_tools_dep.found()
             'default_library=static',
             'docs=disabled',
             'lua=disabled',
+            'help=disabled',
         ],
     )
     apk_tools_lib = [apk_tools_proj.get_variable('libapk')]
