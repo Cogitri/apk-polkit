@@ -22,7 +22,9 @@ stages:
   image: alpine:edge
   stage: build
   script:
-    - apk add meson polkit-d-dev openssl-d-dev apk-tools-d-dev>=2.10.5.7 glibd-dev bash py3-dbusmock dbus dbus-x11 lua5.3 lua5.3-lzlib alpine-sdk
+    - apk add meson polkit-d-dev openssl-d-dev glibd-dev bash py3-dbusmock dbus dbus-x11 lua5.3 lua5.3-lzlib alpine-sdk
+    - git clone https://gitlab.alpinelinux.org/Cogitri/apk-toolsd
+    - cd apk-toolsd && meson build && ninja -C build install
     - meson build && ninja -C build test
 
 build-ldc-alpine:
