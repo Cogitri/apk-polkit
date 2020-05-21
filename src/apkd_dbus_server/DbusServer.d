@@ -684,7 +684,7 @@ private:
         {
             g_variant_builder_clear(&arrBuilder);
         }
-        foreach (pkg; pkgArr)
+        foreach (ref pkg; pkgArr)
         {
             g_variant_builder_add_value(&arrBuilder, apkPackageToVariant(pkg)
                     .getVariantStruct(true));

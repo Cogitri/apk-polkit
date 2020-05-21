@@ -256,7 +256,7 @@ struct ApkDataBase
         apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
 
         // if a subpackage is scheduled to be upgraded, also upgrade the mainpackage.
-        apk_dependency[] toBeUpgraded;
+        apk_dependency*[] toBeUpgraded;
 
         foreach (pkgname; pkgnames)
         {
@@ -288,7 +288,7 @@ struct ApkDataBase
 
         foreach (dep; toBeUpgraded)
         {
-            apk_deps_add(&worldCopy, &dep);
+            apk_deps_add(&worldCopy, dep);
             apk_solver_set_name_flags(dep.name, APK_SOLVERF_UPGRADE, APK_SOLVERF_UPGRADE);
         }
 
@@ -320,11 +320,11 @@ struct ApkDataBase
         }
         apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
 
-        foreach (pkgname; pkgnames)
+        foreach (ref pkgname; pkgnames)
         {
             auto dep = packageNameToApkDependency(pkgname);
 
-            apk_deps_add(&worldCopy, &dep);
+            apk_deps_add(&worldCopy, dep);
             apk_solver_set_name_flags(dep.name, solverFlags, solverFlags);
         }
 
@@ -364,7 +364,7 @@ struct ApkDataBase
         apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
 
         apkd.functions.apk_string_array_init(&pkgnameArr);
-        foreach (pkgname; pkgnames)
+        foreach (ref pkgname; pkgnames)
         {
             *apkd.functions.apk_string_array_add(&pkgnameArr) = pkgname.toUTFz!(char*);
             apk_deps_del(&worldCopy, packageNameToApkDependency(pkgname).name);
@@ -376,7 +376,7 @@ struct ApkDataBase
                 format("Failed to calculate dependency graph due to error '%s'!",
                     apk_error_str(solverSolveRes).to!string));
 
-        foreach (change; changeset.changes.item)
+        foreach (ref change; changeset.changes.item)
         {
             if (change.new_pkg !is null)
             {
@@ -526,7 +526,7 @@ private:
     *   Throws a BadDependencyFormatException if the package name sepcified
     *   doesn't follow the format name(@tag)([<>~=]version)
     */
-    apk_dependency packageNameToApkDependency(string pkgname)
+    apk_dependency* packageNameToApkDependency(string pkgname)
     {
         auto apk_dependency = new apk_dependency;
         apk_blob_t blob = apk_blob_t(pkgname.length, toUTFz!(char*)(pkgname));
@@ -536,7 +536,7 @@ private:
                 pkgname));
         enforce!NoSuchPackageFoundException(apk_dependency !is null,
                 format("Couldn't find package %s", pkgname));
-        return *apk_dependency;
+        return apk_dependency;
     }
 
     /**
@@ -592,9 +592,9 @@ private:
         }
 
         foreachReverseDependency(pkg, true, true, false, &addNotDeletedPackage, ctx);
-        foreach (dep; pkg.install_if.item)
+        foreach (ref dep; pkg.install_if.item)
         {
-            foreach (provider; dep.name.providers.item)
+            foreach (ref provider; dep.name.providers.item)
             {
                 if (provider.pkg.marked && !apk_pkg_match_genid(provider.pkg,
                         notDeletedReasonContext.matches))
@@ -625,7 +625,7 @@ private:
         auto notRemovedDue = cast(string[]*) ctx;
         auto notDeletedReasonContext = NotDeletedReasonContext(name, notRemovedDue,
                 apk_foreach_genid() | APK_FOREACH_MARKED | APK_DEP_SATISFIES);
-        foreach (provider; name.providers.item)
+        foreach (ref provider; name.providers.item)
         {
             if (provider.pkg.marked)
             {
@@ -640,9 +640,9 @@ private:
     static foreachReverseDependency(apk_package* pkg, bool marked,
             bool installed, bool one_dep_only, reverseDepFunc cb, void* ctx) nothrow
     {
-        foreach (reverseDep; pkg.name.rdepends.item)
+        foreach (ref reverseDep; pkg.name.rdepends.item)
         {
-            foreach (depPkg; reverseDep.providers.item)
+            foreach (ref depPkg; reverseDep.providers.item)
             {
                 if ((installed && depPkg.pkg.ipkg is null) || (marked && !depPkg.pkg.marked))
                 {

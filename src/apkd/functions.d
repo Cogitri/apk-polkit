@@ -171,7 +171,7 @@ do
     auto searchContext = cast(SearchContext*) ctx;
     auto apkPackage = cast(apk_package*) item;
 
-    foreach (spec; searchContext.specs)
+    foreach (ref spec; searchContext.specs)
     {
         auto pkgname = apkPackage.name.name.to!string;
         if (pkgname.canFind(spec))
