@@ -248,13 +248,6 @@ struct ApkDataBase
     */
     void upgradePackages(string[] pkgnames, ushort solverFlags = APK_SOLVERF_IGNORE_UPGRADE)
     {
-        apk_dependency_array* worldCopy = null;
-        scope (exit)
-        {
-            apkd.functions.apk_dependency_array_free(&worldCopy);
-        }
-        apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
-
         // if a subpackage is scheduled to be upgraded, also upgrade the mainpackage.
         apk_dependency*[] toBeUpgraded;
 
@@ -288,11 +281,10 @@ struct ApkDataBase
 
         foreach (dep; toBeUpgraded)
         {
-            apk_deps_add(&worldCopy, dep);
-            apk_solver_set_name_flags(dep.name, APK_SOLVERF_UPGRADE, APK_SOLVERF_UPGRADE);
+            apk_solver_set_name_flags(dep.name, APK_SOLVERF_UPGRADE, 0);
         }
 
-        const auto solverCommitRes = apk_solver_commit(&this.db, 0, worldCopy);
+        const auto solverCommitRes = apk_solver_commit(&this.db, 0, this.db.world);
         enforce!ApkDatabaseCommitException(solverCommitRes == 0,
                 format("Failed to commit changes to the database due to error '%s'!",
                     apk_error_str(solverCommitRes).to!string));
