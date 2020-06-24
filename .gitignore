@@ -21,3 +21,6 @@ po/*.mo
 
 # subprojects
 subprojects/apk-tools
+
+# gede debugger
+gede2.ini
