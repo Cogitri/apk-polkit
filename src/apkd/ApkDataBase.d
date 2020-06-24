@@ -179,11 +179,11 @@ struct ApkDataBase
     *   the upgrade, e.g. due to conflicts.
     *   Throws an ApkBrokenWorldException if the db's world is broken.
     */
-    ApkPackage[] listUpgradablePackages()
+    ApkPackage[] listUpgradablePackages(ushort solverFlags = APK_SOLVERF_AVAILABLE)
     {
         ApkPackage[] packages;
 
-        auto upgradeChangeset = this.getAllUpgradeChangeset();
+        auto upgradeChangeset = this.getAllUpgradeChangeset(solverFlags);
 
         scope (exit)
         {
