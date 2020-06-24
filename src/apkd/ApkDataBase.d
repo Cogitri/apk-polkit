@@ -220,9 +220,9 @@ struct ApkDataBase
     *   Throws an ApkSolverException if the solver can't figure out a way to solve
     *   the upgrade, e.g. due to conflicts.
     */
-    void upgradeAllPackages(ushort solverFlags = 0)
+    void upgradeAllPackages(ushort solverFlags = APK_SOLVERF_AVAILABLE)
     {
-        auto changeset = this.getAllUpgradeChangeset();
+        auto changeset = this.getAllUpgradeChangeset(solverFlags);
         scope (exit)
         {
             apkd.functions.apk_change_array_free(&changeset.changes);
@@ -246,7 +246,8 @@ struct ApkDataBase
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
-    void upgradePackages(string[] pkgnames, ushort solverFlags = APK_SOLVERF_IGNORE_UPGRADE)
+    void upgradePackages(string[] pkgnames,
+            ushort solverFlags = APK_SOLVERF_UPGRADE | APK_SOLVERF_AVAILABLE)
     {
         // if a subpackage is scheduled to be upgraded, also upgrade the mainpackage.
         apk_dependency*[] toBeUpgraded;
@@ -281,7 +282,7 @@ struct ApkDataBase
 
         foreach (dep; toBeUpgraded)
         {
-            apk_solver_set_name_flags(dep.name, APK_SOLVERF_UPGRADE, 0);
+            apk_solver_set_name_flags(dep.name, solverFlags, 0);
         }
 
         const auto solverCommitRes = apk_solver_commit(&this.db, 0, this.db.world);
