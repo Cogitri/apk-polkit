@@ -97,13 +97,14 @@ class DBusServer
     * Parameters:
     *   root    = The root of the database. Useful to install to places other than /
     */
-    this(in string root = null)
+    this(in bool replace, in string root = null)
     {
         tracef("Trying to acquire DBus name %s.", apkd_common.globals.dbusBusName);
         this.allowUntrustedRepositories = false;
         this.root = null;
         this.userData = UserData(null, null);
-        auto dbusFlags = BusNameOwnerFlags.NONE;
+        auto dbusFlags = BusNameOwnerFlags.ALLOW_REPLACEMENT | (replace
+                ? BusNameOwnerFlags.REPLACE : BusNameOwnerFlags.NONE);
         this.errorMessages["addPackages"] = gettext("Couldn't add package(s) due to error %s");
         this.errorMessages["deletePackages"] = gettext("Couldn't delete package(s) due to error %s");
         this.errorMessages["listAvailablePackages"] = gettext(

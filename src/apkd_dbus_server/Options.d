@@ -40,7 +40,8 @@ Help Options:
 
 Application Options:
   -v, --version      - Print program version.
-  -d, --debug [0-3]  - Specify the debug level.";
+  -d, --debug [0-3]  - Specify the debug level.
+  -r, --replace      - Replace a running instance.";
 
 /// CLI `Options` of `apkd`
 struct Options
@@ -48,6 +49,7 @@ struct Options
     bool showVersion;
     bool showHelp;
     int debugLevel = -1;
+    bool replace;
 
     /**
     * Construct a `Options` from CLI args.
@@ -59,8 +61,8 @@ struct Options
     */
     this(ref string[] args) @safe
     {
-        getopt(args, "help|h", &this.showHelp, "version|v",
-                &this.showVersion, "debug|d", &this.debugLevel);
+        getopt(args, "help|h", &this.showHelp, "version|v", &this.showVersion,
+                "debug|d", &this.debugLevel, "r|replace", &this.replace);
     }
 
     @safe unittest

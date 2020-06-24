@@ -41,7 +41,7 @@ extern (C) int main(int argc, char** argv)
 
 int _main(string[] args)
 {
-    auto options = Options(args);
+    const options = Options(args);
 
     if (options.showHelp)
     {
@@ -80,7 +80,7 @@ int _main(string[] args)
     auto mainContext = MainContext.default_();
     mainContext.pushThreadDefault();
     auto mainLoop = new MainLoop(mainContext, false);
-    new DBusServer();
+    new DBusServer(options.replace);
     mainLoop.run();
     return 0;
 }
