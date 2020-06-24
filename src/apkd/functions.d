@@ -30,9 +30,9 @@ import deimos.apk_toolsd.apk_package;
 import deimos.apk_toolsd.apk_provider_data;
 import deimos.apk_toolsd.apk_solver;
 import std.algorithm : canFind;
+import std.conv : to;
 import std.exception : assumeWontThrow;
 import std.experimental.logger;
-import std.conv : to;
 import std.utf : toUTFz;
 
 /// Taken from apk_defines.h. It's only declared&defined in the

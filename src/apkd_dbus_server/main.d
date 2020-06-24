@@ -24,11 +24,11 @@ static import apkd_common.globals;
 import apkd_common.SysLogger;
 import apkd_dbus_server.DbusServer;
 import apkd_dbus_server.Options;
+import glib.MainContext;
 import glib.MainLoop;
 import glib.Timeout;
-import glib.MainContext;
 import std.format : format;
-import std.stdio : writeln, writefln;
+import std.stdio : writefln, writeln;
 
 extern extern (C) __gshared bool rt_trapExceptions;
 extern extern (C) int _d_run_main(int, char**, void*);
@@ -80,7 +80,7 @@ int _main(string[] args)
     auto mainContext = MainContext.default_();
     mainContext.pushThreadDefault();
     auto mainLoop = new MainLoop(mainContext, false);
-    auto dbusServer = new DBusServer();
+    new DBusServer();
     mainLoop.run();
     return 0;
 }

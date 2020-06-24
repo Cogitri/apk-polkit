@@ -110,11 +110,10 @@ void setupLogging(const LogLevel l, File logFile = stderr) @safe
 
 @safe unittest
 {
-    import corecollector.coredump : tempFile;
     import std.algorithm : count;
     import std.file : readText, remove;
 
-    const auto testLogPath = tempFile();
+    const auto testLogPath = deleteme();
     scope (exit)
         remove(testLogPath);
 

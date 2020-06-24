@@ -34,7 +34,7 @@ import deimos.apk_toolsd.apk_solver;
 import deimos.apk_toolsd.apk_version;
 import std.algorithm : canFind, sort, uniq;
 import std.conv : to;
-import std.exception : enforce, assumeWontThrow;
+import std.exception : assumeWontThrow, enforce;
 import std.experimental.logger;
 import std.file : readLink;
 import std.format : format;
@@ -305,7 +305,7 @@ struct ApkDataBase
     */
     void addPackages(string[] pkgnames, ushort solverFlags = 0)
     {
-        apk_dependency_array* worldCopy = null;
+        apk_dependency_array* worldCopy;
         scope (exit)
         {
             apkd.functions.apk_dependency_array_free(&worldCopy);
@@ -343,7 +343,7 @@ struct ApkDataBase
     */
     void deletePackages(string[] pkgnames, ushort solverFlags = 0)
     {
-        apk_dependency_array* worldCopy = null;
+        apk_dependency_array* worldCopy;
         apk_changeset changeset;
         apk_string_array* pkgnameArr;
         scope (exit)
@@ -402,7 +402,7 @@ struct ApkDataBase
     {
         import apkd.functions : container_of;
 
-        apk_installed_package* installedPackage = null;
+        apk_installed_package* installedPackage;
         ApkPackage[] ret;
 
         // dfmt off
@@ -630,7 +630,7 @@ private:
             apk_dependency* dep, apk_package* pkg, void* ctx) nothrow;
 
     static foreachReverseDependency(apk_package* pkg, bool marked,
-            bool installed, bool one_dep_only, reverseDepFunc cb, void* ctx) nothrow
+            bool installed, bool, reverseDepFunc cb, void* ctx) nothrow
     {
         foreach (ref reverseDep; pkg.name.rdepends.item)
         {

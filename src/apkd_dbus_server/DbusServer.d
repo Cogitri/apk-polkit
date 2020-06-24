@@ -27,14 +27,14 @@ import apkd_common.gettext : gettext;
 static import apkd_common.globals;
 import apkd_dbus_server.Polkit;
 import apkd_dbus_server.Util;
-import gio.Cancellable;
-import gio.DBusConnection;
-import gio.DBusNames;
-static import gio.DBusError;
-import gio.DBusNodeInfo;
-import gio.DBusMethodInvocation;
 import gio.c.types : BusNameOwnerFlags, BusType, GDBusInterfaceVTable,
     GDBusMethodInvocation, GVariant;
+import gio.Cancellable;
+import gio.DBusConnection;
+static import gio.DBusError;
+import gio.DBusMethodInvocation;
+import gio.DBusNames;
+import gio.DBusNodeInfo;
 import glib.c.functions;
 import glib.GException;
 import glib.Idle;
@@ -47,8 +47,8 @@ import glib.VariantBuilder;
 import glib.VariantType;
 import std.array : split;
 import std.ascii : toLower, toUpper;
-import std.conv : to, ConvException;
 import std.concurrency : receive;
+import std.conv : ConvException, to;
 import std.datetime : SysTime;
 import std.exception;
 import std.experimental.logger;
@@ -728,8 +728,8 @@ private:
         }
         else
         {
-            auto done = progress[0].to!uint;
-            auto total = progress[1].to!uint;
+            const done = progress[0].to!uint;
+            const total = progress[1].to!uint;
             // We can't dive through 0
             if (total == 0)
             {
@@ -751,8 +751,8 @@ private:
     {
         this.userData.db = db;
         auto mainContext = new MainContext();
-        auto progressWorkerThread = new Thread("progressWorker",
-                &startProgressWorkerThread, mainContext.getMainContextStruct());
+        new Thread("progressWorker", &startProgressWorkerThread,
+                mainContext.getMainContextStruct());
 
         auto idleSource = Idle.sourceNew();
         idleSource.setCallback(&progressSenderFn, &this.userData, null);

@@ -21,7 +21,7 @@ module apkd.ApkPackage;
 
 import deimos.apk_toolsd.apk_package;
 import std.conv : to;
-import std.datetime : unixTimeToStdTime, SysTime;
+import std.datetime : SysTime, unixTimeToStdTime;
 import std.format : format;
 
 /// Struct containing all the information about a package
