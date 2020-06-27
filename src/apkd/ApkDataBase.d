@@ -227,10 +227,11 @@ struct ApkDataBase
         {
             apkd.functions.apk_change_array_free(&changeset.changes);
         }
-        const auto solverRes = apk_solver_commit_changeset(&this.db, &changeset, this.db.world);
-        enforce!ApkSolverException(solverRes == 0,
-                format("Couldn't upgrade packages due to error '%s%",
-                    apk_error_str(solverRes).to!string));
+        const auto solverErrorCount = apk_solver_commit_changeset(&this.db,
+                &changeset, this.db.world);
+        enforce!ApkSolverException(solverErrorCount == 0, format(
+                "Failed to upgrade all packages due to %d error%s! Please run 'apk upgrade -a' for more information.",
+                solverErrorCount, solverErrorCount > 1 ? "s" : ""));
     }
 
     /**
@@ -285,10 +286,11 @@ struct ApkDataBase
             apk_solver_set_name_flags(dep.name, solverFlags, 0);
         }
 
-        const auto solverCommitRes = apk_solver_commit(&this.db, 0, this.db.world);
-        enforce!ApkDatabaseCommitException(solverCommitRes == 0,
-                format("Failed to commit changes to the database due to error '%s'!",
-                    apk_error_str(solverCommitRes).to!string));
+        const auto solverErrorCount = apk_solver_commit(&this.db, 0, this.db.world);
+        enforce!ApkDatabaseCommitException(solverErrorCount == 0, format(
+                "Failed to upgrade package%s %s due to %d error%s! Please run 'apk add -u %s' for more information.",
+                pkgnames.length > 1 ? "s" : "", pkgnames, solverErrorCount,
+                solverErrorCount > 1 ? "s" : "", pkgnames));
     }
 
     /**
@@ -323,8 +325,9 @@ struct ApkDataBase
 
         const auto solverCommitErrorCount = apk_solver_commit(&this.db, solverFlags, worldCopy);
         enforce!ApkDatabaseCommitException(solverCommitErrorCount == 0,
-                format("%d error%s occured while installing packages '%s'!",
-                    solverCommitErrorCount, solverCommitErrorCount > 1 ? "s" : "", pkgnames));
+                format("Failed to add package%s %s due to %d error%s! Please run 'apk add' for more information.",
+                    pkgnames.length > 1 ? "s" : "", solverCommitErrorCount,
+                    solverCommitErrorCount > 1 ? "s" : ""));
     }
 
     /**
@@ -363,11 +366,11 @@ struct ApkDataBase
             apk_deps_del(&worldCopy, packageNameToApkDependency(pkgname).name);
         }
 
-        const auto solverSolveRes = apk_solver_solve(&this.db, solverFlags,
+        const auto solverErrorCount = apk_solver_solve(&this.db, solverFlags,
                 worldCopy, &changeset);
-        enforce!ApkSolverException(solverSolveRes == 0,
-                format("Failed to calculate dependency graph due to error '%s'!",
-                    apk_error_str(solverSolveRes).to!string));
+        enforce!ApkSolverException(solverErrorCount == 0,
+                format("Failed to delete package%s %s due to %d error%s! Please run 'apk del' for more information.",
+                    pkgnames.length > 1 ? "s" : "", pkgnames, solverErrorCount > 1 ? "s" : ""));
 
         foreach (ref change; changeset.changes.item)
         {
@@ -383,15 +386,15 @@ struct ApkDataBase
                 &getNotDeletedPackageReason, &dependants);
         if (!dependants.empty())
         {
-            throw new ApkCantDeletedRequiredPackage(format(
-                    "package(s) %s still required by the following packages: %s",
-                    pkgnames, dependants));
+            throw new ApkCantDeletedRequiredPackage(format("package%s %s still required by the following packages: %s",
+                    pkgnames.length > 1 ? "s" : "", pkgnames, dependants));
         }
 
-        const auto solverCommitRes = apk_solver_commit_changeset(&this.db, &changeset, worldCopy);
-        enforce!ApkDatabaseCommitException(solverCommitRes == 0,
-                format("Failed to commit changes for deletion of %s to the database due to error '%s'!",
-                    pkgnames, apk_error_str(solverCommitRes).to!string));
+        const auto solverCommitErrorCount = apk_solver_commit_changeset(&this.db,
+                &changeset, worldCopy);
+        enforce!ApkDatabaseCommitException(solverCommitErrorCount == 0,
+                format("Failed to delete package%s %s due to %d error%s! Please run 'apk del' for more information.",
+                    pkgnames.length > 1 ? "s" : "", pkgnames, solverCommitErrorCount > 1 ? "s" : ""));
     }
 
     /**
@@ -552,9 +555,8 @@ private:
 
         const auto solverSolveRes = apk_solver_solve(&this.db,
                 APK_SOLVERF_UPGRADE | solverFlags, this.db.world, &changeset);
-        enforce!ApkSolverException(solverSolveRes == 0,
-                format("Failed to calculate dependency graph for upgrade due to error '%s'!",
-                    apk_error_str(solverSolveRes).to!string));
+        enforce!ApkSolverException(solverSolveRes == 0, format("Failed to calculate upgrade changset of package%s %s due to %d error%s! Please run 'apk upgrade -a -s' for more information.",
+                solverSolveRes, solverSolveRes > 1 ? "s" : ""));
 
         return changeset;
     }
