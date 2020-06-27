@@ -289,8 +289,9 @@ struct ApkDataBase
         const auto solverErrorCount = apk_solver_commit(&this.db, 0, this.db.world);
         enforce!ApkDatabaseCommitException(solverErrorCount == 0, format(
                 "Failed to upgrade package%s %s due to %d error%s! Please run 'apk add -u %s' for more information.",
-                pkgnames.length > 1 ? "s" : "", pkgnames, solverErrorCount,
-                solverErrorCount > 1 ? "s" : "", pkgnames));
+                pkgnames.length > 1
+                ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames), solverErrorCount,
+                solverErrorCount > 1 ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames)));
     }
 
     /**
@@ -325,9 +326,9 @@ struct ApkDataBase
 
         const auto solverCommitErrorCount = apk_solver_commit(&this.db, solverFlags, worldCopy);
         enforce!ApkDatabaseCommitException(solverCommitErrorCount == 0,
-                format("Failed to add package%s %s due to %d error%s! Please run 'apk add' for more information.",
-                    pkgnames.length > 1 ? "s" : "", solverCommitErrorCount,
-                    solverCommitErrorCount > 1 ? "s" : ""));
+                format("Failed to add package%s %s due to %d error%s! Please run 'apk add %s' for more information.",
+                    pkgnames.length > 1 ? "s" : "", solverCommitErrorCount, solverCommitErrorCount > 1
+                    ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames)));
     }
 
     /**
@@ -369,8 +370,9 @@ struct ApkDataBase
         const auto solverErrorCount = apk_solver_solve(&this.db, solverFlags,
                 worldCopy, &changeset);
         enforce!ApkSolverException(solverErrorCount == 0,
-                format("Failed to delete package%s %s due to %d error%s! Please run 'apk del' for more information.",
-                    pkgnames.length > 1 ? "s" : "", pkgnames, solverErrorCount > 1 ? "s" : ""));
+                format("Failed to delete package%s %s due to %d error%s! Please run 'apk del %s' for more information.",
+                    pkgnames.length > 1 ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames),
+                    solverErrorCount > 1 ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames)));
 
         foreach (ref change; changeset.changes.item)
         {
@@ -387,14 +389,18 @@ struct ApkDataBase
         if (!dependants.empty())
         {
             throw new ApkCantDeletedRequiredPackage(format("package%s %s still required by the following packages: %s",
-                    pkgnames.length > 1 ? "s" : "", pkgnames, dependants));
+                    pkgnames.length > 1 ? "s" : "",
+                    apkd.functions.pkgnamesArrayToList(pkgnames),
+                    apkd.functions.pkgnamesArrayToList(dependants)));
         }
 
         const auto solverCommitErrorCount = apk_solver_commit_changeset(&this.db,
                 &changeset, worldCopy);
         enforce!ApkDatabaseCommitException(solverCommitErrorCount == 0,
-                format("Failed to delete package%s %s due to %d error%s! Please run 'apk del' for more information.",
-                    pkgnames.length > 1 ? "s" : "", pkgnames, solverCommitErrorCount > 1 ? "s" : ""));
+                format("Failed to delete package%s %s due to %d error%s! Please run 'apk del %s' for more information.",
+                    pkgnames.length > 1 ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames),
+                    solverCommitErrorCount > 1 ? "s" : "",
+                    apkd.functions.pkgnamesArrayToList(pkgnames)));
     }
 
     /**

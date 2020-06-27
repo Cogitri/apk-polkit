@@ -33,6 +33,7 @@ import std.algorithm : canFind;
 import std.conv : to;
 import std.exception : assumeWontThrow;
 import std.experimental.logger;
+import std.string : stripRight;
 import std.utf : toUTFz;
 
 /// Taken from apk_defines.h. It's only declared&defined in the
@@ -206,4 +207,19 @@ void allowUntrusted()
 void disallowUntrusted()
 {
     apk_flags &= ~APK_ALLOW_UNTRUSTED;
+}
+
+/**
+* Converts an array to a string of pkgname1 pkgname2 ... pkgnameN
+*/
+string pkgnamesArrayToList(string[] pkgnames)
+{
+    string pkgnameString;
+
+    foreach (ref string pkgname; pkgnames)
+    {
+        pkgnameString ~= pkgname ~ " ";
+    }
+
+    return pkgnameString.stripRight();
 }
