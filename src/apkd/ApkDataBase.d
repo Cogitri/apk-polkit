@@ -252,6 +252,7 @@ struct ApkDataBase
     {
         // if a subpackage is scheduled to be upgraded, also upgrade the mainpackage.
         apk_dependency*[] toBeUpgraded;
+        toBeUpgraded.reserve(pkgnames.length);
 
         foreach (pkgname; pkgnames)
         {
@@ -414,6 +415,7 @@ struct ApkDataBase
 
         apk_installed_package* installedPackage;
         ApkPackage[] ret;
+        ret.reserve(this.db.installed.stats.packages);
 
         // dfmt off
         for(
@@ -437,6 +439,7 @@ struct ApkDataBase
     ApkPackage[] listAvailablePackages()
     {
         ApkPackage[] apkPackages;
+        apkPackages.reserve(this.db.available.packages.num_items);
         auto apkHashRes = apk_hash_foreach(&this.db.available.packages,
                 &apkd.functions.appendApkPackageToArray, &apkPackages);
         enforce!ApkListException(apkHashRes == 0, "Failed to enumerate available packages!");
