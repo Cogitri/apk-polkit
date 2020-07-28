@@ -35,8 +35,6 @@ enum AuthStatus
     Granted,
     /* Access denied */
     Denied,
-    /* Asking for access failed */
-    Failed,
 }
 
 /**

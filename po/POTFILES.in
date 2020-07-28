@@ -3,3 +3,4 @@ data/dev.Cogitri.apkPolkit.policy.in
 
 # Source files
 src/apkd_dbus_server/DbusServer.d
+src/apkd_dbus_server/Operation.d

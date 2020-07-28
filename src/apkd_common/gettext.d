@@ -24,6 +24,17 @@ do
     return gettext(text.toStringz()).to!string;
 }
 
+string ngettext(string singular, string plural, uint num)
+in
+{
+    assert(singular);
+    assert(plural);
+}
+do
+{
+    return ngettext(singular.toStringz(), plural.toStringz(), num).to!string;
+}
+
 string textdomain(string name)
 in
 {

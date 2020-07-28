@@ -1,5 +1,6 @@
 apkd_dbus_server_lib_src = [
     'DbusServer.d',
+    'OperationErrorTranslator.d',
     'Polkit.d',
     'Util.d',
 ]

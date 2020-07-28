@@ -68,7 +68,7 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
             ":")[2] ~ ":" ~ error.message.to!string.split(":")[3];
 
     assert(errorMessage.strip()
-            == "Couldn't delete package(s) due to error package test-a still required by the following packages: test-b test-e");
+            == "Couldn't delete package due to error package test-a still required by the following packages: test-b test-e");
 
     assert(buildPath(testHelper.apkRootDir, "usr", "bin", "test-e").exists());
 
