@@ -22,6 +22,7 @@ module apkd.ApkDataBase;
 import apkd.ApkPackage;
 import apkd.exceptions;
 static import apkd.functions;
+import apkd_common.gettext;
 import core.stdc.errno : EALREADY;
 import deimos.apk_toolsd.apk_archive;
 import deimos.apk_toolsd.apk_blob;
@@ -229,9 +230,11 @@ struct ApkDataBase
         }
         const auto solverErrorCount = apk_solver_commit_changeset(&this.db,
                 &changeset, this.db.world);
-        enforce!ApkSolverException(solverErrorCount == 0, format(
-                "Failed to upgrade all packages due to %d error%s! Please run 'apk upgrade -a' for more information.",
-                solverErrorCount, solverErrorCount > 1 ? "s" : ""));
+        enforce!ApkSolverException(solverErrorCount == 0,
+                /* Translators: Do not translate 'apk upgrade -a', it's the command the user should run */
+                ngettext("An error occured while upgrading! Please run 'apk upgrade -a' for more information.",
+                    "Multiple errors occured while upgrading! Please run 'apk upgrade -a' for more information.",
+                    cast(uint) solverErrorCount));
     }
 
     /**
@@ -288,11 +291,12 @@ struct ApkDataBase
         }
 
         const auto solverErrorCount = apk_solver_commit(&this.db, 0, this.db.world);
-        enforce!ApkDatabaseCommitException(solverErrorCount == 0, format(
-                "Failed to upgrade package%s %s due to %d error%s! Please run 'apk add -u %s' for more information.",
-                pkgnames.length > 1
-                ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames), solverErrorCount,
-                solverErrorCount > 1 ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames)));
+        enforce!ApkDatabaseCommitException(solverErrorCount == 0,
+                /* Translators: Do not translate 'apk add -u %s', it's the command the user should run */
+                format(ngettext("An error occured while upgrading! Please run 'apk add -u %s' for more information.",
+                    "Multiple errors occured while upgrading! Please run 'apk add -u %s' for more information.",
+                    cast(uint) solverErrorCount)), apkd.functions.pkgnamesArrayToList(pkgnames));
+
     }
 
     /**
@@ -327,9 +331,11 @@ struct ApkDataBase
 
         const auto solverCommitErrorCount = apk_solver_commit(&this.db, solverFlags, worldCopy);
         enforce!ApkDatabaseCommitException(solverCommitErrorCount == 0,
-                format("Failed to add package%s %s due to %d error%s! Please run 'apk add %s' for more information.",
-                    pkgnames.length > 1 ? "s" : "", solverCommitErrorCount, solverCommitErrorCount > 1
-                    ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames)));
+                /* Translators: Do not translate 'apk add', it's the command the user should run */
+                format(ngettext("Failed to add package %s! Please run 'apk add %s' for more information.",
+                    "Failed to add packages %s! Please run 'apk add %s' for more information",
+                    cast(uint) pkgnames.length), apkd.functions.pkgnamesArrayToList(pkgnames),
+                    apkd.functions.pkgnamesArrayToList(pkgnames)));
     }
 
     /**
@@ -360,7 +366,6 @@ struct ApkDataBase
         }
 
         apkd.functions.apk_dependency_array_copy(&worldCopy, this.db.world);
-
         apkd.functions.apk_string_array_init(&pkgnameArr);
         foreach (ref pkgname; pkgnames)
         {
@@ -371,9 +376,11 @@ struct ApkDataBase
         const auto solverErrorCount = apk_solver_solve(&this.db, solverFlags,
                 worldCopy, &changeset);
         enforce!ApkSolverException(solverErrorCount == 0,
-                format("Failed to delete package%s %s due to %d error%s! Please run 'apk del %s' for more information.",
-                    pkgnames.length > 1 ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames),
-                    solverErrorCount > 1 ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames)));
+                /* Translators: Do not translate 'apk upgrade -a', it's the command the user should run */
+                format(ngettext("Failed to delete package %s! Please run 'apk del %s' for more information.",
+                    "Failed to delete packages %s! Please run 'apk del %s' for more information",
+                    cast(uint) pkgnames.length), apkd.functions.pkgnamesArrayToList(pkgnames),
+                    apkd.functions.pkgnamesArrayToList(pkgnames)));
 
         foreach (ref change; changeset.changes.item)
         {
@@ -389,8 +396,10 @@ struct ApkDataBase
                 &getNotDeletedPackageReason, &dependants);
         if (!dependants.empty())
         {
-            throw new ApkCantDeletedRequiredPackage(format("package%s %s still required by the following packages: %s",
-                    pkgnames.length > 1 ? "s" : "",
+            throw new ApkCantDeletedRequiredPackage(format(
+                    ngettext("package %s still required by the following packages: %s",
+                    "packages %s still required by the following packages: %s",
+                    cast(uint) pkgnames.length),
                     apkd.functions.pkgnamesArrayToList(pkgnames),
                     apkd.functions.pkgnamesArrayToList(dependants)));
         }
@@ -398,10 +407,12 @@ struct ApkDataBase
         const auto solverCommitErrorCount = apk_solver_commit_changeset(&this.db,
                 &changeset, worldCopy);
         enforce!ApkDatabaseCommitException(solverCommitErrorCount == 0,
-                format("Failed to delete package%s %s due to %d error%s! Please run 'apk del %s' for more information.",
-                    pkgnames.length > 1 ? "s" : "", apkd.functions.pkgnamesArrayToList(pkgnames),
-                    solverCommitErrorCount > 1 ? "s" : "",
+                /* Translators: Do not translate 'apk del', it's the command the user should run */
+                format(ngettext("Failed to delete package %s! Please run 'apk del %s' for more information.",
+                    "Failed to delete packages %s! Please run 'apk del %s' for more information",
+                    cast(uint) pkgnames.length), apkd.functions.pkgnamesArrayToList(pkgnames),
                     apkd.functions.pkgnamesArrayToList(pkgnames)));
+
     }
 
     /**
@@ -415,9 +426,7 @@ struct ApkDataBase
 
         apk_installed_package* installedPackage;
         ApkPackage[] ret;
-        ret.reserve(this.db.installed.stats.packages);
-
-        // dfmt off
+        ret.reserve(this.db.installed.stats.packages);// dfmt off
         for(
             installedPackage = (&this.db.installed.packages).next.container_of!(apk_installed_package, "installed_pkgs_list");
             &installedPackage.installed_pkgs_list != &this.db.installed.packages;
@@ -487,7 +496,6 @@ struct ApkDataBase
         }
 
         enforce!ApkFindFileOwnerException(pkg !is null, "Couldn't find owner of file %s", path);
-
         return ApkPackage(pkg, true);
     }
 
@@ -514,7 +522,7 @@ private:
         else if (cacheRes != -EALREADY)
         {
             this.db.repo_update_errors++;
-            throw new ApkRepoUpdateException(format("Fetch of repository %s failed due to error '%s'!",
+            throw new ApkRepoUpdateException(format(gettext("Fetching repository %s failed due to error '%s'!"),
                     repo.url, apk_error_str(cacheRes).to!string));
         }
     }
@@ -536,11 +544,11 @@ private:
         auto apk_dependency = new apk_dependency;
         apk_blob_t blob = apk_blob_t(pkgname.length, toUTFz!(char*)(pkgname));
         apk_blob_pull_dep(&blob, &this.db, apk_dependency);
-        enforce!BadDependencyFormatException(!(blob.ptr is null || blob.len > 0), format(
-                "'%s' is not a correctly formated world dependency, the format should be: name(@tag)([<>~=]version)",
+        enforce!BadDependencyFormatException(!(blob.ptr is null || blob.len > 0), format(gettext(
+                "'%s' is not a correctly formated world dependency, the format should be: name(@tag)([<>~=]version)"),
                 pkgname));
         enforce!NoSuchPackageFoundException(apk_dependency !is null,
-                format("Couldn't find package %s", pkgname));
+                format(gettext("Couldn't find package %s"), pkgname));
         return apk_dependency;
     }
 
@@ -558,15 +566,15 @@ private:
     apk_changeset getAllUpgradeChangeset(ushort solverFlags = 0)
     {
         apk_changeset changeset;
-
-        enforce!ApkBrokenWorldException(apk_db_check_world(&this.db,
-                this.db.world) == 0, "Missing repository tags; can't continue the upgrade!");
-
+        /* Translators: repository tags are used for pinning packages to a specific repo: https://wiki.alpinelinux.org/wiki/Alpine_Linux_package_management#Repository_pinning*/
+        const errMsg = gettext("Missing repository tags; can't continue the upgrade!");
+        enforce!ApkBrokenWorldException(apk_db_check_world(&this.db, this.db.world) == 0, errMsg);
         const auto solverSolveRes = apk_solver_solve(&this.db,
                 APK_SOLVERF_UPGRADE | solverFlags, this.db.world, &changeset);
-        enforce!ApkSolverException(solverSolveRes == 0, format("Failed to calculate upgrade changset of package%s %s due to %d error%s! Please run 'apk upgrade -a -s' for more information.",
-                solverSolveRes, solverSolveRes > 1 ? "s" : ""));
-
+        enforce!ApkSolverException(solverSolveRes == 0,
+                /* Translators: Do not translate 'apk upgrade -a -s', it's the command the user should run */
+                gettext(
+                    "Failed to calculate upgrade changeset! Please run 'apk upgrade -a -s' for more information."));
         return changeset;
     }
 
@@ -682,7 +690,7 @@ private:
         apk_db_init(&this.db);
         const auto res = apk_db_open(&this.db, &this.dbOptions);
         enforce!ApkDatabaseOpenException(res == 0,
-                format("Failed to open apk database due to error '%s'",
+                format(gettext("Failed to open apk database due to error '%s'"),
                     apk_error_str(res).to!string));
 
         version (testing)

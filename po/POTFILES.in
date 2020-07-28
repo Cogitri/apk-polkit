@@ -2,5 +2,16 @@
 data/dev.Cogitri.apkPolkit.policy.in
 
 # Source files
+src/apkd/exceptions.d
+src/apkd/ApkPackage.d
+src/apkd/functions.d
+src/apkd/ApkDataBase.d
+src/apkd_dbus_server/Options.d
+src/apkd_dbus_server/Polkit.d
+src/apkd_dbus_server/Util.d
+src/apkd_dbus_server/main.d
 src/apkd_dbus_server/DbusServer.d
-src/apkd_dbus_server/Operation.d
+src/apkd_dbus_server/OperationErrorTranslator.d
+src/apkd_common/SysLogger.d
+src/apkd_common/muslsyslog.d
+src/apkd_common/globals.d
