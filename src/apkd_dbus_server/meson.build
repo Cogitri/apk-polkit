@@ -1,8 +1,8 @@
 apkd_dbus_server_lib_src = [
+    'DbusMethodRegistrar.d',
     'DbusServer.d',
     'OperationErrorTranslator.d',
     'Polkit.d',
-    'Util.d',
 ]
 
 apkd_dbus_server_exe_src = [

@@ -10,6 +10,7 @@ src/apkd_dbus_server/Options.d
 src/apkd_dbus_server/Polkit.d
 src/apkd_dbus_server/Util.d
 src/apkd_dbus_server/main.d
+src/apkd_dbus_server/DbusMethodRegistrar.d
 src/apkd_dbus_server/DbusServer.d
 src/apkd_dbus_server/OperationErrorTranslator.d
 src/apkd_common/SysLogger.d

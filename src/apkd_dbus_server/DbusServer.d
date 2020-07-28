@@ -25,11 +25,9 @@ import apkd.exceptions;
 static import apkd.functions;
 import apkd_common.gettext : gettext;
 static import apkd_common.globals;
+import apkd_dbus_server.DbusMethodRegistrar;
 import apkd_dbus_server.OperationErrorTranslator;
 import apkd_dbus_server.Polkit;
-import apkd_dbus_server.Util;
-import gio.c.types : BusNameOwnerFlags, BusType, GDBusInterfaceVTable,
-    GDBusMethodInvocation, GVariant;
 import gio.Cancellable;
 import gio.DBusConnection;
 static import gio.DBusError;
@@ -89,6 +87,12 @@ extern (C) GQuark ApkdDbusServerErrorQuark() nothrow
 /// The DBus interface this dbus application exposes as XML
 auto immutable dbusIntrospectionXML = import("dev.Cogitri.apkPolkit.interface");
 
+string registerDbusMethod(string methodName)
+{
+    return "DbusMethodRegistrar.getInstance().register(&" ~ methodName ~ ", \"" ~ methodName
+        ~ "\");";
+}
+
 /// DBusServer class, that is used to setup the dbus connection and handle method calls
 class DBusServer
 {
@@ -101,8 +105,23 @@ class DBusServer
     this(in bool replace, in string root = null)
     {
         tracef("Trying to acquire DBus name %s.", apkd_common.globals.dbusBusName);
-        this.allowUntrustedRepositories = false;
-        this.root = null;
+
+        mixin(registerDbusMethod("addPackages"));
+        mixin(registerDbusMethod("deletePackages"));
+        mixin(registerDbusMethod("getAll"));
+        mixin(registerDbusMethod("getAllowUntrustedRepos"));
+        mixin(registerDbusMethod("getRoot"));
+        mixin(registerDbusMethod("listAvailablePackages"));
+        mixin(registerDbusMethod("listInstalledPackages"));
+        mixin(registerDbusMethod("listUpgradablePackages"));
+        mixin(registerDbusMethod("updateRepositories"));
+        mixin(registerDbusMethod("upgradeAllPackages"));
+        mixin(registerDbusMethod("upgradePackages"));
+        mixin(registerDbusMethod("searchFileOwner"));
+        mixin(registerDbusMethod("searchPackageNames"));
+        mixin(registerDbusMethod("setAllowUntrustedRepos"));
+        mixin(registerDbusMethod("setRoot"));
+
         this.userData = UserData(null, null);
         const dbusFlags = BusNameOwnerFlags.ALLOW_REPLACEMENT | (replace
                 ? BusNameOwnerFlags.REPLACE : BusNameOwnerFlags.NONE);
@@ -129,7 +148,7 @@ class DBusServer
     *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
-    @("DBusMethod") void addPackages(Variant parameters)
+    void addPackages(Variant parameters)
     {
         auto pkgnames = parameters.getChildValue(0).getStrv();
         tracef("Trying to add package%s: %s", pkgnames.length > 1 ? "s" : "", pkgnames);
@@ -158,7 +177,7 @@ class DBusServer
     *   Throws an ApkDatabaseCommitException if committing the changes to the database fails, e.g.
     *   due to missing permissions.
     */
-    @("DBusMethod") void deletePackages(Variant parameters)
+    void deletePackages(Variant parameters)
     {
         auto pkgnames = parameters.getChildValue(0).getStrv();
         tracef("Trying to delete package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
@@ -172,7 +191,7 @@ class DBusServer
         tracef("Successfully deleted package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
     }
 
-    @("DBusMethod") Variant getAll()
+    Variant getAll()
     {
         GVariantBuilder builder;
         g_variant_builder_init(&builder, new VariantType("a{sv}").getVariantTypeStruct(true));
@@ -198,12 +217,12 @@ class DBusServer
         return new Variant(g_variant_builder_end(&builder));
     }
 
-    @("DBusMethod") Variant getAllowUntrustedRepos()
+    Variant getAllowUntrustedRepos()
     {
         return new Variant(new Variant(this.allowUntrustedRepositories));
     }
 
-    @("DBusMethod") Variant getRoot()
+    Variant getRoot()
     {
         return new Variant(new Variant(this.root));
     }
@@ -215,7 +234,7 @@ class DBusServer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   An ApkListException if something went wrong in iterating over packages
     */
-    @("DBusMethod") Variant listAvailablePackages()
+    Variant listAvailablePackages()
     {
         trace("Trying to list all available packages");
         auto database = ApkDataBase(this.root);
@@ -230,7 +249,7 @@ class DBusServer
     * Throws:
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     */
-    @("DBusMethod") Variant listInstalledPackages()
+    Variant listInstalledPackages()
     {
         trace("Trying to list all installed packages");
         auto database = ApkDataBase(this.root);
@@ -246,7 +265,7 @@ class DBusServer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   An ApkListException if something went wrong in iterating over packages
     */
-    @("DBusMethod") Variant listUpgradablePackages()
+    Variant listUpgradablePackages()
     {
         trace("Trying to list upgradable packages");
         auto database = ApkDataBase(this.root);
@@ -269,7 +288,7 @@ class DBusServer
     *   due to missing permissions, a conflict, etc.
     *
     */
-    @("DBusMethod") void updateRepositories()
+    void updateRepositories()
     {
         trace("Trying to update repositories.");
         auto database = ApkDataBase(this.root);
@@ -290,7 +309,7 @@ class DBusServer
     *   Throws an ApkSolverException if the solver can't figure out a way to solve
     *   the upgrade, e.g. due to conflicts.
     */
-    @("DBusMethod") void upgradeAllPackages()
+    void upgradeAllPackages()
     {
         trace("Trying upgrade all packages.");
         auto database = ApkDataBase(this.root);
@@ -316,7 +335,7 @@ class DBusServer
     *   Throws an ApkDatabaseCommitException if commiting the changes to the database fails, e.g.
     *   due to missing permissions, a conflict, etc.
     */
-    @("DBusMethod") void upgradePackages(Variant parameters)
+    void upgradePackages(Variant parameters)
     {
         auto pkgnames = parameters.getChildValue(0).getStrv();
         tracef("Trying to upgrade package '%s'.", pkgnames);
@@ -340,7 +359,7 @@ class DBusServer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   An ApkListException if something went wrong in iterating over packages
     */
-    @("DBusMethod") Variant searchFileOwner(Variant parameters)
+    Variant searchFileOwner(Variant parameters)
     {
         size_t len;
         auto path = parameters.getChildValue(0).getString(len);
@@ -361,7 +380,7 @@ class DBusServer
     *   Throws an ApkDatabaseOpenException if opening the db fails (e.g. due to missing permissions.)
     *   An ApkListException if something went wrong in iterating over packages
     */
-    @("DBusMethod") Variant searchPackageNames(Variant parameters)
+    Variant searchPackageNames(Variant parameters)
     {
         auto pkgnames = parameters.getChildValue(0).getStrv();
         tracef("Trying to search for packages %s", pkgnames);
@@ -371,7 +390,7 @@ class DBusServer
         return apkPackageArrayToVariant(packages);
     }
 
-    @("DBusMethod") void setAllowUntrustedRepos(Variant value)
+    void setAllowUntrustedRepos(Variant value)
     {
         GVariantBuilder dictBuilder;
         GVariantBuilder valBuilder;
@@ -417,7 +436,7 @@ class DBusServer
                 "PropertiesChanged", new Variant(g_variant_builder_end(&valBuilder)));
     }
 
-    @("DBusMethod") void setRoot(Variant value)
+    void setRoot(Variant value)
     {
         GVariantBuilder dictBuilder;
         GVariantBuilder valBuilder;
@@ -453,18 +472,15 @@ class DBusServer
                 "PropertiesChanged", new Variant(g_variant_builder_end(&valBuilder)));
     }
 
-    static AuthStatus checkAuth(string operation, string sender,
-            DBusMethodInvocation dbusInvocation)
+    static ulong getNumOfPackages(Variant params)
     {
-        info("Tying to authorized user...");
-        const authenticated = queryPolkitAuth(operation, sender.to!string);
-        if (authenticated)
+        try
         {
-            return AuthStatus.Granted;
+            return params.getChildValue(0).getStrv().length;
         }
-        else
+        catch (Exception e)
         {
-            return AuthStatus.Denied;
+            return 0;
         }
     }
 
@@ -490,8 +506,8 @@ class DBusServer
         Variant[] ret = [];
         auto parametersVariant = new Variant(parameters);
         auto methodName = rawMethodName.to!string;
-
         string propertyName = "";
+
         if (interfaceName.to!string == "org.freedesktop.DBus.Properties")
         {
             if (parametersVariant.nChildren() > 1)
@@ -502,106 +518,53 @@ class DBusServer
             }
         }
 
-    methsw:
-        switch (methodName[0].toLower() ~ methodName[1 .. $] ~ propertyName)
+        methodName = methodName[0].toLower() ~ methodName[1 .. $] ~ propertyName;
+
+        try
         {
-            static foreach (memberName; __traits(allMembers, DBusServer))
+            const polkitResult = queryPolkitAuth("dev.Cogitri.apkPolkit.Helper." ~ methodName,
+                    sender.to!string);
+            if (!polkitResult)
             {
-                static if (mixin("hasUDA!(DBusServer." ~ memberName ~ ", \"DBusMethod\")"))
-                {
-        case memberName:
-                    AuthStatus polkitResult = AuthStatus.Denied;
-                    try
-                    {
-                        polkitResult = checkAuth("dev.Cogitri.apkPolkit.Helper." ~ memberName,
-                                sender.to!string, dbusInvocation);
-                    }
-                    catch (GException e)
-                    {
-                        uint numPackages = 0;
-                        try
-                        {
-                            numPackages = cast(uint) parametersVariant.getChildValue(0)
-                                .getStrv().length;
-                        }
-                        catch (Exception e)
-                        {
-                        }
-                        const opErrorTranslator = new OperationErrorTranslator(memberName);
-                        immutable errMsg = format(opErrorTranslator.translateAuthError(numPackages),
-                                e.msg);
-                        error(errMsg);
-                        dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(),
-                                DBusError.ACCESS_DENIED, errMsg);
-                        return;
-                    }
-
-                    final switch (polkitResult) with (AuthStatus)
-                    {
-                    case Granted:
-                        static if (!is(ReturnType!((__traits(getMember,
-                                DBusServer, memberName))) == void))
-                        {
-                            immutable retString = "ret ~=";
-                        }
-                        else
-                        {
-                            immutable retString = "";
-                        }
-                        try
-                        {
-                            mixin(retString ~ " dbusServer." ~ Call!(
-                                    mixin("dbusServer." ~ memberName)));
-                        }
-                        catch (Exception e)
-                        {
-                            uint numPackages = 0;
-                            try
-                            {
-                                numPackages = cast(uint) parametersVariant.getChildValue(0)
-                                    .getStrv().length;
-                            }
-                            catch (Exception e)
-                            {
-                            }
-                            const opErrorTranslator = new OperationErrorTranslator(memberName);
-                            immutable errMsg = format(opErrorTranslator.translateOperationError(numPackages),
-                                    e.msg);
-                            error(errMsg);
-                            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
-                                    ApkdDbusServerErrorQuarkEnum.Failed, errMsg);
-                        }
-                        break;
-                    case Denied:
-                        uint numPackages = 0;
-                        try
-                        {
-                            numPackages = cast(uint) parametersVariant.getChildValue(0)
-                                .getStrv().length;
-                        }
-                        catch (Exception e)
-                        {
-                        }
-                        const opErrorTranslator = new OperationErrorTranslator(memberName);
-                        /* Translators: Authorization for ... failed due to error "access denied" */
-                        immutable accessDeniedMsg = gettext("access denied");
-                        immutable errMsg = format(opErrorTranslator.translateAuthError(numPackages),
-                                accessDeniedMsg);
-                        error(errMsg);
-                        dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(),
-                                DBusError.ACCESS_DENIED, errMsg);
-                        return;
-                    }
-                    break methsw;
-                }
+                throw new Exception(gettext("access denied"));
             }
-
-        default:
-            immutable errorMsg = format("Unkown method name %s", methodName);
-            error(errorMsg);
+        }
+        catch (Exception e)
+        {
+            const opErrorTranslator = new OperationErrorTranslator(methodName);
+            immutable errMsg = format(opErrorTranslator.translateAuthError(
+                    cast(uint) DBusServer.getNumOfPackages(parametersVariant)), e.msg);
+            error(errMsg);
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(),
-                    DBusError.NOT_SUPPORTED, errorMsg);
+                    DBusError.ACCESS_DENIED, errMsg);
             return;
+        }
+
+        auto dbusMethodRegistar = DbusMethodRegistrar.getInstance();
+        Variant dbusRes;
+        try
+        {
+            dbusRes = dbusMethodRegistar.call(methodName, parametersVariant);
+        }
+        catch (DbusMethodNotFoundException e)
+        {
+            error(e.msg);
+            dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(),
+                    DBusError.NOT_SUPPORTED, e.msg);
+            return;
+        }
+        catch (Exception e)
+        {
+            const opErrorTranslator = new OperationErrorTranslator(methodName);
+            immutable errMsg = format(opErrorTranslator.translateOperationError(
+                    cast(uint) DBusServer.getNumOfPackages(parametersVariant)), e.msg);
+            error(errMsg);
+            dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
+                    ApkdDbusServerErrorQuarkEnum.Failed, errMsg);
+        }
+        if (dbusRes)
+        {
+            ret ~= dbusRes;
         }
 
         auto retVariant = new Variant(ret);
@@ -767,7 +730,7 @@ private:
     }
 
     bool allowUntrustedRepositories;
-    string root;
     uint ownerId;
+    string root;
     UserData userData;
 }
