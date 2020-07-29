@@ -232,9 +232,8 @@ struct ApkDataBase
                 &changeset, this.db.world);
         enforce!ApkSolverException(solverErrorCount == 0,
                 /* Translators: Do not translate 'apk upgrade -a', it's the command the user should run */
-                ngettext("An error occured while upgrading! Please run 'apk upgrade -a' for more information.",
-                    "Multiple errors occured while upgrading! Please run 'apk upgrade -a' for more information.",
-                    cast(uint) solverErrorCount));
+                gettext(
+                    "Failed to upgrade all packages! Please run 'apk upgrade -a' for more information."));
     }
 
     /**
@@ -293,9 +292,10 @@ struct ApkDataBase
         const auto solverErrorCount = apk_solver_commit(&this.db, 0, this.db.world);
         enforce!ApkDatabaseCommitException(solverErrorCount == 0,
                 /* Translators: Do not translate 'apk add -u %s', it's the command the user should run */
-                format(ngettext("An error occured while upgrading! Please run 'apk add -u %s' for more information.",
-                    "Multiple errors occured while upgrading! Please run 'apk add -u %s' for more information.",
-                    cast(uint) solverErrorCount)), apkd.functions.pkgnamesArrayToList(pkgnames));
+                format(ngettext("Failed to upgrade package %s! Please run 'apk add -u %s' for more information.",
+                    "Failed to upgrade packages %s! Please run 'apk add -u %s' for more information.",
+                    cast(uint) solverErrorCount), apkd.functions.pkgnamesArrayToList(pkgnames),
+                    apkd.functions.pkgnamesArrayToList(pkgnames)));
 
     }
 
