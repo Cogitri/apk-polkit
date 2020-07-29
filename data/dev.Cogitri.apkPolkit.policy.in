@@ -76,7 +76,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.upgradeAllPackages">
@@ -92,7 +92,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.deletePackages">
@@ -106,9 +106,9 @@
     <defaults>
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.listAvailablePackages">
