@@ -24,3 +24,14 @@ meson build
 ninja -C build test
 ninja -C build install
 ```
+
+# Translating
+
+Apk-polkit's .pot file can be generated via:
+
+```sh
+meson build
+ninja -C build apk-polkit-pot
+```
+
+Afterwards this .pot file can be imported into translation programs like poedit. Save the resulting .po file which includes your translated strings in po/$langname.po, so e.g. for pt_BR (Brazillian Portuguese) po/pt_BR.po and add $langname to po/LINGUAS. Afterwards commit your changes with the following message: "chore(po): add $LANGNAME translation"
