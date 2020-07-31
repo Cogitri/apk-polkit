@@ -1,6 +1,7 @@
 lib_src = [
     'ApkDataBase.d',
     'ApkPackage.d',
+    'ApkRepository.d',
     'exceptions.d',
     'functions.d',
 ]

@@ -244,10 +244,9 @@
     </defaults>
   </action>
 
-
   <action id="dev.Cogitri.apkPolkit.Helper.searchFileOwner">
     <!-- SECURITY:
-          - Everyone is allowed to search for hte owner of a file by default. This
+          - Everyone is allowed to search for the owner of a file by default. This
             rule is only here so you can restrict this if you so desire.
      -->
     <description>Query the owner of a file</description>
@@ -258,5 +257,49 @@
       <allow_inactive>yes</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
+  </action>
+
+  <action id="dev.Cogitri.apkPolkit.Helper.listRepositories">
+    <!-- SECURITY:
+          - Everyone is allowed to list repositories. This
+            rule is only here so you can restrict this if you so desire.
+     -->
+    <description>List software repositories</description>
+    <message>Authentication is required for listing software repositories</message>
+    <defaults>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="dev.Cogitri.apkPolkit.Helper.addRepository">
+    <!-- SECURITY:
+          - Normal users need admin authentication to add a repository
+          - Users in the "wheel" group can add a repository without authentication
+     -->
+    <description>Add a software repository</description>
+    <message>Authentication is required to add a software repository</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages dev.Cogitri.apkPolkit.Helper.removeRepository dev.Cogitri.apkPolkit.Helper.listRepositories</annotate>
+  </action>
+
+  <action id="dev.Cogitri.apkPolkit.Helper.removeRepository">
+    <!-- SECURITY:
+          - Normal users need admin authentication to remove a repository
+          - Users in the "wheel" group can remove a repository without authentication
+     -->
+    <description>Remove a software repository</description>
+    <message>Authentication is required to remove a software repository</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages dev.Cogitri.apkPolkit.Helper.addRepository dev.Cogitri.apkPolkit.Helper.listRepositories</annotate>
   </action>
 </policyconfig>

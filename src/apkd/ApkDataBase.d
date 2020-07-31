@@ -20,6 +20,7 @@
 module apkd.ApkDataBase;
 
 import apkd.ApkPackage;
+import apkd.ApkRepository;
 import apkd.exceptions;
 static import apkd.functions;
 import apkd_common.gettext;
@@ -33,7 +34,8 @@ import deimos.apk_toolsd.apk_package;
 import deimos.apk_toolsd.apk_print;
 import deimos.apk_toolsd.apk_solver;
 import deimos.apk_toolsd.apk_version;
-import std.algorithm : canFind, sort, uniq;
+import std.algorithm : canFind, sort, uniq, startsWith;
+import std.array : join, replace, split;
 import std.conv : to;
 import std.exception : assumeWontThrow, enforce;
 import std.experimental.logger;
@@ -42,7 +44,7 @@ import std.format : format;
 import std.process : pipe, Pipe;
 import std.range : empty;
 import std.stdio : File, write;
-import std.string : toStringz;
+import std.string : toStringz, strip;
 import std.utf : toUTFz;
 
 /**
@@ -497,6 +499,59 @@ struct ApkDataBase
 
         enforce!ApkFindFileOwnerException(pkg !is null, "Couldn't find owner of file %s", path);
         return ApkPackage(pkg, true);
+    }
+
+    /**
+    * Reads all repositories from repoFilePath.
+    *
+    * Params:
+    *   repoFilePath = File path to the repository file.
+    *
+    * Throws:
+    *   ErrnoException if the file couldn't be opened or we can't read from it.
+    */
+    static ApkRepository[] getRepositories(string repoFilePath = "/etc/apk/repositories")
+    {
+        ApkRepository[] repos;
+        auto repoFile = new File(repoFilePath, "r");
+
+        foreach (ref line; repoFile.byLine())
+        {
+            if (!line.strip().empty())
+            {
+                repos ~= ApkRepository(repoFilePath, line.replace("#", "")
+                        .strip().to!string, !line.strip().startsWith("#"));
+            }
+        }
+
+        return repos;
+    }
+
+    /**
+    * Sets the repositories in repoFilePath.
+    *
+    * Params:
+    *   repos = The repositories that should be set in the repoFile.
+    *   repoFilePath = File path to the repository file.
+    *
+    * Throws:
+    *   ErrnoException if the file couldn't be opened or writing to it fails.
+    */
+    static void setRepositories(ApkRepository[] repos, string repoFilePath = "/etc/apk/repositories")
+    {
+        string line = "";
+        auto repoFile = new File(repoFilePath, "w");
+
+        foreach (ref repo; repos)
+        {
+            if (!repo.enabled)
+            {
+                line ~= "#";
+            }
+            line ~= repo.url ~ "\n";
+        }
+        repoFile.write(line);
+        repoFile.flush();
     }
 
 private:

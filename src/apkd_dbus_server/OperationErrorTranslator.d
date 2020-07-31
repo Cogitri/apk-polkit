@@ -13,20 +13,23 @@ class OperationErrorTranslator
     enum Enum
     {
         addPackages,
+        addRepository,
         deletePackages,
         getAll,
         getAllowUntrustedRepos,
         getRoot,
         listAvailablePackages,
         listInstalledPackages,
+        listRepositories,
         listUpgradablePackages,
-        updateRepositories,
-        upgradeAllPackages,
-        upgradePackages,
+        removeRepository,
         searchFileOwner,
         searchPackagenames,
         setAllowUntrustedRepos,
         setRoot,
+        updateRepositories,
+        upgradeAllPackages,
+        upgradePackages,
     }
 
     string translateOperationError(uint nPackages = 0) const
@@ -36,6 +39,8 @@ class OperationErrorTranslator
         case addPackages:
             return ngettext("Couldn't add package due to error %s",
                     "Couldn't add packages due to error %s", nPackages);
+        case addRepository:
+            return gettext("Couldn't add repository due to error %s");
         case deletePackages:
             return ngettext("Couldn't delete package due to error %s",
                     "Couldn't delete packages due to error %s", nPackages);
@@ -52,15 +57,12 @@ class OperationErrorTranslator
             return gettext("Couldn't list available packages due to error %s");
         case listInstalledPackages:
             return gettext("Couldn't list installed packages due to error %s");
+        case listRepositories:
+            return gettext("Couldn't list all repositories due to error %s");
         case listUpgradablePackages:
             return gettext("Couldn't list upgradable packages due to error %s");
-        case updateRepositories:
-            return gettext("Couldn't update repositories due to error %s");
-        case upgradeAllPackages:
-            return gettext("Couldn't upgrade all packages due to error %s");
-        case upgradePackages:
-            return ngettext("Couldn't upgrade package due to error %s",
-                    "Couldn't upgrade packages due to error %s", nPackages);
+        case removeRepository:
+            return gettext("Couldn't remove repository due to error %s");
         case searchFileOwner:
             return gettext("Couldn't search for owner of file due to error %s");
         case searchPackagenames:
@@ -72,6 +74,13 @@ class OperationErrorTranslator
         case setRoot:
             /* Translators: Do not translate "root", it's the name of the property */
             return gettext("Couldn't set the value of DBus-property “root“ due to error %s");
+        case updateRepositories:
+            return gettext("Couldn't update repositories due to error %s");
+        case upgradeAllPackages:
+            return gettext("Couldn't upgrade all packages due to error %s");
+        case upgradePackages:
+            return ngettext("Couldn't upgrade package due to error %s",
+                    "Couldn't upgrade packages due to error %s", nPackages);
         }
     }
 
@@ -82,6 +91,8 @@ class OperationErrorTranslator
         case addPackages:
             return ngettext("Authorization for adding a package failed due to error %s",
                     "Authorization for adding packages failed due to error %s", nPackages);
+        case addRepository:
+            return gettext("Authorization for adding a repository failed due to error %s");
         case deletePackages:
             return ngettext("Authorization for deleting a package failed due to error %s",
                     "Authorization for deleting packages failed due to error %s", nPackages);
@@ -100,15 +111,12 @@ class OperationErrorTranslator
             return gettext("Authorization for listing available packages failed due to error %s");
         case listInstalledPackages:
             return gettext("Authorization for listing installed packages failed due to error %s");
+        case listRepositories:
+            return gettext("Authorization for listing repositories failed due to error %s");
         case listUpgradablePackages:
             return gettext("Authorization for listing upgradable packages failed due to error %s");
-        case updateRepositories:
-            return gettext("Authorization for updating repositories failed due to error %s");
-        case upgradeAllPackages:
-            return gettext("Authorization for upgrading all packages failed due to error %s");
-        case upgradePackages:
-            return ngettext("Authorization for upgrading a package failed due to error %s",
-                    "Authorization for upgrading packages failed due to error %s", nPackages);
+        case removeRepository:
+            return gettext("Authorization for removing a repository failed due to error %s");
         case searchFileOwner:
             return gettext(
                     "Authorization for searching for the owner of file failed due to error %s");
@@ -122,6 +130,13 @@ class OperationErrorTranslator
             /* Translators: Do not translate "root", it's the name of the property */
             return gettext(
                     "Authorization for setting the value of DBus-property “root“ failed due to error %s");
+        case updateRepositories:
+            return gettext("Authorization for updating repositories failed due to error %s");
+        case upgradeAllPackages:
+            return gettext("Authorization for upgrading all packages failed due to error %s");
+        case upgradePackages:
+            return ngettext("Authorization for upgrading a package failed due to error %s",
+                    "Authorization for upgrading packages failed due to error %s", nPackages);
         }
     }
 

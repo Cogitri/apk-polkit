@@ -23,17 +23,13 @@
 
 <node name="/" xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
     <interface name="dev.Cogitri.apkPolkit.Helper">
-        <method name="updateRepositories">
-        </method>
-        <method name="upgradePackages">
+        <method name="addPackages">
             <arg name="packages" type="as" direction="in"/>
         </method>
-        <method name="upgradeAllPackages">
+        <method name="addRepository">
+            <arg name="url" type="s" direction="in"/>
         </method>
         <method name="deletePackages">
-            <arg name="packages" type="as" direction="in"/>
-        </method>
-        <method name="addPackages">
             <arg name="packages" type="as" direction="in"/>
         </method>
         <method name="listAvailablePackages">
@@ -42,8 +38,14 @@
         <method name="listInstalledPackages">
             <arg name="matchingPackages" type="a(ssssssttb)" direction="out"/>
         </method>
+        <method name="listRepositories">
+            <arg name="repositories" type="a(bss)" direction="out"/>
+        </method>
         <method name="listUpgradablePackages">
             <arg name="matchingPackages" type="a(ssssssttb)" direction="out"/>
+        </method>
+        <method name="removeRepository">
+            <arg name="url" type="s" direction="in"/>
         </method>
         <method name="searchPackageNames">
             <arg name="packages" type="as" direction="in"/>
@@ -53,9 +55,17 @@
             <arg name="path" type="s" direction="in"/>
             <arg name="matchingPackage" type="(ssssssttb)" direction="out"/>
         </method>
+        <method name="updateRepositories">
+        </method>
+        <method name="upgradePackages">
+            <arg name="packages" type="as" direction="in"/>
+        </method>
+        <method name="upgradeAllPackages">
+        </method>
 
         <property name="allowUntrustedRepos" type="b" access="readwrite"/>
         <property name="root" type="s" access="readwrite"/>
+        <property name="repositories" type="a(bss)" access="readwrite"/>
 
         <signal name="progressNotification">
             <arg name="progressPercentage" type="u"/>

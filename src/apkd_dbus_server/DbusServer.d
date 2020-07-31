@@ -21,6 +21,7 @@ module apkd_dbus_server.DBusServer;
 
 import apkd.ApkDataBase;
 import apkd.ApkPackage;
+import apkd.ApkRepository;
 import apkd.exceptions;
 static import apkd.functions;
 import apkd_common.gettext : gettext;
@@ -44,6 +45,7 @@ import glib.Thread;
 import glib.Variant;
 import glib.VariantBuilder;
 import glib.VariantType;
+import std.algorithm : canFind, find, remove;
 import std.array : split;
 import std.ascii : toLower, toUpper;
 import std.concurrency : receive;
@@ -53,6 +55,7 @@ import std.exception;
 import std.experimental.logger;
 import std.format : format;
 import std.meta : AliasSeq;
+import std.path : buildPath;
 import std.stdio : readln;
 import std.string : chomp;
 import std.traits : hasUDA, Parameters, ReturnType;
@@ -107,20 +110,23 @@ class DBusServer
         tracef("Trying to acquire DBus name %s.", apkd_common.globals.dbusBusName);
 
         mixin(registerDbusMethod("addPackages"));
+        mixin(registerDbusMethod("addRepository"));
         mixin(registerDbusMethod("deletePackages"));
         mixin(registerDbusMethod("getAll"));
         mixin(registerDbusMethod("getAllowUntrustedRepos"));
         mixin(registerDbusMethod("getRoot"));
         mixin(registerDbusMethod("listAvailablePackages"));
         mixin(registerDbusMethod("listInstalledPackages"));
+        mixin(registerDbusMethod("listRepositories"));
         mixin(registerDbusMethod("listUpgradablePackages"));
-        mixin(registerDbusMethod("updateRepositories"));
-        mixin(registerDbusMethod("upgradeAllPackages"));
-        mixin(registerDbusMethod("upgradePackages"));
+        mixin(registerDbusMethod("removeRepository"));
         mixin(registerDbusMethod("searchFileOwner"));
         mixin(registerDbusMethod("searchPackageNames"));
         mixin(registerDbusMethod("setAllowUntrustedRepos"));
         mixin(registerDbusMethod("setRoot"));
+        mixin(registerDbusMethod("updateRepositories"));
+        mixin(registerDbusMethod("upgradeAllPackages"));
+        mixin(registerDbusMethod("upgradePackages"));
 
         this.userData = UserData(null, null);
         const dbusFlags = BusNameOwnerFlags.ALLOW_REPLACEMENT | (replace
@@ -160,6 +166,31 @@ class DBusServer
         }
         database.addPackages(pkgnames);
         tracef("Successfully added package%s '%s'.", pkgnames.length > 1 ? "s" : "", pkgnames);
+    }
+
+    /**
+    * Adds a repository to /etc/apk/repositories.
+    *
+    * Throws:
+    *   An ErrnoException if opening/writing to the file fails.
+    */
+    void addRepository(Variant value)
+    {
+        size_t len;
+        const repoUrl = value.getChildValue(0).getString(len);
+        const reposFilePath = this.root ? buildPath(this.root, "etc", "apk",
+                "repositories") : "/etc/apk/repositories";
+
+        tracef("Adding repository '%s' to file '%s'.", repoUrl, reposFilePath);
+        auto repos = ApkDataBase.getRepositories(reposFilePath);
+        if (repos.canFind!(r => r.enabled && r.url == repoUrl))
+        {
+            infof("Didn't add repository '%s', since it already is in /etc/apk/repositories",
+                    repoUrl);
+            return;
+        }
+        ApkDataBase.setRepositories(repos ~ ApkRepository(repoUrl, true), reposFilePath);
+        tracef("Successfully added repository %s.", repoUrl);
     }
 
     /**
@@ -204,11 +235,10 @@ class DBusServer
         g_variant_builder_open(&builder, variantType.getVariantTypeStruct(false));
         g_variant_builder_add_value(&builder,
                 new Variant("allowUntrustedRepos").getVariantStruct(true));
-        g_variant_builder_add_value(&builder,
-                new Variant(new Variant(this.allowUntrustedRepositories)).getVariantStruct(true));
+        g_variant_builder_add_value(&builder, this.getAllowUntrustedRepos()
+                .getVariantStruct(true));
         g_variant_builder_close(&builder);
-
-        g_variant_builder_open(&builder, variantType.getVariantTypeStruct(true));
+        g_variant_builder_open(&builder, variantType.getVariantTypeStruct(false));
         g_variant_builder_add_value(&builder, new Variant("root").getVariantStruct(true));
         g_variant_builder_add_value(&builder, new Variant(new Variant(this.root
                 ? this.root : "")).getVariantStruct(true));
@@ -259,6 +289,37 @@ class DBusServer
     }
 
     /**
+    * Lists all repositories in /etc/apk/repositories.
+    *
+    * Throws:
+    *   An ErrnoException if opening/reading from the file fails.
+    */
+    Variant listRepositories()
+    {
+        const reposFilePath = this.root ? buildPath(this.root, "etc", "apk",
+                "repositories") : "/etc/apk/repositories";
+        trace("Trying to list repositories from file '%s'", reposFilePath);
+
+        const auto repos = ApkDataBase.getRepositories(reposFilePath);
+        auto builder = new VariantBuilder(new VariantType("a(bss)"));
+
+        foreach (ref repo; repos)
+        {
+            warning(repo);
+            builder.open(new VariantType("(bss)"));
+
+            builder.addValue(new Variant(repo.enabled));
+            builder.addValue(new Variant(new Variant(repo.description
+                    ? repo.description : "").getVariantStruct()));
+            builder.addValue(new Variant(repo.url));
+
+            builder.close();
+        }
+
+        return builder.end();
+    }
+
+    /**
     * Get an array of all packages that can be upgraded on the machine.
     *
     * Throws:
@@ -272,6 +333,26 @@ class DBusServer
         auto packages = database.listUpgradablePackages();
         trace("Successfully listed all upgradable packages");
         return apkPackageArrayToVariant(packages);
+    }
+
+    /**
+    * Removes a repository from /etc/apk/repositories.
+    *
+    * Throws:
+    *   An ErrnoException if opening/writing to the file fails.
+    */
+    void removeRepository(Variant value)
+    {
+        size_t len;
+        const repoUrl = value.getChildValue(0).getString(len);
+        const reposFilePath = this.root ? buildPath(this.root, "etc", "apk",
+                "repositories") : "/etc/apk/repositories";
+
+        tracef("Removing repository '%s' from file '%s'.", repoUrl, reposFilePath);
+        auto repos = ApkDataBase.getRepositories(reposFilePath);
+        repos = repos.remove!(repo => repo.enabled && repo.url == repoUrl);
+        ApkDataBase.setRepositories(repos, reposFilePath);
+        tracef("Successfully removed repository %s.", repoUrl);
     }
 
     /**
