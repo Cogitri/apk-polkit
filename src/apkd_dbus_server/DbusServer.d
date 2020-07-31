@@ -526,7 +526,15 @@ class DBusServer
                     sender.to!string);
             if (!polkitResult)
             {
-                throw new Exception(gettext("access denied"));
+                const opErrorTranslator = new OperationErrorTranslator(methodName);
+                immutable errMsg = format(opErrorTranslator.translateOperationError(
+                        /* Translators: Couldn't add package due to error "access denied" */
+                        cast(uint) DBusServer.getNumOfPackages(parametersVariant)),
+                        gettext("access denied"));
+                error(errMsg);
+                dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(),
+                        DBusError.ACCESS_DENIED, errMsg);
+                return;
             }
         }
         catch (Exception e)
@@ -536,7 +544,7 @@ class DBusServer
                     cast(uint) DBusServer.getNumOfPackages(parametersVariant)), e.msg);
             error(errMsg);
             dbusInvocation.returnErrorLiteral(gio.DBusError.DBusError.quark(),
-                    DBusError.ACCESS_DENIED, errMsg);
+                    DBusError.AUTH_FAILED, errMsg);
             return;
         }
 

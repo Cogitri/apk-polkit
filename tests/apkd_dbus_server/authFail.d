@@ -56,7 +56,8 @@ extern (C) void onNameAppeared(GDBusConnection* connection, const(char)* name,
 
     assert(!buildPath(testHelper.apkRootDir, "usr", "bin", "test-a").exists());
 
-    assert(error.message.to!string == "GDBus.Error:org.freedesktop.DBus.Error.AccessDenied: Authorization for adding packages failed due to error access denied");
+    assert(error.message.to!string
+            == "GDBus.Error:org.freedesktop.DBus.Error.AccessDenied: Couldn't add packages due to error access denied");
 
     testHelper.cleanup();
     exit(0);
