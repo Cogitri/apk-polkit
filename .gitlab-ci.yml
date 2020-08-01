@@ -6,7 +6,7 @@ stages:
   stage: build
   script:
     - apt update
-    - DEBIAN_FRONTEND=noninteractive apt-get -y install libpolkit-gobject-1-dev policykit-1 libglibd-2.0-dev libssl-dev ldc git build-essential gir-to-d libgirepository1.0-dev libdbus-1-dev dbus-x11 python3-dbusmock gettext python3-pip lua5.3 lua-zlib
+    - DEBIAN_FRONTEND=noninteractive apt-get -y install libpolkit-gobject-1-dev policykit-1 libglibd-2.0-dev libssl-dev ldc git build-essential gir-to-d libgirepository1.0-dev libdbus-1-dev dbus-x11 python3-dbusmock gettext python3-pip lua5.3 lua-zlib appstream-util appstream
     - pip3 install meson ninja
     - git clone https://gitlab.alpinelinux.org/alpine/abuild
     - git clone https://gitlab.alpinelinux.org/Cogitri/apk-toolsd
@@ -22,7 +22,7 @@ stages:
   image: alpine:edge
   stage: build
   script:
-    - apk add meson polkit-d-dev openssl-d-dev glibd-dev bash py3-dbusmock dbus dbus-x11 lua5.3 lua5.3-lzlib alpine-sdk
+    - apk add meson polkit-d-dev openssl-d-dev glibd-dev bash py3-dbusmock dbus dbus-x11 lua5.3 lua5.3-lzlib alpine-sdk appstream-glib
     - git clone https://gitlab.alpinelinux.org/Cogitri/apk-toolsd
     - cd apk-toolsd && meson build && ninja -C build install
     - meson build && ninja -C build test

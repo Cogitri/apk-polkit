@@ -1,4 +1,5 @@
-# Polkit policy
+# Data
+data/dev.Cogitri.apkPolkit.metainfo.xml.in
 data/dev.Cogitri.apkPolkit.policy.in
 
 # Source files

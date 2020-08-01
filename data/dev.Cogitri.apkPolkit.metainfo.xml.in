@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2020 Rasmus Thomsen <oss@cogitri.dev> -->
+<component>
+	<id>dev.Cogitri.apkPolkit</id>
+	<metadata_license>CC0-1.0</metadata_license>
+	<project_license>GPL-3.0-or-later</project_license>
+	<name>apk-polkit</name>
+	<summary>A DBus wrapper around libapk, for usage in software centres</summary>
+	<translation type="gettext">apk-polkit</translation>
+	<content_rating type="oars-1.1" />
+
+	<description>
+		<p>
+			apk-polkit exposes a DBus API for libapk, the library used by APK, the Alpine Package Keeper.
+			It is intended to be used by software centres like GNOME Software to allow users
+			to install software via a GUI.
+		</p>
+	</description>
+
+	<url type="homepage">https://gitlab.alpinelinux.org/Cogitri/apk-polkit</url>
+	<developer_name>Rasmus “Cogitri” Thomsen</developer_name>
+	<update_contact>oss@cogitri.dev</update_contact>
+
+	<provides>
+		<dbus type="system">dev.Cogitri.apkPolkit.Helper</dbus>
+	</provides>
+
+	<releases>
+		<release version="0.6.0" date="2020-08-01">
+			<p>
+				This release adds the possibility to add&amp;remove repositories
+				directly from GNOME Software's GUI. It also makes error message
+				more concise and adds new polkit rules so that the password
+				doesn't have to be entered quite as often (or not at all, if
+				in a privileged group).
+			</p>
+		</release>
+	</releases>
+</component>

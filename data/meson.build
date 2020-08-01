@@ -43,3 +43,22 @@ dbus_interface_src = gnome.gdbus_codegen(
     install_header: true,
     install_dir: join_paths(get_option('includedir'), 'apk-polkit'),
 )
+
+metainfo_file = i18n.merge_file ('metainfo-file',
+    input: 'dev.Cogitri.apkPolkit.metainfo.xml.in',
+    output: 'dev.Cogitri.apkPolkit.metainfo.xml',
+    po_dir: meson.current_source_dir() / '..' / 'po',
+    install: true,
+    install_dir: join_paths (data_dir, 'metainfo'),
+)
+
+appstream_util = find_program('appstream-util', required: false)
+
+if appstream_util.found()
+    test(
+        'validate-metainfo', appstream_util,
+        args: [
+            'validate', '--nonet', metainfo_file.full_path(),
+        ],
+    )
+endif
