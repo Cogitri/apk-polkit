@@ -45,13 +45,15 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages dev.Cogitri.apkPolkit.Helper.addRepository dev.Cogitri.apkPolkit.Helper.removeRepository</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.updateRepositories">
     <!-- SECURITY:
-          - Normal users need admin authentication to update the package database
-          - Users in the "wheel" group can update the package database without authentication
+          - Everyone is allowed to update repos, since it doesn't actually
+            commit changes to the system (other than an updated repo index)
+            and we don't want to spam users with messages about updating
+            the repo every half an hour when GNOME Software runs the update.
      -->
     <description>Update the package database</description>
     <message>Authentication is required to update the package database</message>
@@ -76,7 +78,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages dev.Cogitri.apkPolkit.Helper.addRepository dev.Cogitri.apkPolkit.Helper.removeRepository</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.upgradeAllPackages">
@@ -92,7 +94,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.deletePackages</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.deletePackages dev.Cogitri.apkPolkit.Helper.addRepository dev.Cogitri.apkPolkit.Helper.removeRepository</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.deletePackages">
@@ -108,7 +110,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.addPackages dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.addRepository dev.Cogitri.apkPolkit.Helper.removeRepository</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.listAvailablePackages">
@@ -188,7 +190,7 @@
 
   <action id="dev.Cogitri.apkPolkit.Helper.setAllowUntrustedRepos">
     <!-- SECURITY:
-          - Only admins WITH AUTH are allowed to enable untrusted repositories (e.g. for local installs)
+          - Only admins WITH AUTH are allowed to enable untrusted repositories (e.g. for local installs).
     -->
     <description>Allow or disallow untrusted repositories</description>
     <message>Authentication is required to allow or disallow untrusted repositories</message>
@@ -197,7 +199,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete dev.Cogitri.apkPolkit.Helper.addRepository dev.Cogitri.apkPolkit.Helper.removeRepository</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.getRoot">
@@ -217,7 +219,7 @@
 
   <action id="dev.Cogitri.apkPolkit.Helper.setRoot">
     <!-- SECURITY:
-          - Only admins WITH AUTH are allowed to install to a different root (since this could hold back security updates on /)
+          - Only admins WITH AUTH are allowed to install to a different root (since this could hold back security updates on /).
     -->
     <description>Set the location of the installation root</description>
     <message>Authentication is required to set a different installation root</message>
@@ -226,7 +228,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.install dev.Cogitri.apkPolkit.Helper.upgrade dev.Cogitri.apkPolkit.Helper.delete dev.Cogitri.apkPolkit.Helper.addRepository dev.Cogitri.apkPolkit.Helper.removeRepository</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.searchPackageNames">
@@ -285,7 +287,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages dev.Cogitri.apkPolkit.Helper.removeRepository dev.Cogitri.apkPolkit.Helper.listRepositories</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages dev.Cogitri.apkPolkit.Helper.removeRepository</annotate>
   </action>
 
   <action id="dev.Cogitri.apkPolkit.Helper.removeRepository">
@@ -300,6 +302,6 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages dev.Cogitri.apkPolkit.Helper.addRepository dev.Cogitri.apkPolkit.Helper.listRepositories</annotate>
+    <annotate key="org.freedesktop.policykit.imply">dev.Cogitri.apkPolkit.Helper.upgradePackages dev.Cogitri.apkPolkit.Helper.upgradeAllPackages dev.Cogitri.apkPolkit.Helper.deletePackages dev.Cogitri.apkPolkit.Helper.addRepository</annotate>
   </action>
 </policyconfig>
