@@ -1,8 +1,10 @@
 polkit.addRule(function(action, subject) {
-    if ((action.id == "dev.Cogitri.apkPolkit.add" ||
-         action.id == "dev.Cogitri.apkPolkit.delete"||
-         action.id == "dev.Cogitri.apkPolkit.update" ||
-         action.id == "dev.Cogitri.apkPolkit.upgrade") &&
+    if ((action.id == "dev.Cogitri.apkPolkit.Helper.addPackages" ||
+         action.id == "dev.Cogitri.apkPolkit.Helper.deletePackages"||
+         action.id == "dev.Cogitri.apkPolkit.Helper.updateRepositories" ||
+         action.id == "dev.Cogitri.apkPolkit.Helper.upgradePackages" ||
+         action.id == "dev.Cogitri.apkPolkit.Helper.addRepository" ||
+         action.id == "dev.Cogitri.apkPolkit.Helper.removeRepository") &&
         subject.active == true && subject.local == true &&
         subject.isInGroup("@PRIVILEGED_GROUP@")) {
             return polkit.Result.YES;
