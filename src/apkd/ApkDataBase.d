@@ -197,12 +197,11 @@ struct ApkDataBase
         {
             auto change = upgradeChangeset.changes.item()[i];
 
-            if (change.new_pkg is null || change.old_pkg is null)
+            if (change.old_pkg is null && change.new_pkg !is null)
             {
-                continue;
+                packages ~= ApkPackage(change.new_pkg);
             }
-
-            if ((apk_pkg_version_compare(change.new_pkg,
+            else if (change.old_pkg !is null && change.new_pkg !is null && (apk_pkg_version_compare(change.new_pkg,
                     change.old_pkg) & (APK_VERSION_GREATER | APK_VERSION_EQUAL))
                     && change.new_pkg != change.old_pkg)
             {
@@ -264,7 +263,7 @@ struct ApkDataBase
             toBeUpgraded ~= dep;
 
             const depPackage = apk_pkg_get_installed(dep.name);
-            if (depPackage.origin is null)
+            if (depPackage is null || depPackage.origin is null)
             {
                 continue;
             }
