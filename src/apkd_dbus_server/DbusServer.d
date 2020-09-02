@@ -657,6 +657,7 @@ class DBusServer
             error(errMsg);
             dbusInvocation.returnErrorLiteral(ApkdDbusServerErrorQuark(),
                     ApkdDbusServerErrorQuarkEnum.Failed, errMsg);
+            return;
         }
         if (dbusRes)
         {
