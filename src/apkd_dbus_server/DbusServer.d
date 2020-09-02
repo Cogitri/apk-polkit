@@ -557,7 +557,14 @@ class DBusServer
     {
         try
         {
-            return params.getChildValue(0).getStrv().length;
+            if (params.nChildren() < 1)
+            {
+                return 0;
+            }
+            else
+            {
+                return params.getChildValue(0).getStrv().length;
+            }
         }
         catch (Exception e)
         {
